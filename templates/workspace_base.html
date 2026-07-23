@@ -1,0 +1,82 @@
+{% load static %}<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Workspace{% endblock %} — {{ NETWORK_SHORT_NAME }}</title>
+  <link rel="stylesheet" href="{% static 'css/base.css' %}">
+  {% block extra_head %}{% endblock %}
+</head>
+<body>
+<div class="app-shell">
+  <aside class="app-sidebar">
+    <a href="{% url 'sitepublic:home' %}" class="brand">
+      <span class="brand-mark">{{ NETWORK_SHORT_NAME|slice:":2"|upper }}</span>
+      <span>{{ NETWORK_SHORT_NAME }}</span>
+    </a>
+    <nav class="sidebar-nav">
+      {% if active_organisation %}
+        <a href="{% url 'organisations:workspace_home' %}" class="{% if request.resolver_match.url_name == 'workspace_home' %}active{% endif %}">Overview</a>
+        <a href="{% url 'organisations:org_360' slug=active_organisation.slug %}">Organisation 360°</a>
+        <div class="sidebar-section-label">Compliance &amp; Governance</div>
+        <a href="{% url 'compliance:passport' slug=active_organisation.slug %}">Compliance Passport</a>
+        <a href="{% url 'compliance:calendar' slug=active_organisation.slug %}">Compliance Calendar</a>
+        <a href="{% url 'organisations:health_check' slug=active_organisation.slug %}">Health Check</a>
+        <a href="{% url 'governance:list' slug=active_organisation.slug %}">Governance</a>
+        <a href="{% url 'policies:list' slug=active_organisation.slug %}">Policies</a>
+        <a href="{% url 'documents:list' slug=active_organisation.slug %}">Documents</a>
+        <div class="sidebar-section-label">Delivery</div>
+        <a href="{% url 'grants:list' slug=active_organisation.slug %}">Grants</a>
+        <a href="{% url 'projects:list' slug=active_organisation.slug %}">Projects</a>
+        <a href="{% url 'programmes:list' slug=active_organisation.slug %}">Programmes</a>
+        <a href="{% url 'beneficiaries:list' slug=active_organisation.slug %}">Beneficiaries</a>
+        <a href="{% url 'attendance:list' slug=active_organisation.slug %}">Attendance</a>
+        <a href="{% url 'monitoring_evaluation:dashboard' slug=active_organisation.slug %}">M&amp;E</a>
+        <a href="{% url 'expenses:list' slug=active_organisation.slug %}">Finance Lite</a>
+        <div class="sidebar-section-label">Insight</div>
+        <a href="{% url 'impact:dashboard' slug=active_organisation.slug %}">Impact Dashboard</a>
+        <a href="{% url 'reporting:list' slug=active_organisation.slug %}">Reports</a>
+      {% endif %}
+      {% if request.user.is_platform_admin or request.user.network_staff_roles.exists %}
+        <div class="sidebar-section-label">{{ NETWORK_SHORT_NAME }} Network</div>
+        <a href="{% url 'networks:dashboard' %}">Network Dashboard</a>
+        <a href="{% url 'memberships:queue' %}">Membership Applications</a>
+        <a href="{% url 'networks:capacity' %}">Capacity Intelligence</a>
+        <a href="{% url 'opportunities:manage_list' %}">Opportunities</a>
+      {% endif %}
+    </nav>
+  </aside>
+  <div class="app-main">
+    <div class="app-topbar">
+      <div class="flex items-center gap-16">
+        {% if user_organisation_memberships|length > 1 %}
+        <form method="post" action="{% url 'organisations:switch' %}" class="flex items-center gap-8">
+          {% csrf_token %}
+          <select name="organisation_slug" onchange="this.form.submit()">
+            {% for m in user_organisation_memberships %}
+              <option value="{{ m.organisation.slug }}" {% if active_organisation.slug == m.organisation.slug %}selected{% endif %}>{{ m.organisation.display_name }}</option>
+            {% endfor %}
+          </select>
+        </form>
+        {% elif active_organisation %}
+          <strong>{{ active_organisation.display_name }}</strong>
+        {% endif %}
+      </div>
+      <div class="flex items-center gap-16">
+        {% for message in messages %}<span class="badge badge-primary">{{ message }}</span>{% endfor %}
+        <span class="text-muted">{{ request.user.get_full_name|default:request.user.email }}</span>
+        <a href="{% url 'accounts:logout' %}" class="btn btn-ghost btn-sm">Sign out</a>
+      </div>
+    </div>
+    <div class="app-content">
+      {% if messages %}
+        {% for message in messages %}
+          <div class="alert alert-{{ message.tags|default:'info' }}">{{ message }}</div>
+        {% endfor %}
+      {% endif %}
+      {% block content %}{% endblock %}
+    </div>
+  </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,22 @@
+{% extends "accounts/_auth_shell.html" %}
+{% block title %}Sign in — {{ NETWORK_SHORT_NAME }}{% endblock %}
+{% block auth_title %}Sign in{% endblock %}
+{% block auth_content %}
+<form method="post" novalidate>
+  {% csrf_token %}
+  <div class="form-group">
+    <label for="{{ form.username.id_for_label }}">Email address</label>
+    {{ form.username }}
+  </div>
+  <div class="form-group">
+    <label for="{{ form.password.id_for_label }}">Password</label>
+    {{ form.password }}
+  </div>
+  <input type="hidden" name="next" value="{{ next }}">
+  <button type="submit" class="btn btn-primary btn-block">Sign in</button>
+</form>
+<p class="text-muted" style="margin-top:16px;">
+  <a href="{% url 'accounts:password_reset' %}">Forgot your password?</a>
+</p>
+<p class="text-muted">New to {{ NETWORK_SHORT_NAME }}? <a href="{% url 'accounts:register' %}">Create an account</a></p>
+{% endblock %}
