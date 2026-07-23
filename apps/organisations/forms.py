@@ -1,5 +1,6 @@
 from django import forms
 
+from apps.core.validators import validate_upload_file
 from apps.organisations.models import Organisation
 
 
@@ -72,3 +73,9 @@ class OrganisationPublicProfileForm(forms.ModelForm):
         model = Organisation
         fields = ["is_publicly_listed", "public_about", "public_logo", "public_show_impact", "public_show_contact"]
         widgets = {"public_about": forms.Textarea(attrs={"rows": 5})}
+
+    def clean_public_logo(self):
+        logo = self.cleaned_data.get("public_logo")
+        if logo and hasattr(logo, "size"):
+            validate_upload_file(logo)
+        return logo

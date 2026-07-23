@@ -67,7 +67,7 @@ _ALL_ORG_CAPABILITIES = {
 # default. Org Admin gets everything within the organisation.
 ORG_ROLE_CAPABILITIES = {
     ORG_ROLE_ADMIN: set(_ALL_ORG_CAPABILITIES),
-    ORG_ROLE_EXECUTIVE_DIRECTOR: set(_ALL_ORG_CAPABILITIES) - {"expenses.approve"} | {"expenses.approve"},
+    ORG_ROLE_EXECUTIVE_DIRECTOR: set(_ALL_ORG_CAPABILITIES),
     ORG_ROLE_BOARD_MEMBER: {
         "organisation.view", "governance.view", "policies.view", "documents.view",
         "compliance.view", "grants.view", "projects.view", "programmes.view",
