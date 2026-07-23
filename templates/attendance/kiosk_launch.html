@@ -1,0 +1,20 @@
+{% extends "workspace_base.html" %}
+{% block title %}Launch Kiosk{% endblock %}
+{% block content %}
+<div class="page-header"><div><h1>Launch Kiosk</h1><p>{{ organisation.display_name }} — generates a time-limited, unauthenticated check-in link for one programme. No admin data is exposed at this link.</p></div></div>
+
+{% if session %}
+<div class="alert alert-success">
+  Kiosk link ready, valid until {{ session.expires_at }}.<br>
+  <a href="{% url 'attendance:kiosk_entry' token=session.token %}">{{ request.scheme }}://{{ request.get_host }}{% url 'attendance:kiosk_entry' token=session.token %}</a>
+</div>
+{% endif %}
+
+<div class="card" style="max-width:480px;">
+  <form method="post" novalidate>
+    {% csrf_token %}
+    {% include "partials/_form_fields.html" %}
+    <button type="submit" class="btn btn-primary">Generate kiosk link</button>
+  </form>
+</div>
+{% endblock %}

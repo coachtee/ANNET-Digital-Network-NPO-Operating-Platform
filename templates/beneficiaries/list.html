@@ -1,0 +1,25 @@
+{% extends "workspace_base.html" %}
+{% block title %}Beneficiaries{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div><h1>Beneficiaries</h1><p>{{ organisation.display_name }} — data minimisation applies; only capture what a programme needs.</p></div>
+  {% if can_manage %}<a href="{% url 'beneficiaries:create' slug=organisation.slug %}" class="btn btn-primary">Add beneficiary</a>{% endif %}
+</div>
+{% if beneficiaries %}
+<table>
+  <thead><tr><th>Name / Reference</th><th>Programme</th><th>Mode</th><th>Sensitive</th></tr></thead>
+  <tbody>
+    {% for b in beneficiaries %}
+    <tr>
+      <td>{{ b }}</td>
+      <td>{{ b.programme.name }}</td>
+      <td>{{ b.get_mode_display }}</td>
+      <td>{% if b.is_sensitive %}<span class="badge badge-warning">Sensitive</span>{% else %}—{% endif %}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<div class="empty-state"><h3>No beneficiaries recorded yet.</h3><p>For outreach where individual identification isn't needed, use anonymous headcounts on the Attendance screen instead.</p></div>
+{% endif %}
+{% endblock %}

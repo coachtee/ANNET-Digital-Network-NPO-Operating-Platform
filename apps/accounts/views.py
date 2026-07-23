@@ -71,8 +71,15 @@ def resend_verification(request):
 
 @login_required
 def post_login_redirect(request):
+    # Kiosk devices never use the standard login form — they reach the
+    # restricted check-in flow via a tokenised URL (see apps.attendance).
+    # This flag exists purely as a hard-block if a kiosk-only account were
+    # ever used to sign in through the normal form.
     if request.user.is_kiosk_only:
-        return redirect("attendance:kiosk_select_programme")
+        from django.contrib.auth import logout
+        logout(request)
+        messages.error(request, "This account cannot access the standard platform login.")
+        return redirect("sitepublic:home")
     if request.user.is_platform_admin or request.user.network_staff_roles.exists():
         return redirect("networks:dashboard")
     if request.user.active_memberships.exists():

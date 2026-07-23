@@ -1,0 +1,24 @@
+{% extends "workspace_base.html" %}
+{% block title %}Programmes{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div><h1>Programmes</h1><p>{{ organisation.display_name }}</p></div>
+  {% if can_manage %}<a href="{% url 'programmes:create' slug=organisation.slug %}" class="btn btn-primary">New programme</a>{% endif %}
+</div>
+{% if programmes %}
+<table>
+  <thead><tr><th>Name</th><th>Area</th><th>Status</th></tr></thead>
+  <tbody>
+    {% for p in programmes %}
+    <tr>
+      <td><a href="{% url 'programmes:detail' slug=organisation.slug programme_id=p.id %}">{{ p.name }}</a></td>
+      <td>{{ p.programme_area|default:"—" }}</td>
+      <td><span class="badge badge-neutral">{{ p.get_status_display }}</span></td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<div class="empty-state"><h3>No programmes yet.</h3><p>Create your first programme to begin tracking activities, attendance and impact.</p></div>
+{% endif %}
+{% endblock %}

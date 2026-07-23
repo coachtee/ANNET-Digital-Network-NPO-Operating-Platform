@@ -1,0 +1,31 @@
+{% extends "workspace_base.html" %}
+{% block title %}Attendance{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div><h1>Attendance</h1><p>{{ organisation.display_name }}</p></div>
+  {% if can_manage %}
+  <div class="flex gap-8">
+    <a href="{% url 'attendance:kiosk_launch' slug=organisation.slug %}" class="btn btn-outline">Launch Kiosk</a>
+    <a href="{% url 'attendance:record' slug=organisation.slug %}" class="btn btn-primary">Record attendance</a>
+  </div>
+  {% endif %}
+</div>
+{% if records %}
+<table>
+  <thead><tr><th>Programme</th><th>Activity</th><th>Who</th><th>Date</th><th>Method</th></tr></thead>
+  <tbody>
+    {% for r in records %}
+    <tr>
+      <td>{{ r.programme.name }}</td>
+      <td>{{ r.activity.name|default:"—" }}</td>
+      <td>{% if r.beneficiary %}{{ r.beneficiary }}{% else %}{{ r.headcount }} people (anonymous){% endif %}</td>
+      <td>{{ r.attendance_date }}</td>
+      <td><span class="badge badge-neutral">{{ r.get_check_in_method_display }}</span></td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<div class="empty-state"><h3>No attendance recorded yet.</h3><p>Record manual attendance, or launch a kiosk for self-service check-in.</p></div>
+{% endif %}
+{% endblock %}

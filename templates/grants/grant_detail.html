@@ -1,0 +1,24 @@
+{% extends "workspace_base.html" %}
+{% block title %}{{ grant.name }}{% endblock %}
+{% block content %}
+<div class="breadcrumbs"><a href="{% url 'grants:list' slug=organisation.slug %}">Grants</a> / {{ grant.name }}</div>
+<div class="page-header"><div><h1>{{ grant.name }}</h1><p>{{ grant.funder_name }} · <span class="badge badge-neutral">{{ grant.get_status_display }}</span></p></div></div>
+
+<div class="grid grid-2">
+  <div class="card-flat">
+    <h3>Details</h3>
+    <table>
+      <tr><td>Amount</td><td>{{ grant.currency }} {{ grant.amount }}</td></tr>
+      <tr><td>Funding period</td><td>{{ grant.funding_start|default:"—" }} – {{ grant.funding_end|default:"—" }}</td></tr>
+      <tr><td>Responsible manager</td><td>{{ grant.responsible_manager|default:"Unassigned" }}</td></tr>
+    </table>
+    <p>{{ grant.description }}</p>
+  </div>
+  <div class="card-flat">
+    <h3>Linked projects</h3>
+    {% if projects %}<ul>{% for p in projects %}<li><a href="{% url 'projects:detail' slug=organisation.slug project_id=p.id %}">{{ p.name }}</a></li>{% endfor %}</ul>{% else %}<p class="text-muted">None yet.</p>{% endif %}
+    <h3 style="margin-top:16px;">Linked programmes</h3>
+    {% if programmes %}<ul>{% for p in programmes %}<li><a href="{% url 'programmes:detail' slug=organisation.slug programme_id=p.id %}">{{ p.name }}</a></li>{% endfor %}</ul>{% else %}<p class="text-muted">None yet.</p>{% endif %}
+  </div>
+</div>
+{% endblock %}
