@@ -1,0 +1,36 @@
+{% extends "accounts/_auth_shell.html" %}
+{% block title %}Create your account — {{ NETWORK_SHORT_NAME }}{% endblock %}
+{% block auth_title %}Create your account{% endblock %}
+{% block auth_subtitle %}<p class="text-muted">Start your organisation's journey with {{ NETWORK_SHORT_NAME }}.</p>{% endblock %}
+{% block auth_content %}
+<form method="post" novalidate>
+  {% csrf_token %}
+  <div class="grid grid-2">
+    <div class="form-group">
+      <label for="{{ form.first_name.id_for_label }}">First name</label>
+      {{ form.first_name }}
+    </div>
+    <div class="form-group">
+      <label for="{{ form.last_name.id_for_label }}">Last name</label>
+      {{ form.last_name }}
+    </div>
+  </div>
+  <div class="form-group">
+    <label for="{{ form.email.id_for_label }}">Email address</label>
+    {{ form.email }}
+    {% for error in form.email.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
+  </div>
+  <div class="form-group">
+    <label for="{{ form.password1.id_for_label }}">Password</label>
+    {{ form.password1 }}
+    <div class="field-hint">At least 10 characters. Avoid common passwords.</div>
+    {% for error in form.password1.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
+  </div>
+  <div class="form-group">
+    <label for="{{ form.password2.id_for_label }}">Confirm password</label>
+    {{ form.password2 }}
+  </div>
+  <button type="submit" class="btn btn-primary btn-block">Create account</button>
+</form>
+<p class="text-muted" style="margin-top:16px;">Already have an account? <a href="{% url 'accounts:login' %}">Sign in</a></p>
+{% endblock %}

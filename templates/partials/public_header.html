@@ -1,0 +1,27 @@
+{% load static %}
+<header class="site-header">
+  <div class="inner">
+    <a href="{% url 'sitepublic:home' %}" class="brand">
+      <span class="brand-mark">{{ NETWORK_SHORT_NAME|slice:":2"|upper }}</span>
+      <span>
+        {{ NETWORK_SHORT_NAME }}
+        <span class="brand-tagline">{{ NETWORK_TAGLINE }}</span>
+      </span>
+    </a>
+    <nav class="main-nav">
+      <a href="{% url 'sitepublic:about' %}">About</a>
+      <a href="{% url 'sitepublic:directory' %}">Explore NPOs</a>
+      <a href="{% url 'opportunities:public_list' %}">Opportunities</a>
+      <a href="{% url 'sitepublic:resources' %}">Resources</a>
+      <a href="{% url 'sitepublic:insights' %}">Insights</a>
+    </nav>
+    <div class="header-actions">
+      {% if request.user.is_authenticated %}
+        <a href="{% url 'organisations:workspace_home' %}" class="btn btn-outline btn-sm">My Workspace</a>
+      {% else %}
+        <a href="{% url 'sitepublic:join' %}" class="btn btn-primary btn-sm">Join ANNET</a>
+        <a href="{% url 'accounts:login' %}" class="btn btn-ghost btn-sm">Sign In</a>
+      {% endif %}
+    </div>
+  </div>
+</header>

@@ -1,0 +1,25 @@
+{% extends "workspace_base.html" %}
+{% block title %}Grants{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div><h1>Grants</h1><p>{{ organisation.display_name }}</p></div>
+  {% if can_manage %}<a href="{% url 'grants:create' slug=organisation.slug %}" class="btn btn-primary">New grant</a>{% endif %}
+</div>
+{% if grants %}
+<table>
+  <thead><tr><th>Name</th><th>Funder</th><th>Amount</th><th>Status</th></tr></thead>
+  <tbody>
+    {% for g in grants %}
+    <tr>
+      <td><a href="{% url 'grants:detail' slug=organisation.slug grant_id=g.id %}">{{ g.name }}</a></td>
+      <td>{{ g.funder_name }}</td>
+      <td>{{ g.currency }} {{ g.amount }}</td>
+      <td><span class="badge badge-neutral">{{ g.get_status_display }}</span></td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<div class="empty-state"><h3>No grants yet.</h3><p>Record a grant to link it to projects and programmes and track its lifecycle.</p></div>
+{% endif %}
+{% endblock %}

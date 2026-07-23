@@ -1,0 +1,26 @@
+{% extends "workspace_base.html" %}
+{% block title %}{{ programme.name }} — M&amp;E{% endblock %}
+{% block content %}
+<div class="breadcrumbs"><a href="{% url 'monitoring_evaluation:dashboard' slug=organisation.slug %}">M&amp;E</a> / {{ programme.name }}</div>
+<div class="page-header"><div><h1>{{ programme.name }}</h1><p>Outcomes, outputs and indicators</p></div></div>
+
+<div class="grid grid-3">
+  <div class="card-flat">
+    <h3>Outcomes</h3>
+    {% if outcomes %}<ul>{% for o in outcomes %}<li>{{ o.title }}</li>{% endfor %}</ul>{% else %}<p class="text-muted">None yet.</p>{% endif %}
+    {% if can_manage %}<form method="post">{% csrf_token %}{% include "partials/_form_fields.html" with form=outcome_form %}<button type="submit" name="add_outcome" class="btn btn-outline btn-sm">Add outcome</button></form>{% endif %}
+  </div>
+  <div class="card-flat">
+    <h3>Outputs</h3>
+    {% if outputs %}<ul>{% for o in outputs %}<li>{{ o.title }}</li>{% endfor %}</ul>{% else %}<p class="text-muted">None yet.</p>{% endif %}
+    {% if can_manage %}<form method="post">{% csrf_token %}{% include "partials/_form_fields.html" with form=output_form %}<button type="submit" name="add_output" class="btn btn-outline btn-sm">Add output</button></form>{% endif %}
+  </div>
+  <div class="card-flat">
+    <h3>Indicators</h3>
+    {% if indicators %}
+      <ul>{% for i in indicators %}<li><a href="{% url 'monitoring_evaluation:indicator_detail' slug=organisation.slug indicator_id=i.id %}">{{ i.name }}</a></li>{% endfor %}</ul>
+    {% else %}<p class="text-muted">None yet.</p>{% endif %}
+    {% if can_manage %}<form method="post">{% csrf_token %}{% include "partials/_form_fields.html" with form=indicator_form %}<button type="submit" name="add_indicator" class="btn btn-outline btn-sm">Add indicator</button></form>{% endif %}
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,25 @@
+{% extends "workspace_base.html" %}
+{% block title %}Policies{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div><h1>Policy Register</h1><p>{{ organisation.display_name }}</p></div>
+  {% if can_manage %}<a href="{% url 'policies:create' slug=organisation.slug %}" class="btn btn-primary">New policy</a>{% endif %}
+</div>
+{% if policies %}
+<table>
+  <thead><tr><th>Name</th><th>Category</th><th>Status</th><th>Next review</th></tr></thead>
+  <tbody>
+    {% for p in policies %}
+    <tr>
+      <td><a href="{% url 'policies:detail' slug=organisation.slug policy_id=p.id %}">{{ p.name }}</a></td>
+      <td>{{ p.get_category_display }}</td>
+      <td><span class="badge badge-neutral">{{ p.get_status_display }}</span></td>
+      <td>{{ p.next_review_date|default:"—" }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<div class="empty-state"><h3>No policies yet.</h3><p>Create your first policy to start tracking approvals and review dates.</p></div>
+{% endif %}
+{% endblock %}

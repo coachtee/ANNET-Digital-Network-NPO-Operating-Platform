@@ -1,0 +1,25 @@
+{% extends "workspace_base.html" %}
+{% block title %}Projects{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div><h1>Projects</h1><p>{{ organisation.display_name }}</p></div>
+  {% if can_manage %}<a href="{% url 'projects:create' slug=organisation.slug %}" class="btn btn-primary">New project</a>{% endif %}
+</div>
+{% if projects %}
+<table>
+  <thead><tr><th>Name</th><th>Grant</th><th>Manager</th><th>Status</th></tr></thead>
+  <tbody>
+    {% for p in projects %}
+    <tr>
+      <td><a href="{% url 'projects:detail' slug=organisation.slug project_id=p.id %}">{{ p.name }}</a></td>
+      <td>{{ p.grant|default:"—" }}</td>
+      <td>{{ p.manager|default:"Unassigned" }}</td>
+      <td><span class="badge badge-neutral">{{ p.get_status_display }}</span></td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<div class="empty-state"><h3>No projects yet.</h3><p>Create a project to plan funded delivery, tasks and budget.</p></div>
+{% endif %}
+{% endblock %}

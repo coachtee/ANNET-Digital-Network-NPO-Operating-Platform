@@ -1,0 +1,14 @@
+{% extends "workspace_base.html" %}
+{% block title %}Opportunities{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div><h1>Opportunities</h1><p>{{ network.name }}</p></div>
+  <a href="{% url 'opportunities:create' %}" class="btn btn-primary">New opportunity</a>
+</div>
+{% if opportunities %}
+<table>
+  <thead><tr><th>Title</th><th>Type</th><th>Status</th><th>Closing</th></tr></thead>
+  <tbody>{% for o in opportunities %}<tr><td>{{ o.title }}</td><td>{{ o.get_opportunity_type_display }}</td><td><span class="badge badge-neutral">{{ o.get_status_display }}</span></td><td>{{ o.closing_date|default:"—" }}</td></tr>{% endfor %}</tbody>
+</table>
+{% else %}<div class="empty-state"><h3>No opportunities yet.</h3></div>{% endif %}
+{% endblock %}

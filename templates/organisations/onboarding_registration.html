@@ -1,0 +1,10 @@
+{% extends "organisations/_onboarding_shell.html" %}
+{% block onboarding_title %}Registration Status{% endblock %}
+{% block onboarding_content %}
+<p class="text-muted">Tell us independently about each registration — we never assume one implies another.</p>
+<form method="post" novalidate>
+  {% csrf_token %}
+  {% include "partials/_form_fields.html" %}
+  <button type="submit" class="btn btn-primary">Continue</button>
+</form>
+{% endblock %}

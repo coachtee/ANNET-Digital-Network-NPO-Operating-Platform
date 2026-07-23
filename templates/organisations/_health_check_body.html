@@ -1,0 +1,29 @@
+<div class="flex items-center justify-between" style="margin-bottom:20px;">
+  <div>
+    <div class="text-muted">Overall Readiness</div>
+    <div style="font-size:2.2rem; font-weight:800;">{{ health.overall }}%</div>
+  </div>
+</div>
+<div class="grid grid-2">
+  {% for dim in health.dimensions %}
+  <div class="card-flat">
+    <div class="flex items-center justify-between">
+      <strong>{{ dim.label }}</strong>
+      <span class="badge {% if dim.score >= 75 %}badge-success{% elif dim.score >= 40 %}badge-warning{% else %}badge-danger{% endif %}">{{ dim.score }}%</span>
+    </div>
+    <details style="margin-top:8px;">
+      <summary class="text-muted" style="cursor:pointer; font-size:.85rem;">Why this score?</summary>
+      <ul style="margin:8px 0 0; padding-left:18px; font-size:.85rem;">
+        {% for reason in dim.reasons %}<li>{{ reason }}</li>{% endfor %}
+      </ul>
+      {% if dim.recommended_actions %}
+        <div class="text-muted" style="font-size:.8rem; margin-top:8px; font-weight:600;">Recommended actions</div>
+        <ul style="margin:4px 0 0; padding-left:18px; font-size:.85rem;">
+          {% for action in dim.recommended_actions %}<li>{{ action }}</li>{% endfor %}
+        </ul>
+      {% endif %}
+    </details>
+  </div>
+  {% endfor %}
+</div>
+<p class="text-muted" style="margin-top:16px; font-size:.82rem;">This score reflects compliance readiness and operational maturity based on records in this platform. It is not a legal or regulatory certification.</p>

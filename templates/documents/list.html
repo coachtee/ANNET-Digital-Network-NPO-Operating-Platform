@@ -1,0 +1,29 @@
+{% extends "workspace_base.html" %}
+{% block title %}Documents{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div><h1>Document Vault</h1><p>{{ organisation.display_name }}</p></div>
+  <a href="{% url 'documents:upload' slug=organisation.slug %}" class="btn btn-primary">Upload document</a>
+</div>
+{% if documents %}
+<table>
+  <thead><tr><th>Title</th><th>Visibility</th><th>Uploaded by</th><th>Date</th><th></th></tr></thead>
+  <tbody>
+    {% for doc in documents %}
+    <tr>
+      <td>{{ doc.title }}</td>
+      <td><span class="badge badge-neutral">{{ doc.get_visibility_display }}</span></td>
+      <td>{{ doc.uploaded_by }}</td>
+      <td>{{ doc.created_at|date:"d M Y" }}</td>
+      <td><a href="{% url 'documents:download' slug=organisation.slug document_id=doc.id %}">Download</a></td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<div class="empty-state">
+  <h3>No documents yet.</h3>
+  <p>Upload evidence, board minutes, agreements or policies to keep them safely stored and linked to your records.</p>
+</div>
+{% endif %}
+{% endblock %}

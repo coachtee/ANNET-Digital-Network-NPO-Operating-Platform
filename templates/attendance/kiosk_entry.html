@@ -1,0 +1,22 @@
+{% load static %}<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Check In — {{ session.programme.name }}</title>
+  <link rel="stylesheet" href="{% static 'css/base.css' %}">
+</head>
+<body style="display:flex; align-items:center; justify-content:center; min-height:100vh; background:var(--color-surface-muted);">
+  <div class="card" style="max-width:420px; text-align:center;">
+    <h1>{{ session.programme.name }}</h1>
+    {% if confirmation %}
+      <div class="alert alert-success">Thank you — you're checked in.</div>
+    {% else %}
+      <p class="text-muted">Tap below to check in. No personal details are required.</p>
+      <form method="post">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-primary btn-block" style="font-size:1.1rem; padding:16px;">Check In</button>
+      </form>
+    {% endif %}
+  </div>
+</body>
+</html>

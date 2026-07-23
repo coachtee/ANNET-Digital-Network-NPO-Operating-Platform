@@ -1,0 +1,22 @@
+{% extends "workspace_base.html" %}
+{% block title %}Membership Applications{% endblock %}
+{% block content %}
+<div class="page-header"><div><h1>Membership Applications</h1><p>{{ network.name }}</p></div></div>
+{% if applications %}
+<table>
+  <thead><tr><th>Organisation</th><th>Status</th><th>Submitted</th><th></th></tr></thead>
+  <tbody>
+    {% for a in applications %}
+    <tr>
+      <td>{{ a.organisation.display_name }}</td>
+      <td><span class="badge badge-warning">{{ a.get_status_display }}</span></td>
+      <td>{{ a.submitted_at|date:"d M Y"|default:"—" }}</td>
+      <td><a href="{% url 'memberships:application_detail' application_id=a.id %}">Review</a></td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<div class="empty-state"><h3>No applications waiting for review.</h3></div>
+{% endif %}
+{% endblock %}

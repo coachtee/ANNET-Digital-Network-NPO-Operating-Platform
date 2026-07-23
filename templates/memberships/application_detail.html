@@ -1,0 +1,30 @@
+{% extends "workspace_base.html" %}
+{% block title %}{{ application.organisation.display_name }}{% endblock %}
+{% block content %}
+<div class="breadcrumbs"><a href="{% url 'memberships:queue' %}">Membership Applications</a> / {{ application.organisation.display_name }}</div>
+<div class="page-header"><div><h1>{{ application.organisation.display_name }}</h1><p>Status: <span class="badge badge-primary">{{ application.get_status_display }}</span></p></div></div>
+
+<div class="grid grid-2">
+  <div class="card-flat">
+    <h3>Application</h3>
+    <p><strong>Motivation:</strong> {{ application.motivation|default:"—" }}</p>
+    <p><strong>Organisation type:</strong> {{ application.organisation.get_organisation_type_display }}</p>
+    <p><strong>Province:</strong> {{ application.organisation.get_province_display|default:"—" }}</p>
+    <a href="{% url 'organisations:health_check' slug=application.organisation.slug %}" class="btn btn-outline btn-sm">View Health Check</a>
+    <a href="{% url 'compliance:passport' slug=application.organisation.slug %}" class="btn btn-outline btn-sm">View Compliance Passport</a>
+
+    <h4 style="margin-top:16px;">History</h4>
+    <ul>{% for e in status_events %}<li>{{ e.get_status_display }} — {{ e.actor|default:"—" }} ({{ e.created_at|date:"d M Y H:i" }}){% if e.note %}: {{ e.note }}{% endif %}</li>{% endfor %}</ul>
+  </div>
+  {% if can_decide %}
+  <div class="card-flat">
+    <h3>Decision</h3>
+    <form method="post" novalidate>
+      {% csrf_token %}
+      {% include "partials/_form_fields.html" %}
+      <button type="submit" class="btn btn-primary">Record decision</button>
+    </form>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

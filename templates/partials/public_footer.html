@@ -1,0 +1,32 @@
+<footer class="site-footer">
+  <div class="container">
+    <div class="footer-cols">
+      <div>
+        <div class="brand" style="margin-bottom:10px;">
+          <span class="brand-mark">{{ NETWORK_SHORT_NAME|slice:":2"|upper }}</span>
+          <span>{{ NETWORK_SHORT_NAME }}</span>
+        </div>
+        <p class="text-muted">{{ PLATFORM_NAME }} — connecting South Africa's civil society organisations, networks and funders.</p>
+      </div>
+      <div>
+        <h4>Platform</h4>
+        <p><a href="{% url 'sitepublic:about' %}">About</a></p>
+        <p><a href="{% url 'sitepublic:directory' %}">Explore NPOs</a></p>
+        <p><a href="{% url 'opportunities:public_list' %}">Opportunities</a></p>
+      </div>
+      <div>
+        <h4>Get involved</h4>
+        <p><a href="{% url 'sitepublic:join' %}">Join {{ NETWORK_SHORT_NAME }}</a></p>
+        <p><a href="{% url 'accounts:login' %}">Sign in</a></p>
+      </div>
+      <div>
+        <h4>Legal</h4>
+        <p><a href="{% url 'sitepublic:privacy' %}">Privacy (POPIA)</a></p>
+        <p><a href="{% url 'sitepublic:terms' %}">Terms of use</a></p>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      &copy; {% now "Y" %} {{ NETWORK_SHORT_NAME }}. Platform technology by Naleli Innovations. This platform supports compliance readiness — it does not replace SARS, DSD, CIPC or the Master's Office.
+    </div>
+  </div>
+</footer>

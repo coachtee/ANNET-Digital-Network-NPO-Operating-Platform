@@ -1,0 +1,12 @@
+{% extends "workspace_base.html" %}
+{% block title %}New Policy{% endblock %}
+{% block content %}
+<div class="page-header"><div><h1>New Policy</h1><p>{{ organisation.display_name }}</p></div></div>
+<div class="card" style="max-width:560px;">
+  <form method="post" novalidate>
+    {% csrf_token %}
+    {% include "partials/_form_fields.html" %}
+    <button type="submit" class="btn btn-primary">Create</button>
+  </form>
+</div>
+{% endblock %}

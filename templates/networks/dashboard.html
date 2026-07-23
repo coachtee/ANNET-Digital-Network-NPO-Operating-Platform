@@ -1,0 +1,25 @@
+{% extends "workspace_base.html" %}
+{% block title %}Network Dashboard{% endblock %}
+{% block content %}
+<div class="page-header"><div><h1>{{ network.name }} Network Dashboard</h1><p>Aggregated view across active member organisations. No individual beneficiary data is shown here.</p></div></div>
+
+<div class="metric-row">
+  <div class="metric-card"><div class="stat-value">{{ total_members }}</div><div class="stat-label">Member Organisations</div></div>
+  <div class="metric-card"><div class="stat-value">{{ verified_profiles }}</div><div class="stat-label">Verified Profiles</div></div>
+  <div class="metric-card"><div class="stat-value">{{ average_readiness }}%</div><div class="stat-label">Average Compliance Readiness</div></div>
+  <div class="metric-card"><div class="stat-value">{{ requiring_support }}</div><div class="stat-label">Organisations Requiring Support</div></div>
+  <div class="metric-card"><div class="stat-value">{{ active_programmes }}</div><div class="stat-label">Active Programmes</div></div>
+</div>
+
+<div class="tabs">
+  <a href="?" class="{% if not selected_province %}active{% endif %}">All provinces</a>
+  {% for code, label in provinces %}<a href="?province={{ code }}" class="{% if selected_province == code %}active{% endif %}">{{ label }}</a>{% endfor %}
+</div>
+
+{% if member_organisations %}
+<table>
+  <thead><tr><th>Organisation</th><th>Type</th><th>Province</th></tr></thead>
+  <tbody>{% for org in member_organisations %}<tr><td>{{ org.display_name }}</td><td>{{ org.get_organisation_type_display }}</td><td>{{ org.get_province_display|default:"—" }}</td></tr>{% endfor %}</tbody>
+</table>
+{% else %}<div class="empty-state"><h3>No active member organisations yet.</h3></div>{% endif %}
+{% endblock %}

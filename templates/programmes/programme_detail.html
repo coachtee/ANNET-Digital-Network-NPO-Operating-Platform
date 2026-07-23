@@ -1,0 +1,38 @@
+{% extends "workspace_base.html" %}
+{% block title %}{{ programme.name }}{% endblock %}
+{% block content %}
+<div class="breadcrumbs"><a href="{% url 'programmes:list' slug=organisation.slug %}">Programmes</a> / {{ programme.name }}</div>
+<div class="page-header"><div><h1>{{ programme.name }}</h1><p>{{ programme.programme_area }} · <span class="badge badge-neutral">{{ programme.get_status_display }}</span></p></div></div>
+
+<div class="metric-row">
+  <div class="metric-card"><div class="stat-value">{{ activities|length }}</div><div class="stat-label">Activities</div></div>
+  <div class="metric-card"><div class="stat-value">{{ beneficiary_count }}</div><div class="stat-label">Beneficiaries</div></div>
+  <div class="metric-card"><div class="stat-value">{{ indicators|length }}</div><div class="stat-label">Indicators</div></div>
+</div>
+
+<div class="grid grid-2">
+  <div class="card-flat">
+    <h3>Activities</h3>
+    {% if activities %}
+      <table>
+        <thead><tr><th>Name</th><th>Date</th><th>Status</th></tr></thead>
+        <tbody>{% for a in activities %}<tr><td>{{ a.name }}</td><td>{{ a.scheduled_date|default:"—" }}</td><td>{{ a.get_status_display }}</td></tr>{% endfor %}</tbody>
+      </table>
+    {% else %}<p class="text-muted">No activities yet.</p>{% endif %}
+    {% if can_manage %}
+    <form method="post" style="margin-top:12px;">
+      {% csrf_token %}
+      {% include "partials/_form_fields.html" with form=activity_form %}
+      <button type="submit" class="btn btn-outline btn-sm">Add activity</button>
+    </form>
+    {% endif %}
+  </div>
+  <div class="card-flat">
+    <h3>Indicators</h3>
+    {% if indicators %}
+      <ul>{% for i in indicators %}<li>{{ i.name }} — {% if i.achievement_percent %}{{ i.achievement_percent }}% of target{% else %}no actuals yet{% endif %}</li>{% endfor %}</ul>
+    {% else %}<p class="text-muted">No indicators defined yet.</p>{% endif %}
+    <a href="{% url 'monitoring_evaluation:dashboard' slug=organisation.slug %}" class="btn btn-outline btn-sm">Open M&amp;E</a>
+  </div>
+</div>
+{% endblock %}

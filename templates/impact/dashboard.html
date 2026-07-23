@@ -1,0 +1,32 @@
+{% extends "workspace_base.html" %}
+{% block title %}Impact{% endblock %}
+{% block content %}
+<div class="page-header"><div><h1>Your Impact</h1><p>{{ organisation.display_name }} — figures are calculated from your own records.</p></div></div>
+
+<div class="metric-row">
+  <div class="metric-card"><div class="stat-value">{{ active_programmes }}</div><div class="stat-label">Active Programmes</div></div>
+  <div class="metric-card"><div class="stat-value">{{ people_reached }}</div><div class="stat-label">People Reached</div></div>
+  <div class="metric-card"><div class="stat-value">{{ activities_delivered }}</div><div class="stat-label">Activities Delivered</div></div>
+  <div class="metric-card"><div class="stat-value">{% if target_achievement %}{{ target_achievement }}%{% else %}—{% endif %}</div><div class="stat-label">Avg. Target Achievement</div></div>
+  <div class="metric-card"><div class="stat-value">R{{ funding_under_management }}</div><div class="stat-label">Funding Under Management</div></div>
+  <div class="metric-card"><div class="stat-value">{% if reporting_readiness %}{{ reporting_readiness }}%{% else %}—{% endif %}</div><div class="stat-label">Reporting Readiness</div></div>
+</div>
+
+<div class="card-flat">
+  <h3>Indicator performance</h3>
+  {% if indicators %}
+  <table>
+    <thead><tr><th>Programme</th><th>Indicator</th><th>Target</th><th>Latest actual</th><th>Achievement</th></tr></thead>
+    <tbody>
+      {% for i in indicators %}
+      <tr>
+        <td>{{ i.programme.name }}</td><td>{{ i.name }}</td><td>{{ i.target_value|default:"—" }}</td>
+        <td>{{ i.latest_actual.actual_value|default:"—" }}</td>
+        <td>{% if i.achievement_percent %}{{ i.achievement_percent }}%{% else %}—{% endif %}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}<p class="text-muted">No indicators defined yet — set these up in M&amp;E.</p>{% endif %}
+</div>
+{% endblock %}

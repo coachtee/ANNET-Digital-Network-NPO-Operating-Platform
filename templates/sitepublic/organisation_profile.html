@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}{{ organisation.display_name }} — {{ NETWORK_SHORT_NAME }}{% endblock %}
+{% block content %}
+<div class="section">
+  <div class="container" style="max-width:860px;">
+    <div class="flex items-center gap-16" style="margin-bottom:12px;">
+      <h1 class="mb-0">{{ organisation.display_name }}</h1>
+      {% if organisation.is_annet_member %}<span class="badge badge-success">{{ NETWORK_SHORT_NAME }} Member</span>{% endif %}
+      {% if organisation.public_verification_status == "verified" %}<span class="badge badge-primary">Verified</span>{% endif %}
+    </div>
+    <p class="text-muted">{{ organisation.get_organisation_type_display }} · {{ organisation.municipality }}{% if organisation.municipality %}, {% endif %}{{ organisation.get_province_display }}</p>
+
+    <div class="grid grid-2" style="margin-top:24px;">
+      <div class="card-flat">
+        <h3>About</h3>
+        <p>{{ organisation.public_about|default:"This organisation has not yet added a public description." }}</p>
+        {% if organisation.programme_areas %}
+          <h4>Programme areas</h4>
+          <p>{% for area in organisation.programme_areas %}<span class="badge badge-neutral">{{ area }}</span> {% endfor %}</p>
+        {% endif %}
+      </div>
+      <div class="card-flat">
+        {% if organisation.public_show_contact %}
+          <h3>Contact</h3>
+          <p>{{ organisation.email|default:"—" }}<br>{{ organisation.phone_number|default:"" }}</p>
+          {% if organisation.website %}<p><a href="{{ organisation.website }}" target="_blank" rel="noopener">{{ organisation.website }}</a></p>{% endif %}
+        {% endif %}
+        {% if organisation.public_show_impact and organisation.programmes.exists %}
+          <h3>Programmes</h3>
+          <ul>{% for p in organisation.programmes.all|slice:":5" %}<li>{{ p.name }}</li>{% endfor %}</ul>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

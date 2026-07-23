@@ -1,0 +1,60 @@
+{% extends "workspace_base.html" %}
+{% block title %}{{ project.name }} — Finance{% endblock %}
+{% block content %}
+<div class="breadcrumbs"><a href="{% url 'expenses:list' slug=organisation.slug %}">Finance Lite</a> / {{ project.name }}</div>
+<div class="page-header"><div><h1>{{ project.name }}</h1><p>Budget vs. recorded expenditure</p></div></div>
+
+<div class="grid grid-2">
+  <div class="card-flat">
+    <h3>Budget</h3>
+    {% if budget %}
+      <p><strong>Total:</strong> R{{ budget.total_amount }} &nbsp; <strong>Recorded:</strong> R{{ budget.total_recorded_expenditure }}</p>
+      <table>
+        <thead><tr><th>Category</th><th>Allocated</th><th>Recorded</th></tr></thead>
+        <tbody>{% for line in budget.lines.all %}<tr><td>{{ line.category }}</td><td>R{{ line.allocated_amount }}</td><td>R{{ line.recorded_expenditure }}</td></tr>{% endfor %}</tbody>
+      </table>
+      {% if can_approve %}
+      <form method="post" style="margin-top:12px;">
+        {% csrf_token %}
+        {% include "partials/_form_fields.html" with form=line_form %}
+        <button type="submit" name="add_line" class="btn btn-outline btn-sm">Add budget line</button>
+      </form>
+      {% endif %}
+    {% else %}
+      <p class="text-muted">No budget set up yet.</p>
+      {% if can_approve %}
+      <form method="post">
+        {% csrf_token %}
+        {% include "partials/_form_fields.html" with form=budget_form %}
+        <button type="submit" name="create_budget" class="btn btn-primary btn-sm">Create budget</button>
+      </form>
+      {% endif %}
+    {% endif %}
+  </div>
+
+  <div class="card-flat">
+    <h3>Expenses</h3>
+    {% if expenses %}
+      <table>
+        <thead><tr><th>Description</th><th>Amount</th><th>Status</th><th></th></tr></thead>
+        <tbody>
+        {% for e in expenses %}
+          <tr>
+            <td>{{ e.description }}</td><td>R{{ e.amount }}</td>
+            <td><span class="badge {% if e.status == 'approved' %}badge-success{% elif e.status == 'rejected' %}badge-danger{% else %}badge-warning{% endif %}">{{ e.get_status_display }}</span></td>
+            <td>{% if can_approve and e.status == "submitted" %}<a href="{% url 'expenses:review_expense' slug=organisation.slug expense_id=e.id %}">Review</a>{% endif %}</td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    {% else %}<p class="text-muted">No expenses submitted yet.</p>{% endif %}
+    {% if can_submit and budget %}
+    <form method="post" enctype="multipart/form-data" style="margin-top:12px;">
+      {% csrf_token %}
+      {% include "partials/_form_fields.html" with form=expense_form %}
+      <button type="submit" name="submit_expense" class="btn btn-primary btn-sm">Submit expense</button>
+    </form>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

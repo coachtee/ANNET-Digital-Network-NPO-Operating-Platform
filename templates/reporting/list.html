@@ -1,0 +1,11 @@
+{% extends "workspace_base.html" %}
+{% block title %}Reports{% endblock %}
+{% block content %}
+<div class="page-header"><div><h1>Reports</h1><p>{{ organisation.display_name }}</p></div></div>
+<div class="grid grid-2">
+  <div class="card-flat"><h3>Organisation Profile</h3><p class="text-muted">PDF summary of your organisation record.</p><a class="btn btn-outline btn-sm" href="{% url 'reporting:organisation_profile_pdf' slug=organisation.slug %}">Download PDF</a></div>
+  <div class="card-flat"><h3>Compliance Readiness</h3><p class="text-muted">CSV export of all compliance obligations.</p><a class="btn btn-outline btn-sm" href="{% url 'reporting:compliance_csv' slug=organisation.slug %}">Download CSV</a></div>
+  <div class="card-flat"><h3>Attendance Summary</h3><p class="text-muted">CSV export of attendance and headcount records.</p><a class="btn btn-outline btn-sm" href="{% url 'reporting:attendance_csv' slug=organisation.slug %}">Download CSV</a></div>
+  <div class="card-flat"><h3>Expense Summary</h3><p class="text-muted">CSV export of expenses and approval status.</p><a class="btn btn-outline btn-sm" href="{% url 'reporting:expense_csv' slug=organisation.slug %}">Download CSV</a></div>
+</div>
+{% endblock %}
