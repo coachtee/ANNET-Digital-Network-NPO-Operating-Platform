@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="section">
+  <div class="container" style="max-width: 760px;">
+    <h1>{% block onboarding_title %}{% endblock %}</h1>
+    {% if steps %}
+    <div class="flex gap-8" style="flex-wrap:wrap; margin-bottom:24px;">
+      {% for step_key, step_label in steps %}
+        <span class="badge {% if step_key == step %}badge-primary{% else %}badge-neutral{% endif %}">{{ forloop.counter }}. {{ step_label }}</span>
+      {% endfor %}
+    </div>
+    {% endif %}
+    <div class="card">
+      {% if messages %}
+        {% for message in messages %}<div class="alert alert-{{ message.tags|default:'info' }}">{{ message }}</div>{% endfor %}
+      {% endif %}
+      {% block onboarding_content %}{% endblock %}
+    </div>
+  </div>
+</div>
+{% endblock %}

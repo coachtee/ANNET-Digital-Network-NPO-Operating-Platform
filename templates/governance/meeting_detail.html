@@ -1,0 +1,30 @@
+{% extends "workspace_base.html" %}
+{% block title %}{{ meeting.get_meeting_type_display }}{% endblock %}
+{% block content %}
+<div class="breadcrumbs"><a href="{% url 'governance:list' slug=organisation.slug %}">Governance</a> / {{ meeting.get_meeting_type_display }}</div>
+<div class="page-header"><div><h1>{{ meeting.get_meeting_type_display }}</h1><p>{{ meeting.scheduled_date|date:"d M Y H:i" }} · {{ meeting.location }}</p></div></div>
+
+<div class="grid grid-2">
+  <div class="card-flat">
+    <h3>Resolutions</h3>
+    {% if resolutions %}
+      <ul>{% for r in resolutions %}<li>{{ r.text }} — <span class="badge badge-neutral">{{ r.get_decision_display }}</span></li>{% endfor %}</ul>
+    {% else %}<p class="text-muted">No resolutions recorded yet.</p>{% endif %}
+    {% if can_manage %}
+    <form method="post" style="margin-top:12px;">
+      {% csrf_token %}
+      {% include "partials/_form_fields.html" with form=resolution_form %}
+      <button type="submit" class="btn btn-outline btn-sm">Add resolution</button>
+    </form>
+    {% endif %}
+  </div>
+  <div class="card-flat">
+    <h3>Minutes</h3>
+    {% if meeting.minutes_document %}
+      <a href="{% url 'documents:download' slug=organisation.slug document_id=meeting.minutes_document.id %}">Download minutes</a>
+    {% else %}
+      <p class="text-muted">No minutes uploaded yet. Upload minutes from the <a href="{% url 'documents:upload' slug=organisation.slug %}">Document Vault</a> and link them here.</p>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

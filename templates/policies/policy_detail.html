@@ -1,0 +1,33 @@
+{% extends "workspace_base.html" %}
+{% block title %}{{ policy.name }}{% endblock %}
+{% block content %}
+<div class="breadcrumbs"><a href="{% url 'policies:list' slug=organisation.slug %}">Policies</a> / {{ policy.name }}</div>
+<div class="page-header"><div><h1>{{ policy.name }}</h1><p>{{ policy.get_category_display }} · <span class="badge badge-neutral">{{ policy.get_status_display }}</span></p></div></div>
+
+<div class="grid grid-2">
+  <div class="card-flat">
+    <h3>Version history</h3>
+    {% if versions %}
+      <table>
+        <thead><tr><th>Version</th><th>Approved</th><th></th></tr></thead>
+        <tbody>
+        {% for v in versions %}
+          <tr><td>v{{ v.version_number }}</td><td>{{ v.approved_date|default:"—" }}</td>
+            <td><a href="{% url 'documents:download' slug=organisation.slug document_id=v.document.id %}">Download</a></td></tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    {% else %}<p class="text-muted">No versions uploaded yet.</p>{% endif %}
+  </div>
+  {% if can_manage %}
+  <div class="card-flat">
+    <h3>Upload new version</h3>
+    <form method="post" enctype="multipart/form-data" novalidate>
+      {% csrf_token %}
+      {% include "partials/_form_fields.html" with form=upload_form %}
+      <button type="submit" class="btn btn-primary btn-sm">Upload</button>
+    </form>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,51 @@
+{% extends "workspace_base.html" %}
+{% block title %}Overview{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>{{ organisation.display_name }}</h1>
+    <p>Organisation workspace overview</p>
+  </div>
+  <div class="flex gap-8">
+    {% if not organisation.is_annet_member %}
+      <a href="{% url 'memberships:apply' slug=organisation.slug %}" class="btn btn-primary">Apply to join {{ NETWORK_SHORT_NAME }}</a>
+    {% else %}
+      <span class="badge badge-success">{{ NETWORK_SHORT_NAME }} Member</span>
+    {% endif %}
+  </div>
+</div>
+
+<div class="metric-row">
+  <div class="metric-card"><div class="stat-value">{{ health.overall }}%</div><div class="stat-label">Overall Readiness</div></div>
+  <div class="metric-card"><div class="stat-value">{{ open_obligations }}</div><div class="stat-label">Open Compliance Items</div></div>
+  <div class="metric-card"><div class="stat-value">{{ active_programmes }}</div><div class="stat-label">Active Programmes</div></div>
+  <div class="metric-card"><div class="stat-value">{{ active_projects }}</div><div class="stat-label">Active Projects</div></div>
+</div>
+
+<div class="grid grid-2">
+  <div class="card">
+    <h3>Organisation Health</h3>
+    <p class="text-muted">See dimension-level scores and recommended actions.</p>
+    <a href="{% url 'organisations:health_check' slug=organisation.slug %}" class="btn btn-outline btn-sm">View Health Check</a>
+  </div>
+  <div class="card">
+    <h3>Compliance Passport</h3>
+    <p class="text-muted">Track applicable obligations, deadlines and evidence.</p>
+    <a href="{% url 'compliance:passport' slug=organisation.slug %}" class="btn btn-outline btn-sm">Open Compliance Passport</a>
+  </div>
+  <div class="card">
+    <h3>Impact Dashboard</h3>
+    <p class="text-muted">See reach, delivery and target achievement from your own records.</p>
+    <a href="{% url 'impact:dashboard' slug=organisation.slug %}" class="btn btn-outline btn-sm">View Impact</a>
+  </div>
+  <div class="card">
+    <h3>ANNET Membership</h3>
+    {% if membership_application %}
+      <p class="text-muted">Status: <span class="badge badge-primary">{{ membership_application.get_status_display }}</span></p>
+    {% else %}
+      <p class="text-muted">You haven't applied to join {{ NETWORK_SHORT_NAME }} yet.</p>
+    {% endif %}
+    <a href="{% url 'memberships:apply' slug=organisation.slug %}" class="btn btn-outline btn-sm">View Membership</a>
+  </div>
+</div>
+{% endblock %}

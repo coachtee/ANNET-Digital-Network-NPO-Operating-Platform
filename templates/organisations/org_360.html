@@ -1,0 +1,67 @@
+{% extends "workspace_base.html" %}
+{% block title %}{{ organisation.display_name }}{% endblock %}
+{% block content %}
+<div class="page-header"><div><h1>{{ organisation.display_name }}</h1><p>Organisation 360°</p></div></div>
+
+<div class="tabs">
+  {% for key, label in tabs %}
+    <a href="?tab={{ key }}" class="{% if tab == key %}active{% endif %}">{{ label }}</a>
+  {% endfor %}
+</div>
+
+{% if tab == "overview" %}
+  <div class="grid grid-2">
+    <div class="card-flat">
+      <h3>About</h3>
+      <p><strong>Legal name:</strong> {{ organisation.legal_name }}</p>
+      <p><strong>Trading name:</strong> {{ organisation.trading_name|default:"—" }}</p>
+      <p><strong>Type:</strong> {{ organisation.get_organisation_type_display }}</p>
+      <p><strong>Province:</strong> {{ organisation.get_province_display|default:"—" }}</p>
+      <p><strong>Email:</strong> {{ organisation.email|default:"—" }}</p>
+      <p><strong>Phone:</strong> {{ organisation.phone_number|default:"—" }}</p>
+    </div>
+    <div class="card-flat">
+      <h3>Public directory visibility</h3>
+      <p class="text-muted">Control what appears on your public {{ NETWORK_SHORT_NAME }} directory profile.</p>
+      <a href="{% url 'organisations:public_profile_settings' slug=organisation.slug %}" class="btn btn-outline btn-sm">Edit public profile</a>
+    </div>
+  </div>
+{% elif tab == "legal" %}
+  <div class="card-flat">
+    <h3>Legal &amp; Registration</h3>
+    <table>
+      <tr><td>Legal structure</td><td>{{ organisation.get_legal_structure_display|default:"Not set" }}</td></tr>
+      <tr><td>DSD registered</td><td>{{ organisation.dsd_registered|yesno:"Yes,No,Not captured" }} {{ organisation.dsd_npo_number }}</td></tr>
+      <tr><td>CIPC registered</td><td>{{ organisation.cipc_registered|yesno:"Yes,No,Not captured" }} {{ organisation.cipc_registration_number }}</td></tr>
+      <tr><td>SARS PBO approved</td><td>{{ organisation.sars_pbo_approved|yesno:"Yes,No,Not captured" }} {{ organisation.sars_pbo_number }}</td></tr>
+      <tr><td>Section 18A approved</td><td>{{ organisation.section18a_approved|yesno:"Yes,No,Not captured" }} {{ organisation.section18a_number }}</td></tr>
+      <tr><td>Master's Office registered</td><td>{{ organisation.masters_office_registered|yesno:"Yes,No,Not captured" }} {{ organisation.masters_office_number }}</td></tr>
+    </table>
+  </div>
+{% elif tab == "governance" %}
+  <a href="{% url 'governance:list' slug=organisation.slug %}" class="btn btn-outline btn-sm">Open Governance workspace</a>
+{% elif tab == "people" %}
+  <table>
+    <thead><tr><th>Name</th><th>Role</th><th>Status</th></tr></thead>
+    <tbody>
+      {% for m in organisation.memberships.all %}
+        <tr><td>{{ m.user }}</td><td>{{ m.get_role_display }}</td><td>{% if m.is_active %}<span class="badge badge-success">Active</span>{% else %}<span class="badge badge-neutral">Inactive</span>{% endif %}</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+{% elif tab == "programmes" %}
+  <a href="{% url 'programmes:list' slug=organisation.slug %}" class="btn btn-outline btn-sm">Open Programmes</a>
+{% elif tab == "projects" %}
+  <a href="{% url 'projects:list' slug=organisation.slug %}" class="btn btn-outline btn-sm">Open Projects</a>
+{% elif tab == "funding" %}
+  <a href="{% url 'grants:list' slug=organisation.slug %}" class="btn btn-outline btn-sm">Open Grants</a>
+{% elif tab == "compliance" %}
+  <a href="{% url 'compliance:passport' slug=organisation.slug %}" class="btn btn-outline btn-sm">Open Compliance Passport</a>
+{% elif tab == "policies" %}
+  <a href="{% url 'policies:list' slug=organisation.slug %}" class="btn btn-outline btn-sm">Open Policy Register</a>
+{% elif tab == "documents" %}
+  <a href="{% url 'documents:list' slug=organisation.slug %}" class="btn btn-outline btn-sm">Open Document Vault</a>
+{% elif tab == "impact" %}
+  <a href="{% url 'impact:dashboard' slug=organisation.slug %}" class="btn btn-outline btn-sm">Open Impact Dashboard</a>
+{% endif %}
+{% endblock %}

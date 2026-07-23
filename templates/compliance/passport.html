@@ -1,0 +1,46 @@
+{% extends "workspace_base.html" %}
+{% block title %}Compliance Passport{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div><h1>Compliance Passport</h1><p>{{ organisation.display_name }} — Compliance Readiness, not a certification of legal compliance.</p></div>
+  <a href="{% url 'compliance:calendar' slug=organisation.slug %}" class="btn btn-outline">View Compliance Calendar</a>
+</div>
+
+<div class="tabs">
+  <a href="?" class="{% if not authority_filter %}active{% endif %}">All</a>
+  {% for authority in authorities %}
+    <a href="?authority={{ authority }}" class="{% if authority_filter == authority %}active{% endif %}">{{ authority }}</a>
+  {% endfor %}
+</div>
+
+{% if obligations %}
+<table>
+  <thead><tr><th>Authority</th><th>Obligation</th><th>Frequency</th><th>Due Date</th><th>Status</th><th></th></tr></thead>
+  <tbody>
+    {% for o in obligations %}
+    <tr>
+      <td>{{ o.rule.authority }}</td>
+      <td>{{ o.rule.name }}</td>
+      <td>{{ o.rule.get_frequency_display }}</td>
+      <td>{{ o.due_date|default:"—" }}</td>
+      <td>
+        {% if o.status == "submitted" or o.status == "evidence_recorded" or o.status == "not_applicable" %}
+          <span class="badge badge-success">{{ o.get_status_display }}</span>
+        {% elif o.status == "overdue" %}
+          <span class="badge badge-danger">{{ o.get_status_display }}</span>
+        {% else %}
+          <span class="badge badge-warning">{{ o.get_status_display }}</span>
+        {% endif %}
+      </td>
+      <td><a href="{% url 'compliance:obligation_detail' slug=organisation.slug obligation_id=o.id %}">View</a></td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<div class="empty-state">
+  <h3>No compliance obligations yet.</h3>
+  <p>Obligations are generated automatically from your registration status. Complete your organisation profile to populate this passport.</p>
+</div>
+{% endif %}
+{% endblock %}

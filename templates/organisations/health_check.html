@@ -1,0 +1,6 @@
+{% extends "workspace_base.html" %}
+{% block title %}Health Check{% endblock %}
+{% block content %}
+<div class="page-header"><div><h1>Organisation Health Check</h1><p>{{ organisation.display_name }}</p></div></div>
+{% include "organisations/_health_check_body.html" %}
+{% endblock %}

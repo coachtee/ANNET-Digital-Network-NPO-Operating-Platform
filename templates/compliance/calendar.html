@@ -1,0 +1,41 @@
+{% extends "workspace_base.html" %}
+{% block title %}Compliance Calendar{% endblock %}
+{% block content %}
+<div class="page-header"><div><h1>Compliance Calendar</h1><p>{{ organisation.display_name }}</p></div></div>
+
+<h3>Overdue</h3>
+{% if overdue %}
+<table>
+  <thead><tr><th>Obligation</th><th>Due date</th></tr></thead>
+  <tbody>
+    {% for o in overdue %}
+    <tr><td><a href="{% url 'compliance:obligation_detail' slug=organisation.slug obligation_id=o.id %}">{{ o.rule.name }}</a></td><td><span class="badge badge-danger">{{ o.due_date }}</span></td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}<p class="text-muted">Nothing overdue.</p>{% endif %}
+
+<h3 style="margin-top:28px;">Upcoming</h3>
+{% if upcoming %}
+<table>
+  <thead><tr><th>Obligation</th><th>Due date</th></tr></thead>
+  <tbody>
+    {% for o in upcoming %}
+    <tr><td><a href="{% url 'compliance:obligation_detail' slug=organisation.slug obligation_id=o.id %}">{{ o.rule.name }}</a></td><td>{{ o.due_date|default:"—" }}</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}<p class="text-muted">Nothing upcoming.</p>{% endif %}
+
+<h3 style="margin-top:28px;">Completed</h3>
+{% if completed %}
+<table>
+  <thead><tr><th>Obligation</th><th>Status</th><th>Date</th></tr></thead>
+  <tbody>
+    {% for o in completed %}
+    <tr><td><a href="{% url 'compliance:obligation_detail' slug=organisation.slug obligation_id=o.id %}">{{ o.rule.name }}</a></td><td><span class="badge badge-success">{{ o.get_status_display }}</span></td><td>{{ o.due_date|default:"—" }}</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}<p class="text-muted">Nothing completed yet.</p>{% endif %}
+{% endblock %}

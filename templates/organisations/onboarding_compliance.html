@@ -1,0 +1,26 @@
+{% extends "organisations/_onboarding_shell.html" %}
+{% block onboarding_title %}Compliance Profile{% endblock %}
+{% block onboarding_content %}
+<p class="text-muted">Based on what you've told us, here are your potential compliance areas. This is a readiness guide — not a legal compliance certification.</p>
+{% if obligations %}
+<table>
+  <thead><tr><th>Authority</th><th>Obligation</th><th>Status</th><th>Due</th></tr></thead>
+  <tbody>
+    {% for o in obligations %}
+    <tr>
+      <td>{{ o.rule.authority }}</td>
+      <td>{{ o.rule.name }}</td>
+      <td><span class="badge badge-neutral">{{ o.get_status_display }}</span></td>
+      <td>{{ o.due_date|default:"—" }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<div class="empty-state"><p>No compliance rules matched your organisation profile yet. This updates automatically as rules are added.</p></div>
+{% endif %}
+<form method="post" style="margin-top:20px;">
+  {% csrf_token %}
+  <button type="submit" class="btn btn-primary">Continue to Health Check</button>
+</form>
+{% endblock %}

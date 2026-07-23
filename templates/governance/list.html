@@ -1,0 +1,52 @@
+{% extends "workspace_base.html" %}
+{% block title %}Governance{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div><h1>Governance</h1><p>{{ organisation.display_name }}</p></div>
+  {% if can_manage %}
+  <div class="flex gap-8">
+    <a href="{% url 'governance:add_official' slug=organisation.slug %}" class="btn btn-outline">Add official</a>
+    <a href="{% url 'governance:create_meeting' slug=organisation.slug %}" class="btn btn-primary">Schedule meeting</a>
+  </div>
+  {% endif %}
+</div>
+
+<h3>Active officials</h3>
+{% if active_officials %}
+<table>
+  <thead><tr><th>Name</th><th>Position</th><th>Term start</th><th>Term end</th>{% if can_manage %}<th></th>{% endif %}</tr></thead>
+  <tbody>
+    {% for o in active_officials %}
+    <tr>
+      <td>{{ o.full_name }}</td><td>{{ o.get_position_display }}</td><td>{{ o.term_start }}</td><td>{{ o.term_end|default:"—" }}</td>
+      {% if can_manage %}<td><a href="{% url 'governance:resign_official' slug=organisation.slug official_id=o.id %}">Mark resigned</a></td>{% endif %}
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}<div class="empty-state"><p>No active officials recorded yet.</p></div>{% endif %}
+
+{% if past_officials %}
+<h3 style="margin-top:24px;">Historical officials</h3>
+<table>
+  <thead><tr><th>Name</th><th>Position</th><th>Status</th><th>Term end</th></tr></thead>
+  <tbody>
+    {% for o in past_officials %}
+    <tr><td>{{ o.full_name }}</td><td>{{ o.get_position_display }}</td><td>{{ o.get_status_display }}</td><td>{{ o.term_end|default:"—" }}</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endif %}
+
+<h3 style="margin-top:24px;">Meetings</h3>
+{% if meetings %}
+<table>
+  <thead><tr><th>Type</th><th>Date</th><th>Held</th></tr></thead>
+  <tbody>
+    {% for m in meetings %}
+    <tr><td><a href="{% url 'governance:meeting_detail' slug=organisation.slug meeting_id=m.id %}">{{ m.get_meeting_type_display }}</a></td><td>{{ m.scheduled_date|date:"d M Y H:i" }}</td><td>{{ m.is_held|yesno:"Yes,No" }}</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}<div class="empty-state"><p>No meetings recorded yet.</p></div>{% endif %}
+{% endblock %}

@@ -1,0 +1,25 @@
+{% extends "organisations/_onboarding_shell.html" %}
+{% block onboarding_title %}Governance{% endblock %}
+{% block onboarding_content %}
+<p class="text-muted">Add your initial directors, trustees or office bearers. You can add more, or update this later from Governance.</p>
+
+{% if officials %}
+<table style="margin-bottom:20px;">
+  <thead><tr><th>Name</th><th>Position</th><th>Term start</th></tr></thead>
+  <tbody>
+    {% for o in officials %}
+    <tr><td>{{ o.full_name }}</td><td>{{ o.get_position_display }}</td><td>{{ o.term_start }}</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endif %}
+
+<form method="post" novalidate>
+  {% csrf_token %}
+  {% include "partials/_form_fields.html" %}
+  <div class="flex gap-8">
+    <button type="submit" name="add" class="btn btn-outline">Add another</button>
+    <button type="submit" name="continue" value="1" class="btn btn-primary">Continue</button>
+  </div>
+</form>
+{% endblock %}
