@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}Opportunities — {{ NETWORK_SHORT_NAME }}{% endblock %}
+{% block content %}
+<div class="section">
+  <div class="container">
+    <h1>Opportunities</h1>
+    <p class="text-muted">Funding calls, training, grants, partnerships, events and capacity development from {{ NETWORK_SHORT_NAME }}.</p>
+    <div class="tabs" style="margin-bottom:24px;">
+      <a href="{% url 'opportunities:public_list' %}" class="{% if not type_filter %}active{% endif %}">All</a>
+      {% for key, label in type_choices %}
+        <a href="?type={{ key }}" class="{% if type_filter == key %}active{% endif %}">{{ label }}</a>
+      {% endfor %}
+    </div>
+    {% if page_obj %}
+    <div class="grid grid-3">
+      {% for o in page_obj %}
+      <div class="card">
+        <span class="badge badge-primary">{{ o.get_opportunity_type_display }}</span>
+        <h3 style="margin-top:8px;"><a href="{% url 'opportunities:public_detail' opportunity_id=o.id %}">{{ o.title }}</a></h3>
+        <p class="text-muted">{{ o.location|default:"National" }}</p>
+        {% if o.closing_date %}<p class="text-muted">Closes {{ o.closing_date }}</p>{% endif %}
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state"><h3>No opportunities published yet.</h3></div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

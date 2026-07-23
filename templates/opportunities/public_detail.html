@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}{{ opportunity.title }} — {{ NETWORK_SHORT_NAME }}{% endblock %}
+{% block content %}
+<div class="section">
+  <div class="container" style="max-width:760px;">
+    <span class="badge badge-primary">{{ opportunity.get_opportunity_type_display }}</span>
+    <h1>{{ opportunity.title }}</h1>
+    <p class="text-muted">{{ opportunity.location|default:"National" }} · Opens {{ opportunity.opening_date|default:"—" }} · Closes {{ opportunity.closing_date|default:"—" }}</p>
+    <div class="card">
+      <h3>Description</h3>
+      <p>{{ opportunity.description|linebreaks }}</p>
+      {% if opportunity.eligibility %}<h3>Eligibility</h3><p>{{ opportunity.eligibility|linebreaks }}</p>{% endif %}
+      {% if opportunity.external_url %}<a href="{{ opportunity.external_url }}" class="btn btn-primary" target="_blank" rel="noopener">Apply / Learn more</a>{% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

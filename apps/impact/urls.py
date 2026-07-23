@@ -4,4 +4,6 @@ from . import views
 
 app_name = "impact"
 
-urlpatterns = []
+urlpatterns = [
+    path("<slug:slug>/", views.impact_dashboard, name="dashboard"),
+]

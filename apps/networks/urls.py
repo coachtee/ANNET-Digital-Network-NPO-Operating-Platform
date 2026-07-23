@@ -4,4 +4,7 @@ from . import views
 
 app_name = "networks"
 
-urlpatterns = []
+urlpatterns = [
+    path("", views.dashboard, name="dashboard"),
+    path("capacity/", views.capacity, name="capacity"),
+]
