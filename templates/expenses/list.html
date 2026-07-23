@@ -1,0 +1,11 @@
+{% extends "workspace_base.html" %}
+{% block title %}Finance Lite{% endblock %}
+{% block content %}
+<div class="page-header"><div><h1>Finance Lite</h1><p>{{ organisation.display_name }} — budgets, expenses and receipts by project. Not an accounting system.</p></div></div>
+{% if projects %}
+<table>
+  <thead><tr><th>Project</th><th></th></tr></thead>
+  <tbody>{% for p in projects %}<tr><td>{{ p.name }}</td><td><a href="{% url 'expenses:project_expenses' slug=organisation.slug project_id=p.id %}">Open</a></td></tr>{% endfor %}</tbody>
+</table>
+{% else %}<div class="empty-state"><h3>No projects yet.</h3><p>Create a project first to set up its budget.</p></div>{% endif %}
+{% endblock %}

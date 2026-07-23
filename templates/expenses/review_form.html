@@ -1,0 +1,13 @@
+{% extends "workspace_base.html" %}
+{% block title %}Review Expense{% endblock %}
+{% block content %}
+<div class="page-header"><div><h1>Review Expense</h1><p>{{ expense.description }} — R{{ expense.amount }} submitted by {{ expense.submitted_by }}</p></div></div>
+<div class="card" style="max-width:480px;">
+  <p><a href="{% url 'expenses:download_receipt' slug=organisation.slug expense_id=expense.id %}">Download receipt</a></p>
+  <form method="post" novalidate>
+    {% csrf_token %}
+    {% include "partials/_form_fields.html" %}
+    <button type="submit" class="btn btn-primary">Save review</button>
+  </form>
+</div>
+{% endblock %}

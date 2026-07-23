@@ -1,0 +1,29 @@
+{% extends "workspace_base.html" %}
+{% block title %}{{ indicator.name }}{% endblock %}
+{% block content %}
+<div class="breadcrumbs"><a href="{% url 'monitoring_evaluation:programme_me' slug=organisation.slug programme_id=indicator.programme.id %}">{{ indicator.programme.name }}</a> / {{ indicator.name }}</div>
+<div class="page-header"><div><h1>{{ indicator.name }}</h1><p>{{ indicator.get_indicator_type_display }} · Baseline {{ indicator.baseline_value|default:"—" }} · Target {{ indicator.target_value|default:"—" }}</p></div></div>
+
+<div class="grid grid-2">
+  <div class="card-flat">
+    <h3>Actuals by period</h3>
+    {% if period_values %}
+      <table>
+        <thead><tr><th>Period</th><th>Actual</th><th>Verification</th></tr></thead>
+        <tbody>{% for pv in period_values %}<tr><td>{{ pv.period_start }} – {{ pv.period_end }}</td><td>{{ pv.actual_value }}</td><td>{{ pv.means_of_verification|default:"—" }}</td></tr>{% endfor %}</tbody>
+      </table>
+    {% else %}<p class="text-muted">No actuals recorded yet.</p>{% endif %}
+  </div>
+  {% if can_manage %}
+  <div class="card-flat">
+    <h3>Record actual value</h3>
+    {% if indicator.auto_from_attendance %}<p class="field-hint">This indicator is linked to attendance — the actual value will be computed automatically from attendance records in the period you select.</p>{% endif %}
+    <form method="post" novalidate>
+      {% csrf_token %}
+      {% include "partials/_form_fields.html" %}
+      <button type="submit" class="btn btn-primary btn-sm">Save</button>
+    </form>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

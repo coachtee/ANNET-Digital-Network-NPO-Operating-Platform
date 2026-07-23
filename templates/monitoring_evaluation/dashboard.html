@@ -1,0 +1,17 @@
+{% extends "workspace_base.html" %}
+{% block title %}M&amp;E{% endblock %}
+{% block content %}
+<div class="page-header"><div><h1>Monitoring &amp; Evaluation</h1><p>{{ organisation.display_name }}</p></div></div>
+{% if programmes %}
+<table>
+  <thead><tr><th>Programme</th><th>Indicators</th><th></th></tr></thead>
+  <tbody>
+    {% for p in programmes %}
+    <tr><td>{{ p.name }}</td><td>{{ p.indicators.count }}</td><td><a href="{% url 'monitoring_evaluation:programme_me' slug=organisation.slug programme_id=p.id %}">Manage</a></td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<div class="empty-state"><h3>No programmes yet.</h3><p>Create a programme first, then define its outcomes, outputs and indicators here.</p></div>
+{% endif %}
+{% endblock %}
