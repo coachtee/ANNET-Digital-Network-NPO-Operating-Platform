@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}Explore NPOs — {{ NETWORK_SHORT_NAME }}{% endblock %}
+{% block content %}
+<div class="section">
+  <div class="container">
+    <h1>Explore NPOs</h1>
+    <form method="get" class="card" style="margin-bottom:24px;">
+      <div class="grid grid-4">
+        <div class="form-group" style="margin-bottom:0;">{{ form.q.label_tag }}{{ form.q }}</div>
+        <div class="form-group" style="margin-bottom:0;">{{ form.province.label_tag }}{{ form.province }}</div>
+        <div class="form-group" style="margin-bottom:0;">{{ form.organisation_type.label_tag }}{{ form.organisation_type }}</div>
+        <div class="form-group" style="margin-bottom:0;">{{ form.annet_member.label_tag }}{{ form.annet_member }}</div>
+      </div>
+      <button type="submit" class="btn btn-primary btn-sm" style="margin-top:12px;">Search</button>
+    </form>
+
+    {% if page_obj %}
+    <div class="grid grid-3">
+      {% for org in page_obj %}
+      <div class="card">
+        <h3 style="font-size:1.05rem;"><a href="{% url 'sitepublic:organisation_profile' slug=org.slug %}">{{ org.display_name }}</a></h3>
+        <p class="text-muted" style="font-size:.85rem;">{{ org.programme_areas|join:", "|default:org.get_organisation_type_display }}</p>
+        <p class="text-muted" style="font-size:.85rem;">{{ org.municipality }}{% if org.municipality %}, {% endif %}{{ org.get_province_display }}</p>
+        {% if org.is_annet_member %}<span class="badge badge-success">{{ NETWORK_SHORT_NAME }} Member</span>{% endif %}
+        <div style="margin-top:8px;"><a href="{% url 'sitepublic:organisation_profile' slug=org.slug %}">View Profile →</a></div>
+      </div>
+      {% endfor %}
+    </div>
+    <div class="pagination">
+      {% if page_obj.has_previous %}<a href="?page={{ page_obj.previous_page_number }}">Previous</a>{% endif %}
+      <span class="current">{{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span>
+      {% if page_obj.has_next %}<a href="?page={{ page_obj.next_page_number }}">Next</a>{% endif %}
+    </div>
+    {% else %}
+    <div class="empty-state"><h3>No organisations match your search.</h3><p>Try broadening your filters, or check back soon as more organisations join {{ NETWORK_SHORT_NAME }}.</p></div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

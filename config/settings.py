@@ -166,7 +166,15 @@ STATICFILES_DIRS = [BASE_DIR / "static"]
 STATIC_ROOT = BASE_DIR / "staticfiles"
 STORAGES = {
     "staticfiles": {
-        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+        # The manifest storage requires `collectstatic` to have been run
+        # (it hashes filenames and needs staticfiles.json to resolve
+        # {% static %} tags), which is a production deploy step. Falling
+        # back to plain static storage in DEBUG means local dev and the
+        # test suite work without that extra step.
+        "BACKEND": (
+            "whitenoise.storage.CompressedManifestStaticFilesStorage"
+            if not DEBUG else "django.contrib.staticfiles.storage.StaticFilesStorage"
+        ),
     },
 }
 
