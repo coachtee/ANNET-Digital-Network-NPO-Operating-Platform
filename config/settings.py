@@ -132,6 +132,23 @@ else:
     }
 
 # ------------------------------------------------------------------
+# Cache (Redis in production/Docker; falls back to in-process memory so
+# local dev and the test suite never require a Redis server to be running)
+# ------------------------------------------------------------------
+
+REDIS_URL = config("REDIS_URL", default="")
+if REDIS_URL:
+    CACHES = {
+        "default": {
+            "BACKEND": "django_redis.cache.RedisCache",
+            "LOCATION": REDIS_URL,
+            "OPTIONS": {"CLIENT_CLASS": "django_redis.client.DefaultClient"},
+        }
+    }
+else:
+    CACHES = {"default": {"BACKEND": "django.core.cache.backends.locmem.LocMemCache"}}
+
+# ------------------------------------------------------------------
 # Auth
 # ------------------------------------------------------------------
 
