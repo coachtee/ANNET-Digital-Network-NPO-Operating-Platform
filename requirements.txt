@@ -1,9 +1,11 @@
 Django==5.2.16
 django-htmx==1.28.0
+django-redis==7.0.0
 gunicorn==26.0.0
 openpyxl==3.1.5
 pillow==12.3.0
 psycopg2-binary==2.9.12
 python-decouple==3.8
+redis==8.0.1
 reportlab==5.0.0
 whitenoise==6.12.0

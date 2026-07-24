@@ -74,7 +74,8 @@ Expected: all tests pass (11 at the time of writing — golden path, tenant isol
 
 - `/about/` and `/resources/` public pages contain clearly-labelled placeholder copy — the real annet.org.za site blocked automated fetching, so nothing was scraped; real copy needs to be supplied and reviewed before production publication.
 - `/privacy/` and `/terms/` are explicitly flagged as placeholders pending legal review — not a real POPIA notice yet.
-- No scheduled reminder emails yet (compliance deadlines, policy reviews, governance term expiry) — the underlying date fields exist; see `IMPLEMENTATION_PLAN.md` item 3.
+- No official logo artwork was ever supplied (only the approved mockup screenshot). The favicon uses a crop of the mockup's logo emblem; the header/sidebar mark stays a clean CSS badge rather than a blurry raster swap. See `IMPLEMENTATION_PLAN.md` item 3.
+- No scheduled reminder emails yet (compliance deadlines, policy reviews, governance term expiry) — the underlying date fields exist; see `IMPLEMENTATION_PLAN.md` item 4.
 - No rate limiting on login/password-reset yet.
 - Funder Workspace is out of scope for this build (explicitly a later phase in the spec).
 - Governance meeting minutes: the model supports linking a document as a meeting's minutes, but there's no in-page "attach" control yet — link it via Django admin in the meantime if needed for UAT.

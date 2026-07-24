@@ -2,7 +2,7 @@
 {% block title %}{{ indicator.name }}{% endblock %}
 {% block content %}
 <div class="breadcrumbs"><a href="{% url 'monitoring_evaluation:programme_me' slug=organisation.slug programme_id=indicator.programme.id %}">{{ indicator.programme.name }}</a> / {{ indicator.name }}</div>
-<div class="page-header"><div><h1>{{ indicator.name }}</h1><p>{{ indicator.get_indicator_type_display }} · Baseline {{ indicator.baseline_value|default:"—" }} · Target {{ indicator.target_value|default:"—" }}</p></div></div>
+<div class="page-header"><div><h1>{{ indicator.name }}</h1><p>{{ indicator.get_indicator_type_display }} · Baseline {% if indicator.baseline_value is not None %}{{ indicator.baseline_value }}{% else %}—{% endif %} · Target {% if indicator.target_value is not None %}{{ indicator.target_value }}{% else %}—{% endif %}</p></div></div>
 
 <div class="grid grid-2">
   <div class="card-flat">

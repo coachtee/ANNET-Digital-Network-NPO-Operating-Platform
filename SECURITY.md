@@ -46,6 +46,8 @@ Compliance evidence, board minutes, policy documents and expense receipts are st
 
 Automatically enabled by `config/settings.py` whenever `DEBUG=False`: `SESSION_COOKIE_SECURE`, `CSRF_COOKIE_SECURE`, `SECURE_SSL_REDIRECT`, `SECURE_HSTS_SECONDS` (1 year) with `includeSubDomains`/`preload`, and `SECURE_PROXY_SSL_HEADER` for a reverse-proxy deployment. See `.env.example`.
 
+`SECURE_SSL_REDIRECT` deserves a specific note for the Docker deployment: `deploy.sh` deliberately writes it as `False` until Nginx actually has a working HTTPS listener (i.e. until Let's Encrypt issuance succeeds), then flips it to `True` in `.env` and recreates the `web` container. Setting it `True` before Nginx terminates TLS would 301-redirect every request to an HTTPS endpoint that doesn't exist yet, taking the whole site down — this exact failure mode was caught during testing (see `CHANGELOG.md`) and is why the flag is state-tracked rather than hard-coded.
+
 ## Data minimisation / POPIA
 
 - `Beneficiary` has no mandatory ID-number or address field; anonymous outreach never creates a `Beneficiary` row at all (see `DATA_MODEL.md`).
@@ -55,7 +57,7 @@ Automatically enabled by `config/settings.py` whenever `DEBUG=False`: `SESSION_C
 
 ## What this build does NOT yet include (be aware before production launch)
 
-- No rate limiting on the login/password-reset endpoints (spec section 38 lists this as "where practical" — flagged as a pre-production follow-up, see `DEPLOYMENT.md`).
+- No rate limiting on the login/password-reset endpoints (spec section 38 lists this as "where practical" — flagged as a pre-production follow-up, see `DEPLOYMENT.md`). The Docker deployment's Redis cache backend (`django-redis`, see `DEPLOYMENT.md`) makes adding `django-ratelimit` a small follow-up whenever this is prioritised — Redis itself does not provide rate limiting.
 - No automated retention/deletion policy engine (spec section 39 asks only for retention *metadata support*, not automation — a `retention` field can be added to `Beneficiary`/`Document` as a follow-up).
 - No Content-Security-Policy header (`django-csp` or equivalent) — recommended before production launch given the platform serves user-controlled `public_about` text (auto-escaped, but CSP is defence-in-depth).
 - No automated `bandit`/`safety`/dependency-audit CI step configured yet — recommended before production launch.
