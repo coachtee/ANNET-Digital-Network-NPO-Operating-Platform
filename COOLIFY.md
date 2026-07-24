@@ -15,6 +15,25 @@ configuration comes from environment variables set in the Coolify UI. Secrets
 Coolify's environment variable editor, or use Coolify's own "generate" button
 where it offers one.
 
+## 0. One-time setup checklist (do this before step 1)
+
+Two things that are easy to configure *after* the first deploy fails, but
+cheaper to get right up front:
+
+- [ ] **Domain is assigned to the `web` service specifically**, not just typed
+  into a notes field — Coolify → app → **Configuration → Domains**. Until this
+  is set, Coolify's `COOLIFY_FQDN` variable is empty, Traefik has no route for
+  your hostname, and every request 404s with a plain-text "page not found"
+  (Traefik's own stock response, not Django's).
+- [ ] **`ALLOWED_HOSTS` and `CSRF_TRUSTED_ORIGINS` are set** (see the table in
+  step 2) *before* the domain starts receiving real traffic — without them,
+  once Traefik does route the request through, Django rejects it with a bare
+  `Bad Request (400)` (its stock `DisallowedHost` response).
+
+Both are one-line fixes but only take effect after a redeploy — an env var
+change or a domain assignment does not retroactively apply to an already
+running container.
+
 ## 1. Create the resources
 
 In your Coolify project, create three resources:
@@ -144,6 +163,43 @@ account automatically — no manual steps or scripts required.
 Redeploys (new commits, or clicking **Redeploy** in Coolify) go through the
 same entrypoint and are safe to run repeatedly: migrations and
 `ensure_superuser` are idempotent.
+
+## Shipping a change: Claude Code → GitHub → Coolify
+
+This is the normal day-2 loop once the app is live — no script, no manual
+server access, every step below is either Claude Code or the Coolify UI.
+
+1. **Ask Claude Code to make the change**, in a session pointed at this
+   repository. It edits files, runs the test suite (`python manage.py test`)
+   and `python manage.py check`, then commits and pushes to the branch
+   Coolify is tracking (currently `claude/annet-platform-rc-build-tfew1l`).
+   You can review the diff on GitHub before it reaches production.
+2. **Coolify picks up the push.** If a GitHub webhook is configured
+   (Coolify → app → **Configuration → General** → "Automatic deployment" /
+   webhook), a deploy starts automatically within seconds of the push. If
+   not, open the app in Coolify and click **Deploy** manually — either way,
+   deploys always build from the latest commit on the tracked branch, never
+   from uncommitted local state.
+3. **Watch the deployment log** (Coolify → app → **Deployments**, or the log
+   stream shown live during a deploy). A healthy run looks like: image
+   build (or "Build step skipped" if the commit's image is already cached),
+   `Rolling update started`, the new container passing its `/health/`
+   healthcheck (`Healthcheck logs: OK`), `Removing old containers`, `Rolling
+   update completed`. Coolify only cuts traffic over to the new container
+   once the healthcheck passes — a bad deploy fails the healthcheck and the
+   previous container keeps serving traffic instead of an outage.
+4. **Verify:** load `https://annet.naleli.co.za` and click through whatever
+   the change touched. `curl -I https://annet.naleli.co.za/health/` should
+   return `200`.
+5. **If something's wrong,** use Coolify's deployment history to redeploy a
+   previous commit/image while you diagnose — the migrations
+   `entrypoint.sh` ran are forward-only, so a rollback restores the
+   *application code*, not the database schema; check whether the change
+   included a migration before assuming a straight rollback is safe.
+
+Nothing in this loop needs SSH access to the server, a `.env` file, or any
+of the removed `deploy.sh`/`backup.sh`/`restore.sh`/`update.sh` scripts —
+that's the entire point of moving to Coolify.
 
 ## Local Docker Compose (non-Coolify)
 
