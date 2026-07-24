@@ -34,7 +34,11 @@ bash deploy.sh
 Builds and starts PostgreSQL, Redis, the Django app (Gunicorn) and Nginx
 with automatic Let's Encrypt HTTPS for `annet.naleli.co.za`; generates all
 secrets and the admin password automatically; idempotent — safe to re-run.
-See `DEPLOYMENT.md` for details, overrides, and day-2 operations.
+
+Day-2 operations: `bash update.sh` (pull, backup, rebuild, redeploy),
+`bash backup.sh` (database + media backup), `bash restore.sh <timestamp>`
+(restore a backup). See `DEPLOYMENT.md` for details, overrides, and full
+day-2 operations.
 
 ## Running tests
 

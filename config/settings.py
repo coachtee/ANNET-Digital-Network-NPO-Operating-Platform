@@ -21,6 +21,14 @@ ENVIRONMENT = config("ENVIRONMENT", default="development")  # development | stag
 ALLOWED_HOSTS = config("ALLOWED_HOSTS", default="127.0.0.1,localhost", cast=Csv())
 CSRF_TRUSTED_ORIGINS = config("CSRF_TRUSTED_ORIGINS", default="", cast=Csv())
 
+# Optional: when set, unhandled 500 errors are emailed here (via Django's
+# built-in AdminEmailHandler — see LOGGING below). Disabled by default
+# since no SMTP provider can be safely auto-configured; set ADMIN_EMAIL
+# and real EMAIL_HOST_* values to enable.
+_admin_email = config("ADMIN_EMAIL", default="")
+ADMINS = [("Platform Admin", _admin_email)] if _admin_email else []
+MANAGERS = ADMINS
+
 # ------------------------------------------------------------------
 # Applications
 # ------------------------------------------------------------------
@@ -220,6 +228,7 @@ EMAIL_HOST_PASSWORD = config("EMAIL_HOST_PASSWORD", default="")
 EMAIL_USE_TLS = config("EMAIL_USE_TLS", default=True, cast=bool)
 DEFAULT_FROM_EMAIL = config("DEFAULT_FROM_EMAIL", default="ANNET Platform <no-reply@annet.org.za>")
 SERVER_EMAIL = DEFAULT_FROM_EMAIL
+EMAIL_SUBJECT_PREFIX = config("EMAIL_SUBJECT_PREFIX", default="[ANNET Platform] ")
 
 # ------------------------------------------------------------------
 # Security
@@ -232,6 +241,7 @@ CSRF_COOKIE_SAMESITE = "Lax"
 X_FRAME_OPTIONS = "DENY"
 SECURE_CONTENT_TYPE_NOSNIFF = True
 SECURE_BROWSER_XSS_FILTER = True
+SECURE_REFERRER_POLICY = "same-origin"
 
 if not DEBUG:
     SESSION_COOKIE_SECURE = True
@@ -250,6 +260,10 @@ ALLOWED_UPLOAD_EXTENSIONS = [
     ".pdf", ".doc", ".docx", ".xls", ".xlsx", ".csv",
     ".png", ".jpg", ".jpeg", ".gif", ".ppt", ".pptx",
 ]
+# Uploaded files (including private compliance evidence and expense
+# receipts) are not group/world-readable on disk by default.
+FILE_UPLOAD_PERMISSIONS = 0o640
+FILE_UPLOAD_DIRECTORY_PERMISSIONS = 0o750
 
 # ------------------------------------------------------------------
 # Logging
@@ -263,10 +277,19 @@ LOGGING = {
     },
     "handlers": {
         "console": {"class": "logging.StreamHandler", "formatter": "verbose"},
+        "mail_admins": {"class": "django.utils.log.AdminEmailHandler", "level": "ERROR"},
     },
     "root": {"handlers": ["console"], "level": config("LOG_LEVEL", default="INFO")},
     "loggers": {
         "django.security": {"handlers": ["console"], "level": "WARNING", "propagate": False},
+        # Only wired up when ADMINS is non-empty (see ADMIN_EMAIL above) —
+        # AdminEmailHandler silently no-ops without recipients, so this is
+        # harmless either way, but explicit is clearer than relying on that.
+        "django.request": {
+            "handlers": ["console"] + (["mail_admins"] if ADMINS else []),
+            "level": "ERROR",
+            "propagate": False,
+        },
     },
 }
 

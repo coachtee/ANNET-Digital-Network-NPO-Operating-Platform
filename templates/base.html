@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{% block title %}{{ NETWORK_SHORT_NAME }} — {{ NETWORK_TAGLINE }}{% endblock %}</title>
+  {% include "partials/favicon.html" %}
   <link rel="stylesheet" href="{% static 'css/base.css' %}">
   {% block extra_head %}{% endblock %}
 </head>

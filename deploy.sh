@@ -182,6 +182,10 @@ REDIS_PASSWORD=${REDIS_PASSWORD}
 EMAIL_BACKEND=django.core.mail.backends.console.EmailBackend
 DEFAULT_FROM_EMAIL=ANNET Platform <no-reply@${DOMAIN}>
 
+# Unhandled server errors are emailed here once EMAIL_HOST_* above is set
+# to a real provider (harmless no-op until then).
+ADMIN_EMAIL=${ADMIN_EMAIL}
+
 PLATFORM_NAME=ANNET Digital Network
 NETWORK_SHORT_NAME=ANNET
 NETWORK_TAGLINE=Unity. Collaboration. Impact.

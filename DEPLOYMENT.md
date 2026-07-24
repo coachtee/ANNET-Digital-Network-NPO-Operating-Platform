@@ -61,13 +61,24 @@ SKIP_TLS=true bash deploy.sh               # stay on HTTP only (e.g. testing bef
 **Day-2 operations:**
 
 ```bash
+bash update.sh                      # pull latest code, backup first, rebuild, redeploy — the normal way to ship changes
+bash backup.sh                      # back up the database + media on demand (also runs automatically before every update.sh)
+bash restore.sh --list              # list available backups
+bash restore.sh <timestamp>         # restore a backup — DESTRUCTIVE, asks for confirmation
+bash deploy.sh                      # safe to re-run any time; also retries Let's Encrypt issuance if it failed before
+
 docker compose logs -f web          # application logs
 docker compose logs -f nginx        # access/error logs
 docker compose exec web python manage.py <command>   # any management command
 docker compose down                 # stop the stack (data volumes are preserved)
 docker compose down -v              # stop AND delete all data — irreversible
-bash deploy.sh                      # pull latest code, rebuild, redeploy — safe to re-run any time
 ```
+
+**`update.sh`** is the normal way to ship a code change: it refuses to run over uncommitted local changes, backs up the database (via `backup.sh`) before touching anything, `git pull --ff-only`s, rebuilds the image, and restarts the stack — migrations and `collectstatic` happen automatically via the same entrypoint `deploy.sh` uses. Run `SKIP_GIT_PULL=true bash update.sh` to just rebuild/restart without pulling (e.g. after editing a file directly on the server), or `SKIP_BACKUP=true bash update.sh` to skip the pre-update backup.
+
+**`backup.sh`** dumps the PostgreSQL database (`pg_dump`, gzipped) and both media volumes (public `media` and private `private_media` — compliance evidence, expense receipts, board documents) to `./backups/` with a UTC timestamp, and prunes older backups beyond the last 14 of each type (override with `KEEP=n`). Safe to run at any time without stopping the stack. Point `BACKUP_DIR` at a mounted off-host location (network share, object storage mount, etc.) for real durability — local-disk backups alone don't protect against losing the VPS itself.
+
+**`restore.sh <timestamp>`** is destructive by design — it drops and recreates the database and overwrites both media volumes from a specific backup, after an explicit typed confirmation (or `--yes` to skip it in scripted contexts). It stops `web`/`nginx` for the duration and restarts them afterwards. Run `bash restore.sh --list` first to see what's available.
 
 **What `deploy.sh` deliberately cannot do for you:** configure a real SMTP
 provider (it defaults to the console email backend — password reset and

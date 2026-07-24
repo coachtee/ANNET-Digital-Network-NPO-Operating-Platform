@@ -2,6 +2,31 @@
 
 All notable changes to this repository. Format loosely follows Keep a Changelog; dates are UTC.
 
+## 2026-07-24 — Final production readiness review
+
+Reviewed the repository against the production-readiness checklist ahead of merging this branch: verified `Dockerfile`, `docker-compose.yml` and `deploy.sh` are present and correct, and added the operational scripts that were missing.
+
+### Added
+- `update.sh` — the normal way to ship a code change to a deployed instance: refuses to run over uncommitted local changes, backs up the database first (via `backup.sh`), `git pull --ff-only`s, rebuilds the image, restarts the stack, and verifies the app responds afterwards.
+- `backup.sh` — dumps the PostgreSQL database (gzipped `pg_dump`) and both media volumes (public and private) to `./backups/` with a UTC timestamp; prunes old backups beyond a configurable retention count; safe to run without stopping the stack.
+- `restore.sh` — restores a named backup, with an explicit typed confirmation before it drops/recreates the database and overwrites media volumes (or `--yes` for scripted use); `--list` shows what's available.
+- Favicon assets (`static/img/favicon.ico`, `favicon-32.png`, `favicon-180.png`), circular-masked and extracted from the approved mockup's logo emblem — the only official ANNET branding asset available (no vector/high-res file was ever supplied). Wired into every page via a new `templates/partials/favicon.html` include.
+- Production settings hardening: `SECURE_REFERRER_POLICY`, `FILE_UPLOAD_PERMISSIONS`/`FILE_UPLOAD_DIRECTORY_PERMISSIONS` (uploaded files, including private compliance evidence and receipts, are no longer group/world-readable by default), `EMAIL_SUBJECT_PREFIX`, and an optional `ADMINS`/`MANAGERS` + `AdminEmailHandler` wiring (via `ADMIN_EMAIL`) so unhandled server errors can be emailed once a real SMTP provider is configured. `deploy.sh` now writes `ADMIN_EMAIL` into the generated `.env` automatically.
+
+### Fixed
+- `.gitignore` was missing `/backups/`, `/docker/letsencrypt/` and `/docker/certbot-webroot/` — all three will contain real secrets/data (database dumps, TLS private keys) on a live deployment and must never be committed. Added before any of them could be created.
+
+### Decisions made explicit
+- **Logo:** the only ANNET branding asset available in this build is the approved mockup screenshot, from which the logo emblem was cropped at 80×80px native resolution. That's legible as a favicon (inherently tiny/abstracted) but too low-quality to use as the header/sidebar mark without looking like a regression from the current clean CSS badge — so the header keeps the text-based "AN" mark in brand colours, and obtaining real vector/high-res artwork from Naleli/ANNET is flagged as a pre-launch item (`IMPLEMENTATION_PLAN.md` item 3), not silently worked around with a blurry asset.
+- **`update.sh`/`backup.sh`/`restore.sh` scope:** treated as operational/deployment tooling (infrastructure to safely run and maintain the already-built product), not new product features — consistent with the instruction not to add features during this review.
+
+### Verified (no code changes needed)
+- Deployment to `annet.naleli.co.za` is fully automated end-to-end via `bash deploy.sh` (see the 2026-07-24 Docker entry below for how this was validated in a sandbox that blocks Docker Hub).
+- `python manage.py check --deploy` produces **zero** warnings under production-equivalent settings (`DEBUG=False`, a real-length `SECRET_KEY`, `ADMIN_EMAIL` set).
+- Full test suite: 13/13 passing.
+- No secrets, generated configs, or test artifacts are tracked in git (`docker/nginx/active.conf`, `DEPLOYMENT_CREDENTIALS.txt`, `.env`, `backups/`, TLS material — all correctly gitignored and confirmed absent from `git ls-files`).
+- Re-checked every spec-listed release blocker (cross-tenant exposure, IDOR, unauthenticated private document access, broken auth, missing server-side authorisation, failing migrations/tests, fake metrics, unvalidated uploads, expense self-approval, beneficiary data exposure, hard-coded secrets) against the current automated test suite and code — none present.
+
 ## 2026-07-24 — Dockerized production deployment
 
 Added a fully automated, idempotent one-command production deployment for a clean Ubuntu VPS: `bash deploy.sh`.
