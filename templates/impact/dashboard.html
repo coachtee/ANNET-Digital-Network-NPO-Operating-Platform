@@ -7,9 +7,9 @@
   <div class="metric-card"><div class="stat-value">{{ active_programmes }}</div><div class="stat-label">Active Programmes</div></div>
   <div class="metric-card"><div class="stat-value">{{ people_reached }}</div><div class="stat-label">People Reached</div></div>
   <div class="metric-card"><div class="stat-value">{{ activities_delivered }}</div><div class="stat-label">Activities Delivered</div></div>
-  <div class="metric-card"><div class="stat-value">{% if target_achievement %}{{ target_achievement }}%{% else %}—{% endif %}</div><div class="stat-label">Avg. Target Achievement</div></div>
+  <div class="metric-card"><div class="stat-value">{% if target_achievement is not None %}{{ target_achievement }}%{% else %}—{% endif %}</div><div class="stat-label">Avg. Target Achievement</div></div>
   <div class="metric-card"><div class="stat-value">R{{ funding_under_management }}</div><div class="stat-label">Funding Under Management</div></div>
-  <div class="metric-card"><div class="stat-value">{% if reporting_readiness %}{{ reporting_readiness }}%{% else %}—{% endif %}</div><div class="stat-label">Reporting Readiness</div></div>
+  <div class="metric-card"><div class="stat-value">{% if reporting_readiness is not None %}{{ reporting_readiness }}%{% else %}—{% endif %}</div><div class="stat-label">Reporting Readiness</div></div>
 </div>
 
 <div class="card-flat">
@@ -20,9 +20,10 @@
     <tbody>
       {% for i in indicators %}
       <tr>
-        <td>{{ i.programme.name }}</td><td>{{ i.name }}</td><td>{{ i.target_value|default:"—" }}</td>
-        <td>{{ i.latest_actual.actual_value|default:"—" }}</td>
-        <td>{% if i.achievement_percent %}{{ i.achievement_percent }}%{% else %}—{% endif %}</td>
+        <td>{{ i.programme.name }}</td><td>{{ i.name }}</td>
+        <td>{% if i.target_value is not None %}{{ i.target_value }}{% else %}—{% endif %}</td>
+        <td>{% if i.latest_actual %}{{ i.latest_actual.actual_value }}{% else %}—{% endif %}</td>
+        <td>{% if i.achievement_percent is not None %}{{ i.achievement_percent }}%{% else %}—{% endif %}</td>
       </tr>
       {% endfor %}
     </tbody>
