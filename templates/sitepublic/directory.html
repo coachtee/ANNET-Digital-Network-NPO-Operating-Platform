@@ -5,10 +5,12 @@
   <div class="container">
     <h1>Explore NPOs</h1>
     <form method="get" class="card" style="margin-bottom:24px;">
-      <div class="grid grid-4">
+      <div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));">
         <div class="form-group" style="margin-bottom:0;">{{ form.q.label_tag }}{{ form.q }}</div>
         <div class="form-group" style="margin-bottom:0;">{{ form.province.label_tag }}{{ form.province }}</div>
+        <div class="form-group" style="margin-bottom:0;">{{ form.sector.label_tag }}{{ form.sector }}</div>
         <div class="form-group" style="margin-bottom:0;">{{ form.organisation_type.label_tag }}{{ form.organisation_type }}</div>
+        <div class="form-group" style="margin-bottom:0;">{{ form.verification_status.label_tag }}{{ form.verification_status }}</div>
         <div class="form-group" style="margin-bottom:0;">{{ form.annet_member.label_tag }}{{ form.annet_member }}</div>
       </div>
       <button type="submit" class="btn btn-primary btn-sm" style="margin-top:12px;">Search</button>

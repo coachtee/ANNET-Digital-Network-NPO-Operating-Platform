@@ -6,11 +6,13 @@
   <title>{% block title %}{{ NETWORK_SHORT_NAME }} — {{ NETWORK_TAGLINE }}{% endblock %}</title>
   {% include "partials/favicon.html" %}
   <link rel="stylesheet" href="{% static 'css/base.css' %}">
+  <link rel="stylesheet" href="{% static 'css/brand.css' %}">
   {% block extra_head %}{% endblock %}
 </head>
 <body>
   {% include "partials/public_header.html" %}
   {% block content %}{% endblock %}
   {% include "partials/public_footer.html" %}
+  <script src="{% static 'js/site.js' %}" defer></script>
 </body>
 </html>

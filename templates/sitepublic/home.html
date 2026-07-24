@@ -1,80 +1,182 @@
 {% extends "base.html" %}
+{% load static icons %}
 {% block title %}{{ NETWORK_SHORT_NAME }} — {{ NETWORK_TAGLINE }}{% endblock %}
 {% block content %}
 
 <section class="hero">
   <div class="container hero-grid">
     <div>
+      <span class="hero-eyebrow">South Africa's National NPO Alliance</span>
       <h1>Connecting South Africa's Civil Society</h1>
-      <p class="text-muted" style="font-size:1.05rem;">Discover organisations. Build partnerships. Access opportunities. Strengthen communities.</p>
-      <div class="flex gap-8">
-        <a href="{% url 'sitepublic:directory' %}" class="btn btn-primary">Explore the Network</a>
+      <p class="hero-lede">{{ NETWORK_SHORT_NAME }} is the united voice of NPO networks working together for a stronger, more accountable and more equitable South Africa.</p>
+      <div class="hero-actions">
+        <a href="{% url 'sitepublic:directory' %}" class="btn btn-primary">
+          Explore the Network {% icon "arrow-right" %}
+        </a>
         <a href="{% url 'sitepublic:join' %}" class="btn btn-outline">Join the Alliance</a>
       </div>
     </div>
-    <div class="hero-image">
-      <div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:var(--color-primary);font-weight:700;">
-        {{ NETWORK_SHORT_NAME }}
-      </div>
+    <div class="hero-visual">
+      <span class="ring-accent"></span>
+      <img src="{% static 'img/annet-logo.png' %}" alt="{{ NETWORK_SHORT_NAME }} — Unity and Accountability">
     </div>
   </div>
 </section>
 
-<section class="container" style="margin-top:-30px;">
-  <div class="card" style="padding:24px;">
-    <div class="grid grid-4">
-      <div class="stat"><div class="stat-value">{{ total_organisations }}</div><div class="stat-label">Organisations</div></div>
-      <div class="stat"><div class="stat-value">{{ provinces_represented }}</div><div class="stat-label">Provinces Represented</div></div>
-      <div class="stat"><div class="stat-value">{{ sector_count }}</div><div class="stat-label">Sectors</div></div>
-      <div class="stat"><div class="stat-value">{{ network_count }}</div><div class="stat-label">National Network{{ network_count|pluralize }}</div></div>
+<section class="container" style="margin-top:-34px; position:relative; z-index:5;">
+  <div class="stats-panel reveal">
+    <div class="stats-grid">
+      <div class="stat-card">
+        <span class="stat-icon">{% icon "building" %}</span>
+        <div><div class="stat-value">{{ registered_organisations }}</div><div class="stat-label">Registered Organisations</div></div>
+      </div>
+      <div class="stat-card">
+        <span class="stat-icon">{% icon "badge-check" %}</span>
+        <div><div class="stat-value">{{ verified_organisations }}</div><div class="stat-label">Verified Organisations</div></div>
+      </div>
+      <div class="stat-card">
+        <span class="stat-icon">{% icon "coins" %}</span>
+        <div><div class="stat-value">{{ funding_opportunities }}</div><div class="stat-label">Funding Opportunities</div></div>
+      </div>
+      <div class="stat-card">
+        <span class="stat-icon">{% icon "network" %}</span>
+        <div><div class="stat-value">{{ national_networks }}</div><div class="stat-label">National Network{{ national_networks|pluralize }}</div></div>
+      </div>
     </div>
   </div>
 </section>
 
 <section class="section">
+  <div class="container grid grid-2" style="align-items:center; gap:48px;">
+    <div class="reveal">
+      <span class="text-muted" style="font-weight:700; letter-spacing:.04em; font-size:.78rem; text-transform:uppercase;">About {{ NETWORK_SHORT_NAME }}</span>
+      <h2>A National Umbrella Body for Civil Society</h2>
+      <p class="text-muted">{{ NETWORK_SHORT_NAME }} unites NPO networks across South Africa to strengthen governance, drive compliance readiness and amplify the collective voice of civil society.</p>
+      <ul class="facts-list">
+        <li><span class="fact-icon">{% icon "calendar" %}</span><span>Founded in <strong>April 2020</strong> as a national umbrella body for NPO networks.</span></li>
+        <li><span class="fact-icon">{% icon "users" %}</span><span>Represents <strong>over 78,000 NPOs</strong> through its member networks.</span></li>
+        <li><span class="fact-icon">{% icon "network" %}</span><span>Founded by <strong>seven founding member networks</strong> committed to unity and accountability.</span></li>
+        <li><span class="fact-icon">{% icon "handshake" %}</span><span>Supported by <strong>CIBA</strong> as technical partner.</span></li>
+      </ul>
+    </div>
+    <div class="facts-highlight reveal">
+      <div class="facts-highlight-grid">
+        <div><div class="stat-value">2020</div><div class="stat-label">Founded</div></div>
+        <div><div class="stat-value">7</div><div class="stat-label">Founding Networks</div></div>
+        <div><div class="stat-value">78,000+</div><div class="stat-label">NPOs Represented</div></div>
+        <div><div class="stat-value">CIBA</div><div class="stat-label">Technical Partner</div></div>
+      </div>
+      <p class="facts-highlight-note">These figures describe {{ NETWORK_SHORT_NAME }}'s national reach through its member networks — distinct from the live platform statistics above, which reflect organisations registered directly on this platform.</p>
+    </div>
+  </div>
+</section>
+
+<section class="section section-muted">
   <div class="container">
-    <h2 style="text-align:center;">Find Organisations. Build Partnerships. Drive Change.</h2>
-    <p class="text-muted" style="text-align:center;">Search our directory of {{ NETWORK_SHORT_NAME }} organisations across sectors and provinces.</p>
-    <form method="get" action="{% url 'sitepublic:directory' %}" class="card" style="margin-top:20px;">
-      <div class="grid" style="grid-template-columns: 2fr 1fr 1fr auto; align-items:end; gap:12px;">
-        <div class="form-group" style="margin-bottom:0;">{{ search_form.q }}</div>
-        <div class="form-group" style="margin-bottom:0;">{{ search_form.organisation_type }}</div>
-        <div class="form-group" style="margin-bottom:0;">{{ search_form.province }}</div>
-        <button type="submit" class="btn btn-primary">Search</button>
+    <h2 style="text-align:center;" class="reveal">Find Organisations. Build Partnerships. Drive Change.</h2>
+    <p class="text-muted reveal" style="text-align:center;">Search the {{ NETWORK_SHORT_NAME }} directory by name, province, sector or registration status.</p>
+    <form method="get" action="{% url 'sitepublic:directory' %}" class="card search-panel reveal" style="margin-top:24px; padding:20px;">
+      <div class="search-grid">
+        <div class="form-group">{{ search_form.q.label_tag }}{{ search_form.q }}</div>
+        <div class="form-group">{{ search_form.province.label_tag }}{{ search_form.province }}</div>
+        <div class="form-group">{{ search_form.sector.label_tag }}{{ search_form.sector }}</div>
+        <div class="form-group">{{ search_form.verification_status.label_tag }}{{ search_form.verification_status }}</div>
+        <button type="submit" class="btn btn-primary">{% icon "search" %} Search</button>
       </div>
     </form>
   </div>
 </section>
 
-<section class="section section-muted">
-  <div class="container grid grid-3">
-    <div class="card">
-      <h3>Explore Our Network</h3>
-      <p class="text-muted">Discover organisations working on the ground in communities across the country.</p>
-      <a href="{% url 'sitepublic:directory' %}">Browse Directory →</a>
-    </div>
-    <div class="card">
-      <h3>Opportunities</h3>
-      <p class="text-muted">Find funding, training, tenders and collaboration opportunities for your organisation.</p>
-      <a href="{% url 'opportunities:public_list' %}">View Opportunities →</a>
-    </div>
-    <div class="card">
-      <h3>Resources &amp; Support</h3>
-      <p class="text-muted">Access tools, guides and resources to strengthen governance, compliance and impact.</p>
-      <a href="{% url 'sitepublic:resources' %}">Explore Resources →</a>
+<section class="section">
+  <div class="container">
+    <h2 class="reveal" style="text-align:center;">Everything Your Organisation Needs</h2>
+    <p class="text-muted reveal" style="text-align:center;">One platform for discovery, funding, compliance and capacity development.</p>
+    <div class="grid grid-3" style="margin-top:28px;">
+      <a href="{% url 'sitepublic:directory' %}" class="card resource-card hover-lift reveal">
+        <span class="resource-icon">{% icon "users" %}</span>
+        <h3>Explore Organisations</h3>
+        <p class="text-muted">Discover NPOs and networks working on the ground in communities across the country.</p>
+        <span class="resource-link">Browse Directory {% icon "arrow-right" %}</span>
+      </a>
+      <a href="{% url 'opportunities:public_list' %}?type=funding" class="card resource-card hover-lift reveal">
+        <span class="resource-icon">{% icon "coins" %}</span>
+        <h3>Funding Opportunities</h3>
+        <p class="text-muted">Find grants, tenders and collaboration opportunities for your organisation.</p>
+        <span class="resource-link">View Opportunities {% icon "arrow-right" %}</span>
+      </a>
+      <a href="{% url 'sitepublic:resources' %}" class="card resource-card hover-lift reveal">
+        <span class="resource-icon">{% icon "book-open" %}</span>
+        <h3>Resources</h3>
+        <p class="text-muted">Access tools, guides and templates to strengthen governance and impact.</p>
+        <span class="resource-link">Explore Resources {% icon "arrow-right" %}</span>
+      </a>
+      <a href="{% url 'sitepublic:resources' %}" class="card resource-card hover-lift reveal">
+        <span class="resource-icon">{% icon "shield-check" %}</span>
+        <h3>Compliance Support</h3>
+        <p class="text-muted">Understand your compliance readiness against SARS, DSD, CIPC and Master's Office requirements.</p>
+        <span class="resource-link">Get Started {% icon "arrow-right" %}</span>
+      </a>
+      <a href="{% url 'opportunities:public_list' %}?type=training" class="card resource-card hover-lift reveal">
+        <span class="resource-icon">{% icon "graduation-cap" %}</span>
+        <h3>Training</h3>
+        <p class="text-muted">Build capacity with governance, compliance and M&amp;E training opportunities.</p>
+        <span class="resource-link">View Training {% icon "arrow-right" %}</span>
+      </a>
+      <a href="{% url 'opportunities:public_list' %}?type=event" class="card resource-card hover-lift reveal">
+        <span class="resource-icon">{% icon "calendar" %}</span>
+        <h3>Events</h3>
+        <p class="text-muted">Network gatherings, workshops and sector convenings from across the alliance.</p>
+        <span class="resource-link">View Events {% icon "arrow-right" %}</span>
+      </a>
     </div>
   </div>
 </section>
 
+<section class="section section-muted">
+  <div class="container">
+    <div class="flex justify-between items-center reveal">
+      <h2>Recently Joined Organisations</h2>
+      <a href="{% url 'sitepublic:directory' %}">Browse all organisations {% icon "arrow-right" %}</a>
+    </div>
+    {% if featured_organisations %}
+    <div class="grid grid-3" style="margin-top:20px;">
+      {% for org in featured_organisations %}
+      <div class="card org-card hover-lift reveal">
+        <div class="org-card-top">
+          {% if org.public_logo %}
+            <img src="{{ org.public_logo.url }}" alt="{{ org.display_name }} logo" class="org-logo">
+          {% else %}
+            <span class="org-logo-fallback">{{ org.display_name|slice:":2"|upper }}</span>
+          {% endif %}
+          <div>
+            <h3 style="font-size:1rem; margin-bottom:2px;"><a href="{% url 'sitepublic:organisation_profile' slug=org.slug %}">{{ org.display_name }}</a></h3>
+            {% if org.public_verification_status == "verified" %}<span class="badge badge-success">{% icon "badge-check" %} Verified</span>{% endif %}
+          </div>
+        </div>
+        <div class="org-meta">{% icon "map-pin" %}<span>{{ org.municipality }}{% if org.municipality %}, {% endif %}{{ org.get_province_display|default:"South Africa" }}</span></div>
+        <a href="{% url 'sitepublic:organisation_profile' slug=org.slug %}">View Profile {% icon "arrow-right" %}</a>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state reveal" style="margin-top:20px; background:#fff;">
+      <h3>No organisations have joined yet</h3>
+      <p>As NPOs complete their public profile, they'll be featured here.</p>
+      <a href="{% url 'sitepublic:join' %}" class="btn btn-primary btn-sm" style="margin-top:8px;">Be the First to Join</a>
+    </div>
+    {% endif %}
+  </div>
+</section>
+
 <section class="section">
-  <div class="container grid grid-2">
-    <div>
-      <span class="text-muted" style="font-weight:700; letter-spacing:.04em; font-size:.78rem;">NATIONAL IMPACT</span>
+  <div class="container grid grid-2" style="gap:32px;">
+    <div class="reveal">
+      <span class="text-muted" style="font-weight:700; letter-spacing:.04em; font-size:.78rem; text-transform:uppercase;">National Impact</span>
       <h2>A Stronger Network. Stronger Communities.</h2>
       <p class="text-muted">{{ NETWORK_SHORT_NAME }} brings together NPO networks and organisations to amplify impact, influence policy and build a just and inclusive society.</p>
       <a href="{% url 'sitepublic:our_network' %}" class="btn btn-outline">View Impact Insights</a>
     </div>
-    <div class="card-flat">
+    <div class="card-flat reveal">
       <h3>Organisations by Province</h3>
       {% if province_counts %}
         <table>
@@ -89,32 +191,92 @@
   </div>
 </section>
 
-{% if latest_opportunities %}
 <section class="section section-muted">
-  <div class="container">
-    <div class="flex justify-between items-center">
-      <h2>Latest Opportunities</h2>
-      <a href="{% url 'opportunities:public_list' %}">View all opportunities →</a>
-    </div>
-    <div class="grid grid-4">
-      {% for o in latest_opportunities %}
-      <div class="card">
-        <span class="badge badge-primary">{{ o.get_opportunity_type_display }}</span>
-        <h3 style="font-size:1rem; margin-top:8px;"><a href="{% url 'opportunities:public_detail' opportunity_id=o.id %}">{{ o.title }}</a></h3>
-        <p class="text-muted" style="font-size:.82rem;">{% if o.closing_date %}Deadline: {{ o.closing_date }}{% endif %}</p>
-        <p class="text-muted" style="font-size:.82rem;">{{ o.location|default:"National" }}</p>
+  <div class="container grid grid-2" style="gap:32px; align-items:start;">
+    <div class="reveal">
+      <div class="flex justify-between items-center">
+        <h2 style="margin-bottom:0;">Latest News &amp; Insights</h2>
       </div>
-      {% endfor %}
+      {% if latest_news %}
+      <div class="grid" style="margin-top:16px;">
+        {% for item in latest_news %}
+        <div class="card news-card hover-lift">
+          <span class="badge badge-primary">{{ item.category }}</span>
+          <h3 style="font-size:1rem;">{{ item.title }}</h3>
+          <p class="text-muted" style="font-size:.85rem;">{{ item.summary }}</p>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <div class="empty-state" style="margin-top:16px; background:#fff;">
+        <span class="resource-icon" style="margin:0 auto 10px;">{% icon "newspaper" %}</span>
+        <h3>No news published yet</h3>
+        <p>Network news, sector insights and member stories will appear here as they're published.</p>
+        <a href="{% url 'sitepublic:insights' %}" class="btn btn-outline btn-sm" style="margin-top:8px;">Visit Insights</a>
+      </div>
+      {% endif %}
+    </div>
+
+    <div class="reveal">
+      <div class="flex justify-between items-center">
+        <h2 style="margin-bottom:0;">Upcoming Events</h2>
+        <a href="{% url 'opportunities:public_list' %}?type=event">View all {% icon "arrow-right" %}</a>
+      </div>
+      {% if upcoming_events %}
+      <div class="grid" style="margin-top:16px;">
+        {% for event in upcoming_events %}
+        <a href="{% url 'opportunities:public_detail' opportunity_id=event.id %}" class="card event-card hover-lift">
+          <div class="event-card-top">
+            <span class="event-date-chip">
+              <span class="day">{{ event.opening_date|date:"d" }}</span>
+              <span class="mon">{{ event.opening_date|date:"M" }}</span>
+            </span>
+            <div>
+              <h3 style="font-size:1rem; margin-bottom:2px;">{{ event.title }}</h3>
+              <div class="org-meta">{% icon "map-pin" %}<span>{{ event.location|default:"National" }}</span></div>
+            </div>
+          </div>
+        </a>
+        {% endfor %}
+      </div>
+      {% else %}
+      <div class="empty-state" style="margin-top:16px; background:#fff;">
+        <span class="resource-icon" style="margin:0 auto 10px;">{% icon "calendar" %}</span>
+        <h3>No upcoming events</h3>
+        <p>Network gatherings and workshops will be listed here once scheduled.</p>
+      </div>
+      {% endif %}
     </div>
   </div>
 </section>
-{% endif %}
 
 <section class="section">
-  <div class="container" style="text-align:center;">
-    <h2>Ready to join {{ NETWORK_SHORT_NAME }}?</h2>
-    <p class="text-muted">Build your organisation profile, understand your compliance readiness, and become part of the network.</p>
-    <a href="{% url 'sitepublic:join' %}" class="btn btn-primary">Join the Alliance</a>
+  <div class="container">
+    <p class="text-muted reveal" style="text-align:center; font-weight:700; letter-spacing:.04em; font-size:.78rem; text-transform:uppercase;">In Partnership With</p>
+    <div class="partner-strip reveal">
+      <div class="partner-track">
+        {% for i in "123456" %}
+        <span class="partner-chip">{% icon "handshake" %} Partner Organisation</span>
+        {% endfor %}
+        {% for i in "123456" %}
+        <span class="partner-chip">{% icon "handshake" %} Partner Organisation</span>
+        {% endfor %}
+      </div>
+    </div>
+    <p class="text-muted" style="text-align:center; font-size:.78rem; margin-top:10px;">Partner logos shown are placeholders pending official artwork.</p>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <div class="cta-band reveal">
+      <h2>Ready to join {{ NETWORK_SHORT_NAME }}?</h2>
+      <p>Build your organisation profile, understand your compliance readiness, and become part of South Africa's national civil society network.</p>
+      <div class="hero-actions" style="justify-content:center;">
+        <a href="{% url 'sitepublic:join' %}" class="btn btn-primary">Join the Alliance</a>
+        <a href="{% url 'sitepublic:about' %}" class="btn btn-outline">Learn More</a>
+      </div>
+    </div>
   </div>
 </section>
 
