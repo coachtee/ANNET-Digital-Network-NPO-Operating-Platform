@@ -13,10 +13,3 @@ __pycache__/
 htmlcov/
 .DS_Store
 *.log
-
-# Docker deployment — generated at deploy time, never committed
-docker/nginx/active.conf
-DEPLOYMENT_CREDENTIALS.txt
-/backups/
-/docker/letsencrypt/
-/docker/certbot-webroot/

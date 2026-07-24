@@ -15,4 +15,3 @@ private_media/
 .pytest_cache/
 .coverage
 htmlcov/
-DEPLOYMENT_CREDENTIALS.txt

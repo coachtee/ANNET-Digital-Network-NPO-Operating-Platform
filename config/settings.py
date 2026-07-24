@@ -8,6 +8,8 @@ hard-coded here — see SECURITY.md for the production hardening checklist.
 from pathlib import Path
 from decouple import Csv, config
 
+from apps.core.utils import ensure_hosts_present
+
 BASE_DIR = Path(__file__).resolve().parent.parent
 # decouple's `config` auto-discovers a .env file relative to this file's
 # working directory and otherwise falls back to real environment variables
@@ -19,6 +21,15 @@ DEBUG = config("DEBUG", default=False, cast=bool)
 ENVIRONMENT = config("ENVIRONMENT", default="development")  # development | staging | production
 
 ALLOWED_HOSTS = config("ALLOWED_HOSTS", default="127.0.0.1,localhost", cast=Csv())
+# Container-internal health probes (Docker/Kubernetes/Coolify) hit
+# 127.0.0.1:8000 directly, bypassing Traefik/any proxy entirely — so
+# whatever ALLOWED_HOSTS an operator configures for the public domain must
+# never be able to accidentally lock that probe out. These two are only
+# reachable from inside the container's own network namespace in practice,
+# not from the public internet, so always-allowing them doesn't weaken
+# Host-header validation for real traffic.
+ALLOWED_HOSTS = ensure_hosts_present(ALLOWED_HOSTS, "127.0.0.1", "localhost")
+
 CSRF_TRUSTED_ORIGINS = config("CSRF_TRUSTED_ORIGINS", default="", cast=Csv())
 
 # Optional: when set, unhandled 500 errors are emailed here (via Django's
@@ -116,9 +127,12 @@ WSGI_APPLICATION = "config.wsgi.application"
 # ------------------------------------------------------------------
 
 if config("DATABASE_URL", default=""):
-    import dj_database_url  # optional dependency, only needed if DATABASE_URL is used
+    # Coolify's managed PostgreSQL resource (and most other PaaS databases)
+    # hand you a single connection string rather than separate DB_* values
+    # — support both so either integration style works unmodified.
+    import dj_database_url
 
-    DATABASES = {"default": dj_database_url.parse(config("DATABASE_URL"))}
+    DATABASES = {"default": dj_database_url.parse(config("DATABASE_URL"), conn_max_age=60)}
 elif config("DB_ENGINE", default="sqlite") == "postgresql":
     DATABASES = {
         "default": {
@@ -243,6 +257,13 @@ SECURE_CONTENT_TYPE_NOSNIFF = True
 SECURE_BROWSER_XSS_FILTER = True
 SECURE_REFERRER_POLICY = "same-origin"
 
+# The health check endpoint must never redirect (Docker/Coolify health
+# probes hit it over plain HTTP on the container's internal port and don't
+# follow redirects) — exempt it from SECURE_SSL_REDIRECT unconditionally,
+# not just when DEBUG=False, so this holds regardless of how that setting
+# is toggled below.
+SECURE_REDIRECT_EXEMPT = [r"^health/?$"]
+
 if not DEBUG:
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
@@ -250,7 +271,12 @@ if not DEBUG:
     SECURE_HSTS_SECONDS = config("SECURE_HSTS_SECONDS", default=31536000, cast=int)
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
     SECURE_HSTS_PRELOAD = True
+    # Coolify's Traefik terminates TLS and reverse-proxies to this
+    # container over plain HTTP, setting X-Forwarded-Proto/X-Forwarded-Host
+    # — both must be trusted or Django will see every request as
+    # insecure/wrong-host and either redirect-loop or reject it.
     SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+    USE_X_FORWARDED_HOST = True
 
 # Uploads
 DATA_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024  # 10MB

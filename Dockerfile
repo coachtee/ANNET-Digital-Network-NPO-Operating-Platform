@@ -1,7 +1,8 @@
 # ANNET Digital Network & NPO Operating Platform — production image.
 # Multi-stage: build wheels in a full build environment, run in a slim,
-# non-root final image. Gunicorn is the WSGI server; Nginx (a separate
-# container — see docker-compose.yml) sits in front of it.
+# non-root final image. Gunicorn is the WSGI server; Coolify's built-in
+# Traefik reverse proxy (or any other proxy in front of this container)
+# handles TLS/domain routing — see COOLIFY.md.
 
 FROM python:3.11-slim AS builder
 
@@ -44,8 +45,10 @@ USER app
 
 EXPOSE 8000
 
+# /health/ requires no auth and touches no database (apps.core.views.health_check)
+# — it exists purely to prove Gunicorn is up, so it's safe to poll every 30s.
 HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
-    CMD curl -fsS http://127.0.0.1:8000/accounts/login/ || exit 1
+    CMD curl -fsS http://127.0.0.1:8000/health/ || exit 1
 
 ENTRYPOINT ["/app/docker/django/entrypoint.sh"]
 CMD ["gunicorn", "config.wsgi:application", "--bind", "0.0.0.0:8000", "--workers", "3", "--timeout", "60", "--access-logfile", "-", "--error-logfile", "-"]

@@ -46,7 +46,7 @@ Compliance evidence, board minutes, policy documents and expense receipts are st
 
 Automatically enabled by `config/settings.py` whenever `DEBUG=False`: `SESSION_COOKIE_SECURE`, `CSRF_COOKIE_SECURE`, `SECURE_SSL_REDIRECT`, `SECURE_HSTS_SECONDS` (1 year) with `includeSubDomains`/`preload`, and `SECURE_PROXY_SSL_HEADER` for a reverse-proxy deployment. See `.env.example`.
 
-`SECURE_SSL_REDIRECT` deserves a specific note for the Docker deployment: `deploy.sh` deliberately writes it as `False` until Nginx actually has a working HTTPS listener (i.e. until Let's Encrypt issuance succeeds), then flips it to `True` in `.env` and recreates the `web` container. Setting it `True` before Nginx terminates TLS would 301-redirect every request to an HTTPS endpoint that doesn't exist yet, taking the whole site down — this exact failure mode was caught during testing (see `CHANGELOG.md`) and is why the flag is state-tracked rather than hard-coded.
+`SECURE_SSL_REDIRECT` deserves a specific note for the Coolify deployment: Coolify's built-in Traefik proxy terminates TLS and always forwards to the app container over plain HTTP, setting `X-Forwarded-Proto`. `SECURE_PROXY_SSL_HEADER` and `USE_X_FORWARDED_HOST` (`config/settings.py`) trust that header so Django correctly detects HTTPS requests — without them, `SECURE_SSL_REDIRECT=True` would see every request as insecure and redirect-loop. The `/health/` endpoint is unconditionally exempted from `SECURE_SSL_REDIRECT` (`SECURE_REDIRECT_EXEMPT`) since Docker/Coolify health probes hit the container directly over plain HTTP on its internal port and don't follow redirects. See `COOLIFY.md`.
 
 ## Data minimisation / POPIA
 

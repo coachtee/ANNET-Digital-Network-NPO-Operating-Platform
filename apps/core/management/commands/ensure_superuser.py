@@ -6,15 +6,15 @@ from apps.accounts.models import User
 
 
 class Command(BaseCommand):
-    """Idempotent, non-interactive superuser bootstrap for automated
-    deployment (deploy.sh / docker entrypoint.sh).
+    """Idempotent, non-interactive superuser bootstrap, called by
+    docker/django/entrypoint.sh on every container start.
 
     Unlike Django's built-in ``createsuperuser --noinput``, this:
     - never touches an existing account's password on re-run (safe to call
-      on every container start / every ``deploy.sh`` run);
+      on every container start);
     - reports via exit-code-free stdout markers ("CREATED"/"EXISTS") so the
-      calling shell script knows whether to show the freshly generated
-      password or say "credentials unchanged".
+      entrypoint script knows whether to show the freshly generated password
+      or say "credentials unchanged".
     """
 
     help = "Create the platform admin superuser from DJANGO_SUPERUSER_EMAIL/PASSWORD env vars if it doesn't already exist."

@@ -2,6 +2,66 @@
 
 All notable changes to this repository. Format loosely follows Keep a Changelog; dates are UTC.
 
+## 2026-07-24 — Migrate deployment to Coolify v4
+
+Refactored the deployment path to make ANNET a first-class Coolify v4
+application, replacing the self-hosted `deploy.sh`-orchestrated stack. Coolify
+now builds `Dockerfile` directly, manages PostgreSQL/Redis as separate
+resources, and fronts the app with its built-in Traefik proxy for TLS/domain
+routing.
+
+### Added
+- `GET /health/` (`apps/core/views.py`) — a liveness/readiness probe with no
+  auth, no database/cache query, and no redirect, for Docker/Kubernetes/
+  Coolify health checks. Wired first in `config/urls.py`, ahead of every
+  other route.
+- `apps/core/utils.py:ensure_hosts_present` — guarantees `127.0.0.1`/
+  `localhost` always pass `ALLOWED_HOSTS` for container-internal health
+  probes, regardless of the operator-configured public domain. Unit tested.
+- `COOLIFY.md` — full Coolify v4 deployment guide: required environment
+  variables, database/Redis configuration, persistent volumes, health check
+  and domain setup.
+- `dj-database-url` dependency — parses Coolify's managed-PostgreSQL
+  `DATABASE_URL` connection string (`config/settings.py`), alongside the
+  existing discrete `DB_*` variables for non-PaaS setups.
+- Tests for the health endpoint and `ensure_hosts_present` in `apps/core/tests.py`.
+
+### Changed
+- `docker-compose.yml` reduced to the `web` application service only —
+  PostgreSQL, Redis, Nginx and the Certbot renewal loop are removed; on
+  Coolify those are managed resources / the built-in Traefik proxy instead.
+  Still usable for a plain `docker compose up` outside Coolify (point
+  `DATABASE_URL`/`REDIS_URL` at your own services).
+- `Dockerfile`'s `HEALTHCHECK` now curls `/health/` instead of
+  `/accounts/login/` (which required no auth only incidentally and could
+  redirect).
+- `config/settings.py`: added `SECURE_REDIRECT_EXEMPT` for `/health/`,
+  `USE_X_FORWARDED_HOST = True`, and a clarified `SECURE_PROXY_SSL_HEADER`
+  comment — all required for Coolify's Traefik (TLS-terminating reverse
+  proxy) to be correctly trusted.
+- `config/urls.py`: `MEDIA_URL` is now served by Django in every
+  environment (previously only when `DEBUG=True`), since Coolify's Traefik
+  is a reverse proxy only, not a file server, and there's no Nginx
+  `location /media/` block anymore.
+- `docker/django/entrypoint.sh`'s database-readiness wait now also
+  recognises `DATABASE_URL` (previously it only waited when the discrete
+  `DB_ENGINE=postgresql` var was set, which Coolify's managed Postgres
+  resource doesn't use).
+- `DEPLOYMENT.md`, `README.md`, `SECURITY.md` updated to point at Coolify /
+  `COOLIFY.md` instead of `deploy.sh`.
+
+### Removed
+- `deploy.sh`, `backup.sh`, `restore.sh`, `update.sh` — orchestrated the
+  self-hosted db/redis/nginx/certbot containers that Coolify now manages as
+  separate resources / its built-in proxy; keeping them would have required
+  maintaining a second, parallel deployment topology.
+- `docker/nginx/http.conf.template` and `https.conf.template` — Coolify's
+  Traefik replaces Nginx for TLS termination and domain routing entirely.
+- `.gitignore` entries for the removed Nginx/Certbot/backup paths
+  (`docker/nginx/active.conf`, `DEPLOYMENT_CREDENTIALS.txt`, `/backups/`,
+  `/docker/letsencrypt/`, `/docker/certbot-webroot/`) — nothing in the repo
+  creates those paths anymore.
+
 ## 2026-07-24 — Final production readiness review
 
 Reviewed the repository against the production-readiness checklist ahead of merging this branch: verified `Dockerfile`, `docker-compose.yml` and `deploy.sh` are present and correct, and added the operational scripts that were missing.

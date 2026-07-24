@@ -11,21 +11,28 @@ import time
 
 import psycopg2
 
-if os.environ.get("DB_ENGINE") != "postgresql":
+# Coolify's managed PostgreSQL resource is supplied as a single DATABASE_URL;
+# a self-hosted/Docker Compose Postgres is supplied as discrete DB_* vars
+# (see config/settings.py) — wait using whichever one is actually configured.
+database_url = os.environ.get("DATABASE_URL")
+if not database_url and os.environ.get("DB_ENGINE") != "postgresql":
     sys.exit(0)
 
 deadline = time.time() + 60
 last_error = None
 while time.time() < deadline:
     try:
-        psycopg2.connect(
-            dbname=os.environ.get("DB_NAME", "annet_platform"),
-            user=os.environ.get("DB_USER", "annet_platform"),
-            password=os.environ.get("DB_PASSWORD", ""),
-            host=os.environ.get("DB_HOST", "db"),
-            port=os.environ.get("DB_PORT", "5432"),
-            connect_timeout=3,
-        ).close()
+        if database_url:
+            psycopg2.connect(database_url, connect_timeout=3).close()
+        else:
+            psycopg2.connect(
+                dbname=os.environ.get("DB_NAME", "annet_platform"),
+                user=os.environ.get("DB_USER", "annet_platform"),
+                password=os.environ.get("DB_PASSWORD", ""),
+                host=os.environ.get("DB_HOST", "db"),
+                port=os.environ.get("DB_PORT", "5432"),
+                connect_timeout=3,
+            ).close()
         print("[entrypoint] database is ready.")
         sys.exit(0)
     except Exception as exc:  # noqa: BLE001
