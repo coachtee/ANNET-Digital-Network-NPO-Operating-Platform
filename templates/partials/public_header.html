@@ -5,7 +5,6 @@
       <img src="{% static 'img/bohlale-logo.png' %}" alt="{{ NETWORK_SHORT_NAME }} logo" class="brand-logo-mark">
       <span class="brand-wordmark">
         <span class="brand-name">{{ NETWORK_SHORT_NAME }}</span>
-        <span class="brand-tagline">{{ NETWORK_TAGLINE }}</span>
       </span>
     </a>
     <div class="nav-panel">
@@ -22,8 +21,8 @@
         {% if request.user.is_authenticated %}
           <a href="{% url 'organisations:workspace_home' %}" class="btn btn-outline btn-sm">My Organisation</a>
         {% else %}
-          <a href="{% url 'sitepublic:join' %}" class="btn btn-primary btn-sm">Join Bohlale Impact</a>
-          <a href="{% url 'accounts:login' %}" class="btn btn-ghost btn-sm">Sign In</a>
+          <a href="{% url 'sitepublic:join' %}" class="btn btn-primary btn-sm">Join Bohlale</a>
+          <a href="{% url 'accounts:login' %}" class="btn btn-outline btn-sm">Sign In</a>
         {% endif %}
       </div>
     </div>

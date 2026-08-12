@@ -1,45 +1,83 @@
 {% extends "base.html" %}
 {% load static icons %}
-{% block title %}{{ NETWORK_SHORT_NAME }} — {{ NETWORK_TAGLINE }}{% endblock %}
+{% block title %}{{ NETWORK_SHORT_NAME }}: {{ NETWORK_TAGLINE }}{% endblock %}
 {% block content %}
 
 <section class="hero">
   <div class="container hero-grid">
     <div>
-      <span class="hero-eyebrow">South Africa's Community Impact Platform</span>
-      <h1>Connect. Manage. Measure Impact.</h1>
-      <p class="hero-lede">Bohlale Impact is where South African NPOs, NGOs, community organisations and advice offices build their organisation profile, find opportunities and partners, run their programmes, and demonstrate the difference they make.</p>
+      <h1>Connecting South Africa's Community Organisations</h1>
+      <p class="hero-lede">Bohlale Impact is a community platform where organisations connect, collaborate, access opportunities and create lasting impact.</p>
       <div class="hero-actions">
-        <a href="{% url 'sitepublic:directory' %}" class="btn btn-primary">
-          Discover Organisations {% icon "arrow-right" %}
-        </a>
-        <a href="{% url 'sitepublic:join' %}" class="btn btn-outline">Join Bohlale Impact</a>
+        <a href="{% url 'sitepublic:join' %}" class="btn btn-primary">Join Bohlale {% icon "arrow-right" %}</a>
+        <a href="{% url 'sitepublic:directory' %}" class="btn btn-outline">Explore Organisations</a>
       </div>
     </div>
     <div class="hero-visual">
-      <img src="{% static 'img/bohlale-logo.png' %}" alt="Bohlale Impact">
+      <div class="sa-illustration" role="img" aria-label="Illustration of a connected network spanning South Africa, linking opportunities, resources, training, partnerships, support and impact">
+        <svg class="sa-map-svg" viewBox="0 0 300 300" aria-hidden="true">
+          <path class="sa-silhouette" fill-rule="evenodd" d="M70,50 L140,25 L215,35 L245,70 L260,120 L250,160 L225,195 L195,225 L160,250 L115,258 L85,235 L65,200 L50,155 L48,105 L55,70 Z M168,172 L182,186 L168,200 L154,186 Z"/>
+          <g class="sa-network">
+            <line class="sa-line" x1="150" y1="140" x2="100" y2="65"/>
+            <line class="sa-line" x1="150" y1="140" x2="190" y2="55"/>
+            <line class="sa-line" x1="150" y1="140" x2="85" y2="120"/>
+            <line class="sa-line" x1="150" y1="140" x2="225" y2="95"/>
+            <line class="sa-line" x1="150" y1="140" x2="90" y2="190"/>
+            <line class="sa-line" x1="150" y1="140" x2="215" y2="165"/>
+            <line class="sa-line" x1="150" y1="140" x2="140" y2="230"/>
+            <line class="sa-line" x1="150" y1="140" x2="65" y2="150"/>
+            <line class="sa-line" x1="150" y1="140" x2="240" y2="140"/>
+            <line class="sa-line" x1="150" y1="140" x2="150" y2="90"/>
+            <line class="sa-line sa-line-thin" x1="100" y1="65" x2="150" y2="90"/>
+            <line class="sa-line sa-line-thin" x1="190" y1="55" x2="225" y2="95"/>
+            <line class="sa-line sa-line-thin" x1="85" y1="120" x2="90" y2="190"/>
+            <line class="sa-line sa-line-thin" x1="215" y1="165" x2="240" y2="140"/>
+            <line class="sa-line sa-line-thin" x1="90" y1="190" x2="140" y2="230"/>
+            <line class="sa-line sa-line-thin" x1="65" y1="150" x2="85" y2="120"/>
+            <circle class="sa-node" cx="100" cy="65" r="3.4"/>
+            <circle class="sa-node sa-node-pulse" cx="190" cy="55" r="3.4"/>
+            <circle class="sa-node" cx="85" cy="120" r="3.4"/>
+            <circle class="sa-node sa-node-pulse" cx="225" cy="95" r="3.4"/>
+            <circle class="sa-node" cx="90" cy="190" r="3.4"/>
+            <circle class="sa-node sa-node-pulse" cx="215" cy="165" r="3.4"/>
+            <circle class="sa-node" cx="140" cy="230" r="3.4"/>
+            <circle class="sa-node sa-node-pulse" cx="65" cy="150" r="3.4"/>
+            <circle class="sa-node" cx="240" cy="140" r="3.4"/>
+            <circle class="sa-node sa-node-pulse" cx="150" cy="90" r="3.4"/>
+          </g>
+          <circle class="sa-hub-ring" cx="150" cy="140" r="27"/>
+          <circle class="sa-hub" cx="150" cy="140" r="20"/>
+        </svg>
+        <img class="sa-hub-logo" src="{% static 'img/bohlale-logo.png' %}" alt="">
+        <div class="sa-badge sa-badge-opportunities"><span class="sa-badge-icon">{% icon "briefcase" %}</span><span>Opportunities</span></div>
+        <div class="sa-badge sa-badge-partnerships"><span class="sa-badge-icon">{% icon "handshake" %}</span><span>Partnerships</span></div>
+        <div class="sa-badge sa-badge-resources"><span class="sa-badge-icon">{% icon "book-open" %}</span><span>Resources</span></div>
+        <div class="sa-badge sa-badge-support"><span class="sa-badge-icon">{% icon "users" %}</span><span>Support</span></div>
+        <div class="sa-badge sa-badge-training"><span class="sa-badge-icon">{% icon "graduation-cap" %}</span><span>Training</span></div>
+        <div class="sa-badge sa-badge-impact"><span class="sa-badge-icon">{% icon "bar-chart" %}</span><span>Impact</span></div>
+      </div>
     </div>
   </div>
 </section>
 
-<section class="container" style="margin-top:-34px; position:relative; z-index:5;">
+<section class="container stats-float">
   <div class="stats-panel reveal">
     <div class="stats-grid">
       <div class="stat-card">
-        <span class="stat-icon">{% icon "building" %}</span>
-        <div><div class="stat-value">{{ registered_organisations }}</div><div class="stat-label">Registered Organisations</div></div>
-      </div>
-      <div class="stat-card">
-        <span class="stat-icon">{% icon "badge-check" %}</span>
-        <div><div class="stat-value">{{ verified_organisations }}</div><div class="stat-label">Verified Organisations</div></div>
-      </div>
-      <div class="stat-card">
-        <span class="stat-icon">{% icon "coins" %}</span>
-        <div><div class="stat-value">{{ funding_opportunities }}</div><div class="stat-label">Funding Opportunities</div></div>
-      </div>
-      <div class="stat-card">
         <span class="stat-icon">{% icon "network" %}</span>
-        <div><div class="stat-value">{{ national_networks }}</div><div class="stat-label">Programme{{ national_networks|pluralize }} &amp; Network{{ national_networks|pluralize }}</div></div>
+        <div><div class="stat-value">{{ national_networks }}{% if national_networks %}+{% endif %}</div><div class="stat-label">Networks</div></div>
+      </div>
+      <div class="stat-card">
+        <span class="stat-icon">{% icon "building" %}</span>
+        <div><div class="stat-value">{{ registered_organisations }}</div><div class="stat-label">Organisations</div></div>
+      </div>
+      <div class="stat-card">
+        <span class="stat-icon">{% icon "handshake" %}</span>
+        <div><div class="stat-value">{{ partnership_opportunities }}</div><div class="stat-label">Partnerships</div></div>
+      </div>
+      <div class="stat-card">
+        <span class="stat-icon">{% icon "briefcase" %}</span>
+        <div><div class="stat-value">{{ funding_opportunities }}</div><div class="stat-label">Opportunities</div></div>
       </div>
     </div>
   </div>
@@ -50,12 +88,12 @@
     <div class="reveal">
       <span class="text-muted" style="font-weight:700; letter-spacing:.04em; font-size:.78rem; text-transform:uppercase;">What is Bohlale Impact</span>
       <h2>A Digital Home for Community Organisations</h2>
-      <p class="text-muted">Bohlale Impact is a community and operating platform for South African NPOs, NGOs, community-based organisations, advice offices, foundations and social enterprises — built to grow with your organisation, not just list it.</p>
+      <p class="text-muted">Bohlale Impact is a community and operating platform for South African NPOs, NGOs, community-based organisations, advice offices, foundations and social enterprises, built to grow with your organisation, not just list it.</p>
       <ul class="facts-list">
-        <li><span class="fact-icon">{% icon "users" %}</span><span><strong>Connect</strong> — build a public organisation profile and become part of a national community of civil society organisations.</span></li>
-        <li><span class="fact-icon">{% icon "handshake" %}</span><span><strong>Collaborate</strong> — discover funding, training, tenders, events and partnerships, and apply to join programmes and networks.</span></li>
-        <li><span class="fact-icon">{% icon "shield-check" %}</span><span><strong>Manage</strong> — run your compliance, governance, programmes, people and finances from one organisation workspace.</span></li>
-        <li><span class="fact-icon">{% icon "badge-check" %}</span><span><strong>Measure Impact</strong> — capture the work you do and demonstrate it to funders, partners and your own board.</span></li>
+        <li><span class="fact-icon">{% icon "users" %}</span><span><strong>Connect:</strong> build a public organisation profile and become part of a national community of civil society organisations.</span></li>
+        <li><span class="fact-icon">{% icon "handshake" %}</span><span><strong>Collaborate:</strong> discover funding, training, tenders, events and partnerships, and apply to join programmes and networks.</span></li>
+        <li><span class="fact-icon">{% icon "shield-check" %}</span><span><strong>Manage:</strong> run your compliance, governance, programmes, people and finances from one organisation workspace.</span></li>
+        <li><span class="fact-icon">{% icon "badge-check" %}</span><span><strong>Measure Impact:</strong> capture the work you do and demonstrate it to funders, partners and your own board.</span></li>
       </ul>
     </div>
     <div class="facts-highlight reveal">
@@ -65,7 +103,7 @@
         <div><div class="stat-value">{{ sector_count }}</div><div class="stat-label">Sectors Represented</div></div>
         <div><div class="stat-value">{{ national_networks }}</div><div class="stat-label">Programmes &amp; Networks</div></div>
       </div>
-      <p class="facts-highlight-note">One connected platform — your organisation profile, workspace and records stay yours even if a specific programme or partnership ends.</p>
+      <p class="facts-highlight-note">One connected platform: your organisation profile, workspace and records stay yours even if a specific programme or partnership ends.</p>
     </div>
   </div>
 </section>
@@ -89,43 +127,43 @@
 <section class="section">
   <div class="container">
     <h2 class="reveal" style="text-align:center;">Everything Your Organisation Needs</h2>
-    <p class="text-muted reveal" style="text-align:center;">One platform for discovery, funding, compliance and capacity development.</p>
+    <p class="text-muted reveal" style="text-align:center;">One platform for discovery, management, compliance and impact.</p>
     <div class="grid grid-3" style="margin-top:28px;">
       <a href="{% url 'sitepublic:directory' %}" class="card resource-card hover-lift reveal">
-        <span class="resource-icon">{% icon "users" %}</span>
-        <h3>Explore Organisations</h3>
-        <p class="text-muted">Discover NPOs, NGOs and community organisations working on the ground across the country.</p>
+        <span class="resource-icon">{% icon "building" %}</span>
+        <h3>Discover Organisations</h3>
+        <p class="text-muted">Find and connect with organisations across South Africa.</p>
         <span class="resource-link">Browse Directory {% icon "arrow-right" %}</span>
       </a>
-      <a href="{% url 'opportunities:public_list' %}?type=funding" class="card resource-card hover-lift reveal">
-        <span class="resource-icon">{% icon "coins" %}</span>
-        <h3>Funding Opportunities</h3>
-        <p class="text-muted">Find grants, tenders and collaboration opportunities for your organisation.</p>
+      <a href="{% url 'opportunities:public_list' %}" class="card resource-card hover-lift reveal">
+        <span class="resource-icon">{% icon "briefcase" %}</span>
+        <h3>Opportunities</h3>
+        <p class="text-muted">Access funding, grants, tenders, partnerships and events.</p>
         <span class="resource-link">View Opportunities {% icon "arrow-right" %}</span>
       </a>
       <a href="{% url 'sitepublic:resources' %}" class="card resource-card hover-lift reveal">
         <span class="resource-icon">{% icon "book-open" %}</span>
         <h3>Resources</h3>
-        <p class="text-muted">Access tools, guides and templates to strengthen governance and impact.</p>
+        <p class="text-muted">Templates, guides and tools to strengthen your organisation.</p>
         <span class="resource-link">Explore Resources {% icon "arrow-right" %}</span>
       </a>
-      <a href="{% url 'sitepublic:resources' %}" class="card resource-card hover-lift reveal">
-        <span class="resource-icon">{% icon "shield-check" %}</span>
-        <h3>Compliance Support</h3>
-        <p class="text-muted">Understand your compliance readiness against SARS, DSD, CIPC and Master's Office requirements.</p>
-        <span class="resource-link">Get Started {% icon "arrow-right" %}</span>
+      <a href="{% url 'organisations:workspace_home' %}" class="card resource-card hover-lift reveal">
+        <span class="resource-icon">{% icon "monitor-check" %}</span>
+        <h3>Manage &amp; Monitor</h3>
+        <p class="text-muted">Manage programmes, beneficiaries, activities and progress.</p>
+        <span class="resource-link">Go to Workspace {% icon "arrow-right" %}</span>
       </a>
-      <a href="{% url 'opportunities:public_list' %}?type=training" class="card resource-card hover-lift reveal">
-        <span class="resource-icon">{% icon "graduation-cap" %}</span>
-        <h3>Training</h3>
-        <p class="text-muted">Build capacity with governance, compliance and M&amp;E training opportunities.</p>
-        <span class="resource-link">View Training {% icon "arrow-right" %}</span>
+      <a href="{% url 'sitepublic:insights' %}" class="card resource-card hover-lift reveal">
+        <span class="resource-icon">{% icon "bar-chart" %}</span>
+        <h3>Measure Impact</h3>
+        <p class="text-muted">Track outcomes, generate reports and demonstrate impact.</p>
+        <span class="resource-link">View Insights {% icon "arrow-right" %}</span>
       </a>
-      <a href="{% url 'opportunities:public_list' %}?type=event" class="card resource-card hover-lift reveal">
-        <span class="resource-icon">{% icon "calendar" %}</span>
-        <h3>Events</h3>
-        <p class="text-muted">Community gatherings, workshops and sector convenings from across the platform.</p>
-        <span class="resource-link">View Events {% icon "arrow-right" %}</span>
+      <a href="{% url 'sitepublic:our_network' %}" class="card resource-card hover-lift reveal">
+        <span class="resource-icon">{% icon "users" %}</span>
+        <h3>Community</h3>
+        <p class="text-muted">Collaborate, share knowledge and grow together.</p>
+        <span class="resource-link">Join the Community {% icon "arrow-right" %}</span>
       </a>
     </div>
   </div>

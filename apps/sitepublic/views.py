@@ -36,6 +36,9 @@ def home(request):
         "registered_organisations": Organisation.objects.count(),
         "verified_organisations": Organisation.objects.filter(public_verification_status="verified").count(),
         "funding_opportunities": Opportunity.objects.filter(status=Opportunity.STATUS_PUBLISHED).count(),
+        "partnership_opportunities": Opportunity.objects.filter(
+            status=Opportunity.STATUS_PUBLISHED, opportunity_type=Opportunity.TYPE_PARTNERSHIP
+        ).count(),
         "national_networks": Network.objects.count(),
         # Secondary/contextual counts used further down the page.
         "provinces_represented": provinces_represented,

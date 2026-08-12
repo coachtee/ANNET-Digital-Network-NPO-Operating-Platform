@@ -37,15 +37,13 @@ html { scroll-behavior: smooth; }
 /* Header */
 /* ---------------------------------------------------------------- */
 .site-header { background: #fff; }
-.site-header .inner { padding: 14px 24px; gap: 16px; }
-.brand { gap: 12px; }
-.brand-logo-mark { width: 46px; height: 46px; flex-shrink: 0; display: block; }
+.site-header .inner { padding: 12px 24px; gap: 16px; }
+.brand { gap: 10px; }
+.brand-logo-mark { width: 36px; height: 36px; flex-shrink: 0; display: block; }
 .brand-wordmark { display: flex; flex-direction: column; line-height: 1.2; }
 .brand-wordmark .brand-name { font-weight: 800; font-size: 1.05rem; color: var(--color-charcoal); letter-spacing: .01em; }
-.brand-wordmark .brand-sub { font-size: .62rem; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; color: var(--color-primary); }
-.brand-wordmark .brand-tagline { font-size: .68rem; color: var(--color-text-muted); font-weight: 500; }
 
-.nav-panel { display: flex; align-items: center; gap: 28px; }
+.nav-panel { display: flex; align-items: center; gap: 26px; }
 
 .main-nav a { position: relative; padding: 6px 2px; color: var(--color-charcoal); }
 .main-nav a::after {
@@ -80,42 +78,102 @@ html { scroll-behavior: smooth; }
   .site-header { position: relative; }
 }
 
-/* Touch-friendly buttons everywhere on the public site */
-.btn { min-height: 44px; }
-.btn-sm { min-height: 38px; }
+/* Public-site button system. Overrides base.css's generic .btn (which
+   also serves the authenticated workspace, so it stays untouched there)
+   with a single consistent height, tighter padding and a font size that
+   lets every label — including "Join Bohlale →" — sit on one line. */
+.btn {
+  min-height: 40px; padding: 0 18px; font-size: .875rem; line-height: 1;
+  white-space: nowrap;
+}
+.btn-sm { min-height: 34px; padding: 0 14px; font-size: .82rem; }
 
 /* ---------------------------------------------------------------- */
 /* Hero */
 /* ---------------------------------------------------------------- */
 .hero { background: var(--color-surface-muted); overflow: hidden; position: relative; }
-.hero-eyebrow {
-  display: inline-flex; align-items: center; gap: 6px; font-size: .74rem; font-weight: 700;
-  letter-spacing: .06em; text-transform: uppercase; color: var(--color-primary);
-  background: var(--color-primary-light); padding: 5px 12px; border-radius: 999px; margin-bottom: 16px;
-}
-.hero h1 { font-size: clamp(2rem, 4.2vw, 2.9rem); letter-spacing: -.01em; color: var(--color-charcoal); }
-.hero-lede { font-size: clamp(1rem, 1.6vw, 1.15rem); color: var(--color-text-muted); max-width: 46ch; }
-.hero-actions { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 8px; }
+.hero h1 { font-size: clamp(1.9rem, 3.6vw, 2.6rem); letter-spacing: -.01em; color: var(--color-charcoal); }
+.hero-lede { font-size: clamp(1rem, 1.6vw, 1.1rem); color: var(--color-text-muted); max-width: 46ch; }
+.hero-actions { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 20px; }
 
-/* A flat, light panel rather than a decorative gradient block — the
-   logo's ink is a single dark navy, so it needs a light backdrop to read
-   (a dark hero panel would make the mark disappear). One thin ring is
-   the only ornament; kept deliberately restrained. */
+/* ---------------------------------------------------------------- */
+/* Hero visual: a South Africa network illustration. A flat, borderless
+   panel rather than a card — it should read as part of the hero surface,
+   not a boxed graphic sitting on top of it. */
+/* ---------------------------------------------------------------- */
 .hero-visual {
-  position: relative; aspect-ratio: 4/3; border-radius: 12px; overflow: hidden;
-  background: #fff; border: 1px solid var(--color-border);
-  display: flex; align-items: center; justify-content: center;
+  position: relative; aspect-ratio: 4/3.1; display: flex; align-items: center; justify-content: center;
+  padding: 6px;
 }
-.hero-visual::before {
-  content: ""; position: absolute; width: 62%; height: 62%; border-radius: 50%;
-  border: 1px solid var(--color-border);
+.sa-illustration { position: relative; width: 100%; height: 100%; }
+.sa-map-svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.sa-silhouette { fill: var(--color-primary); opacity: .94; }
+.sa-network .sa-line { stroke: var(--color-primary); stroke-width: 1; opacity: .28; }
+.sa-network .sa-line-thin { opacity: .16; }
+.sa-network .sa-node { fill: #fff; opacity: .9; }
+.sa-hub-ring { fill: none; stroke: #fff; stroke-width: 1.5; opacity: .55; }
+.sa-hub { fill: #fff; }
+.sa-hub-logo {
+  position: absolute; top: 46.7%; left: 50%; width: 11%; transform: translate(-50%, -50%);
+  display: block;
 }
-.hero-visual img { position: relative; width: 34%; max-width: 170px; }
-@media (max-width: 900px) { .hero-visual { aspect-ratio: 16/10; margin-top: 8px; } }
+
+@media (prefers-reduced-motion: no-preference) {
+  .sa-network .sa-node-pulse { animation: sa-pulse 2.6s ease-in-out infinite; transform-origin: center; transform-box: fill-box; }
+  .sa-network .sa-node-pulse:nth-of-type(2) { animation-delay: .5s; }
+  .sa-network .sa-node-pulse:nth-of-type(4) { animation-delay: 1s; }
+  .sa-network .sa-node-pulse:nth-of-type(6) { animation-delay: 1.5s; }
+}
+@keyframes sa-pulse {
+  0%, 100% { opacity: .9; transform: scale(1); }
+  50% { opacity: .35; transform: scale(1.9); }
+}
+
+.sa-badge {
+  position: absolute; display: flex; flex-direction: column; align-items: center; gap: 6px;
+  width: 88px; text-align: center;
+}
+.sa-badge-icon {
+  width: 42px; height: 42px; border-radius: 50%; background: #fff; border: 1px solid var(--color-border);
+  color: var(--color-primary); display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 2px 6px rgba(13,27,56,.08);
+}
+.sa-badge-icon svg { width: 19px; height: 19px; }
+.sa-badge span:last-child { font-size: .74rem; font-weight: 700; color: var(--color-charcoal); }
+
+.sa-badge-opportunities { top: 2%; left: -4%; }
+.sa-badge-partnerships  { top: 2%; right: -4%; }
+.sa-badge-resources     { top: 40%; left: -12%; }
+.sa-badge-support       { top: 40%; right: -12%; }
+.sa-badge-training      { bottom: 4%; left: -4%; }
+.sa-badge-impact        { bottom: 4%; right: -4%; }
+
+@media (max-width: 900px) {
+  .hero-visual { aspect-ratio: 4/3.4; margin-top: 20px; padding: 0 44px; }
+}
+
+/* Mobile: floating badges would collide with the narrower map, so they're
+   replaced with a compact legend row beneath it instead of being shrunk
+   in place — a deliberate mobile composition, not the desktop layout
+   scaled down. */
+@media (max-width: 640px) {
+  .hero-visual { display: block; aspect-ratio: auto; padding: 0; }
+  .sa-illustration { aspect-ratio: 1/1; max-width: 260px; margin: 0 auto; }
+  .sa-badge { display: none; }
+  .hero-visual::after {
+    content: "Opportunities \00b7  Partnerships \00b7  Resources \00b7  Support \00b7  Training \00b7  Impact";
+    display: block; margin: 14px auto 0; max-width: 300px; text-align: center;
+    font-size: .78rem; font-weight: 600; color: var(--color-text-muted); line-height: 1.7;
+  }
+}
 
 /* ---------------------------------------------------------------- */
-/* Stats strip — floats over the hero/content seam */
+/* Stats strip — floats over the hero/content seam on desktop only;
+   on narrow screens the hero's legend text sits where the overlap would
+   land, so the panel flows normally there instead of covering it. */
 /* ---------------------------------------------------------------- */
+.stats-float { margin-top: -34px; position: relative; z-index: 5; }
+@media (max-width: 640px) { .stats-float { margin-top: 28px; } }
 .stats-panel {
   background: #fff; border-radius: var(--radius-md); border: 1px solid var(--color-border);
   box-shadow: 0 4px 12px rgba(13,27,56,.06); padding: 8px;
