@@ -36,7 +36,7 @@ def apply(request, slug):
             new_application.save()
             MembershipStatusEvent.objects.create(application=new_application, status=new_application.status, actor=request.user, note="Application submitted")
             log_action("membership.application_submitted", organisation=organisation, obj=new_application, actor=request.user)
-            messages.success(request, "Your ANNET membership application has been submitted.")
+            messages.success(request, "Your membership application has been submitted.")
             return redirect("memberships:apply", slug=slug)
 
     context = {

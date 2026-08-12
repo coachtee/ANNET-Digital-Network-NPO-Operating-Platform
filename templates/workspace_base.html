@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>{% block title %}Workspace{% endblock %} — {{ NETWORK_SHORT_NAME }}</title>
+  <title>{% block title %}My Organisation{% endblock %} — {{ NETWORK_SHORT_NAME }}</title>
   {% include "partials/favicon.html" %}
   <link rel="stylesheet" href="{% static 'css/base.css' %}">
   {% block extra_head %}{% endblock %}
@@ -12,34 +12,39 @@
 <div class="app-shell">
   <aside class="app-sidebar">
     <a href="{% url 'sitepublic:home' %}" class="brand">
-      <span class="brand-mark">{{ NETWORK_SHORT_NAME|slice:":2"|upper }}</span>
+      <img src="{% static 'img/bohlale-logo.png' %}" alt="{{ NETWORK_SHORT_NAME }} logo" style="width:32px;height:32px;">
       <span>{{ NETWORK_SHORT_NAME }}</span>
     </a>
     <nav class="sidebar-nav">
       {% if active_organisation %}
-        <a href="{% url 'organisations:workspace_home' %}" class="{% if request.resolver_match.url_name == 'workspace_home' %}active{% endif %}">Overview</a>
-        <a href="{% url 'organisations:org_360' slug=active_organisation.slug %}">Organisation 360°</a>
-        <div class="sidebar-section-label">Compliance &amp; Governance</div>
+        <div class="sidebar-section-label">Overview</div>
+        <a href="{% url 'organisations:workspace_home' %}" class="{% if request.resolver_match.url_name == 'workspace_home' %}active{% endif %}">Organisation Dashboard</a>
+        <a href="{% url 'organisations:org_360' slug=active_organisation.slug %}">Organisation Profile</a>
+        <div class="sidebar-section-label">Governance &amp; Compliance</div>
         <a href="{% url 'compliance:passport' slug=active_organisation.slug %}">Compliance Passport</a>
         <a href="{% url 'compliance:calendar' slug=active_organisation.slug %}">Compliance Calendar</a>
         <a href="{% url 'organisations:health_check' slug=active_organisation.slug %}">Health Check</a>
         <a href="{% url 'governance:list' slug=active_organisation.slug %}">Governance</a>
         <a href="{% url 'policies:list' slug=active_organisation.slug %}">Policies</a>
-        <a href="{% url 'documents:list' slug=active_organisation.slug %}">Documents</a>
-        <div class="sidebar-section-label">Delivery</div>
+        <div class="sidebar-section-label">Operations</div>
         <a href="{% url 'grants:list' slug=active_organisation.slug %}">Grants</a>
         <a href="{% url 'projects:list' slug=active_organisation.slug %}">Projects</a>
         <a href="{% url 'programmes:list' slug=active_organisation.slug %}">Programmes</a>
-        <a href="{% url 'beneficiaries:list' slug=active_organisation.slug %}">Beneficiaries</a>
+        <a href="{% url 'beneficiaries:list' slug=active_organisation.slug %}">People</a>
         <a href="{% url 'attendance:list' slug=active_organisation.slug %}">Attendance</a>
-        <a href="{% url 'monitoring_evaluation:dashboard' slug=active_organisation.slug %}">M&amp;E</a>
         <a href="{% url 'expenses:list' slug=active_organisation.slug %}">Finance Lite</a>
-        <div class="sidebar-section-label">Insight</div>
+        <div class="sidebar-section-label">Evidence</div>
+        <a href="{% url 'documents:list' slug=active_organisation.slug %}">Documents</a>
+        <div class="sidebar-section-label">Impact</div>
+        <a href="{% url 'monitoring_evaluation:dashboard' slug=active_organisation.slug %}">M&amp;E</a>
         <a href="{% url 'impact:dashboard' slug=active_organisation.slug %}">Impact Dashboard</a>
         <a href="{% url 'reporting:list' slug=active_organisation.slug %}">Reports</a>
+        <div class="sidebar-section-label">Administration</div>
+        <a href="{% url 'memberships:apply' slug=active_organisation.slug %}">Membership</a>
+        <a href="{% url 'organisations:public_profile_settings' slug=active_organisation.slug %}">Settings</a>
       {% endif %}
       {% if request.user.is_platform_admin or request.user.network_staff_roles.exists %}
-        <div class="sidebar-section-label">{{ NETWORK_SHORT_NAME }} Network</div>
+        <div class="sidebar-section-label">Programme Administration</div>
         <a href="{% url 'networks:dashboard' %}">Network Dashboard</a>
         <a href="{% url 'memberships:queue' %}">Membership Applications</a>
         <a href="{% url 'networks:capacity' %}">Capacity Intelligence</a>

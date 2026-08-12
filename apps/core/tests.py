@@ -50,8 +50,8 @@ class EnsureSuperuserCommandTests(TestCase):
 class EnsureHostsPresentTests(TestCase):
     def test_appends_missing_hosts_without_duplicating(self):
         self.assertEqual(
-            ensure_hosts_present(["annet.naleli.co.za"], "127.0.0.1", "localhost"),
-            ["annet.naleli.co.za", "127.0.0.1", "localhost"],
+            ensure_hosts_present(["impact.bohlale.co.za"], "127.0.0.1", "localhost"),
+            ["impact.bohlale.co.za", "127.0.0.1", "localhost"],
         )
 
     def test_does_not_duplicate_hosts_already_present(self):
@@ -61,9 +61,9 @@ class EnsureHostsPresentTests(TestCase):
         )
 
     def test_does_not_mutate_input_list(self):
-        original = ["annet.naleli.co.za"]
+        original = ["impact.bohlale.co.za"]
         ensure_hosts_present(original, "127.0.0.1")
-        self.assertEqual(original, ["annet.naleli.co.za"])
+        self.assertEqual(original, ["impact.bohlale.co.za"])
 
 
 class HealthCheckViewTests(TestCase):

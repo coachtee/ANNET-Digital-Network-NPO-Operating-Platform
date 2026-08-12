@@ -32,7 +32,7 @@ ORGANISATION_TYPE_CHOICES = [
 class Organisation(UUIDPrimaryKeyModel, TimeStampedModel):
     """The single master organisation record (spec section 13, Org 360).
 
-    One record powers ANNET membership, the public directory, compliance,
+    One record powers network membership, the public directory, compliance,
     governance, projects/programmes and reporting — never duplicated per
     module. Everything elsewhere in the platform that is organisation-scoped
     holds a FK back to this model.
@@ -143,7 +143,7 @@ class Organisation(UUIDPrimaryKeyModel, TimeStampedModel):
         super().save(*args, **kwargs)
 
     @property
-    def is_annet_member(self):
+    def is_network_member(self):
         return self.network_memberships.filter(status="approved").exists()
 
 

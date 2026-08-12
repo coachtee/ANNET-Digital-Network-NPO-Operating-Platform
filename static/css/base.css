@@ -1,26 +1,28 @@
-/* ANNET Digital Network — design system
-   Institutional, calm, professional. White surfaces, restrained colour,
-   generous spacing. See MASTER_BUILD_SPEC.md section 5 / 9. */
+/* Bohlale Impact — design system
+   Modern, professional, restrained. Navy + charcoal + white/soft-grey,
+   flat surfaces, subtle borders over heavy shadows. Colour values are
+   sampled directly from the official Bohlale logo (static/img/bohlale-logo.png)
+   — that file is the source of truth, not this palette description. */
 
 :root {
-  --color-primary: #1b4332;
-  --color-primary-dark: #12301f;
-  --color-primary-light: #e8f0ea;
-  --color-accent: #2d6a4f;
-  --color-text: #1a1d1a;
-  --color-text-muted: #5b615c;
-  --color-border: #e3e6e3;
+  --color-primary: #0d1b38;
+  --color-primary-dark: #081222;
+  --color-primary-light: #e8ebf2;
+  --color-accent: #24406b;
+  --color-text: #20242b;
+  --color-text-muted: #5b6270;
+  --color-border: #e1e4ea;
   --color-surface: #ffffff;
-  --color-surface-muted: #f7f8f7;
+  --color-surface-muted: #f5f6f8;
   --color-danger: #b3261e;
   --color-danger-light: #fbeceb;
   --color-warning: #8a5a00;
   --color-warning-light: #fdf2e0;
-  --color-success: #1b4332;
-  --color-success-light: #e8f0ea;
+  --color-success: #1b7a4d;
+  --color-success-light: #e7f5ee;
   --radius-sm: 6px;
-  --radius-md: 10px;
-  --shadow-sm: 0 1px 2px rgba(20, 24, 20, 0.06);
+  --radius-md: 8px;
+  --shadow-sm: 0 1px 2px rgba(13, 27, 56, 0.06);
   --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 }
 

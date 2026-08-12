@@ -7,10 +7,10 @@ from apps.core.models import TimeStampedModel
 
 
 class MembershipApplication(TimeStampedModel):
-    """The ANNET membership lifecycle record (spec section 31).
+    """An organisation's application to join a network/programme.
 
     ``approved`` is the terminal "Active Member" state — Organisation
-    .is_annet_member reads this status. A re-application after a decline
+    .is_network_member reads this status. A re-application after a decline
     creates a new row so the decision history of the earlier attempt is
     preserved rather than overwritten.
     """
@@ -40,7 +40,7 @@ class MembershipApplication(TimeStampedModel):
     decided_by = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="+"
     )
-    motivation = models.TextField(blank=True, help_text="Why this organisation is applying to join ANNET.")
+    motivation = models.TextField(blank=True, help_text="Why this organisation is applying to join.")
     internal_notes = models.TextField(blank=True)
 
     class Meta:
@@ -52,8 +52,8 @@ class MembershipApplication(TimeStampedModel):
 
 class MembershipStatusEvent(models.Model):
     """Append-only decision/status history for a membership application —
-    required so ANNET admins have a durable audit trail of who requested
-    information, when, and why (spec section 31/37).
+    required so network/programme admins have a durable audit trail of who
+    requested information, when, and why (spec section 31/37).
     """
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)

@@ -128,7 +128,7 @@ def onboarding_step(request, slug, step):
             organisation.onboarding_step = Organisation.ONBOARDING_COMPLETE
             organisation.onboarding_completed_at = timezone.now()
             organisation.save(update_fields=["onboarding_step", "onboarding_completed_at"])
-            messages.success(request, "Onboarding complete. You can now submit your ANNET membership application from your workspace.")
+            messages.success(request, "Onboarding complete. You can now submit your membership application from My Organisation.")
             return redirect("organisations:workspace_home")
         context["health"] = compute_health_check(organisation)
         return render(request, "organisations/onboarding_health_check.html", context)

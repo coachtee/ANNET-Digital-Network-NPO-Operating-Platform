@@ -5,7 +5,7 @@
   <div class="container" style="max-width:860px;">
     <div class="flex items-center gap-16" style="margin-bottom:12px;">
       <h1 class="mb-0">{{ organisation.display_name }}</h1>
-      {% if organisation.is_annet_member %}<span class="badge badge-success">{{ NETWORK_SHORT_NAME }} Member</span>{% endif %}
+      {% if organisation.is_network_member %}<span class="badge badge-success">{{ NETWORK_SHORT_NAME }} Member</span>{% endif %}
       {% if organisation.public_verification_status == "verified" %}<span class="badge badge-primary">Verified</span>{% endif %}
     </div>
     <p class="text-muted">{{ organisation.get_organisation_type_display }} · {{ organisation.municipality }}{% if organisation.municipality %}, {% endif %}{{ organisation.get_province_display }}</p>

@@ -11,7 +11,7 @@
         <div class="form-group" style="margin-bottom:0;">{{ form.sector.label_tag }}{{ form.sector }}</div>
         <div class="form-group" style="margin-bottom:0;">{{ form.organisation_type.label_tag }}{{ form.organisation_type }}</div>
         <div class="form-group" style="margin-bottom:0;">{{ form.verification_status.label_tag }}{{ form.verification_status }}</div>
-        <div class="form-group" style="margin-bottom:0;">{{ form.annet_member.label_tag }}{{ form.annet_member }}</div>
+        <div class="form-group" style="margin-bottom:0;">{{ form.network_member.label_tag }}{{ form.network_member }}</div>
       </div>
       <button type="submit" class="btn btn-primary btn-sm" style="margin-top:12px;">Search</button>
     </form>
@@ -23,7 +23,7 @@
         <h3 style="font-size:1.05rem;"><a href="{% url 'sitepublic:organisation_profile' slug=org.slug %}">{{ org.display_name }}</a></h3>
         <p class="text-muted" style="font-size:.85rem;">{{ org.programme_areas|join:", "|default:org.get_organisation_type_display }}</p>
         <p class="text-muted" style="font-size:.85rem;">{{ org.municipality }}{% if org.municipality %}, {% endif %}{{ org.get_province_display }}</p>
-        {% if org.is_annet_member %}<span class="badge badge-success">{{ NETWORK_SHORT_NAME }} Member</span>{% endif %}
+        {% if org.is_network_member %}<span class="badge badge-success">{{ NETWORK_SHORT_NAME }} Member</span>{% endif %}
         <div style="margin-top:8px;"><a href="{% url 'sitepublic:organisation_profile' slug=org.slug %}">View Profile →</a></div>
       </div>
       {% endfor %}

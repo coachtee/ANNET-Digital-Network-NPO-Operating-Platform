@@ -17,7 +17,7 @@ class DirectorySearchForm(forms.Form):
     sector = forms.ChoiceField(required=False, choices=[("", "All Sectors")])
     organisation_type = forms.ChoiceField(required=False, choices=[("", "All Types")] + ORGANISATION_TYPE_CHOICES)
     verification_status = forms.ChoiceField(required=False, choices=VERIFICATION_STATUS_CHOICES)
-    annet_member = forms.ChoiceField(required=False, choices=[("", "All"), ("1", "ANNET Members Only")])
+    network_member = forms.ChoiceField(required=False, choices=[("", "All"), ("1", "Active Members Only")])
 
     def __init__(self, *args, sector_choices=(), **kwargs):
         super().__init__(*args, **kwargs)

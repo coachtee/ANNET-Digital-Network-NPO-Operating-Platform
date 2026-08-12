@@ -39,7 +39,7 @@ def register(request):
 def _send_verification_email(request, user):
     token = urlsafe_base64_encode(force_bytes(user.pk)) + "-" + str(user.email_verification_token)
     verify_url = request.build_absolute_uri(reverse("accounts:verify_email", args=[token]))
-    subject = "Verify your email — ANNET Digital Network"
+    subject = "Verify your email — Bohlale Impact"
     body = render_to_string("accounts/email/verify_email.txt", {"user": user, "verify_url": verify_url})
     send_mail(subject, body, None, [user.email], fail_silently=True)
 

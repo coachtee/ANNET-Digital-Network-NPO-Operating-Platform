@@ -1,5 +1,5 @@
 """
-Django settings for the ANNET Digital Network & NPO Operating Platform.
+Django settings for Bohlale Impact — Community Impact Platform.
 
 Configuration is environment-driven (see .env.example). Nothing secret is
 hard-coded here — see SECURITY.md for the production hardening checklist.
@@ -137,8 +137,8 @@ elif config("DB_ENGINE", default="sqlite") == "postgresql":
     DATABASES = {
         "default": {
             "ENGINE": "django.db.backends.postgresql",
-            "NAME": config("DB_NAME", default="annet_platform"),
-            "USER": config("DB_USER", default="annet_platform"),
+            "NAME": config("DB_NAME", default="bohlale_impact"),
+            "USER": config("DB_USER", default="bohlale_impact"),
             "PASSWORD": config("DB_PASSWORD", default=""),
             "HOST": config("DB_HOST", default="localhost"),
             "PORT": config("DB_PORT", default="5432"),
@@ -240,9 +240,9 @@ EMAIL_PORT = config("EMAIL_PORT", default=587, cast=int)
 EMAIL_HOST_USER = config("EMAIL_HOST_USER", default="")
 EMAIL_HOST_PASSWORD = config("EMAIL_HOST_PASSWORD", default="")
 EMAIL_USE_TLS = config("EMAIL_USE_TLS", default=True, cast=bool)
-DEFAULT_FROM_EMAIL = config("DEFAULT_FROM_EMAIL", default="ANNET Platform <no-reply@annet.org.za>")
+DEFAULT_FROM_EMAIL = config("DEFAULT_FROM_EMAIL", default="Bohlale Impact <no-reply@bohlale.co.za>")
 SERVER_EMAIL = DEFAULT_FROM_EMAIL
-EMAIL_SUBJECT_PREFIX = config("EMAIL_SUBJECT_PREFIX", default="[ANNET Platform] ")
+EMAIL_SUBJECT_PREFIX = config("EMAIL_SUBJECT_PREFIX", default="[Bohlale Impact] ")
 
 # ------------------------------------------------------------------
 # Security
@@ -323,7 +323,7 @@ LOGGING = {
 # Platform-specific settings
 # ------------------------------------------------------------------
 
-PLATFORM_NAME = config("PLATFORM_NAME", default="ANNET Digital Network")
-NETWORK_SHORT_NAME = config("NETWORK_SHORT_NAME", default="ANNET")
-NETWORK_TAGLINE = config("NETWORK_TAGLINE", default="Unity. Collaboration. Impact.")
+PLATFORM_NAME = config("PLATFORM_NAME", default="Bohlale Impact")
+NETWORK_SHORT_NAME = config("NETWORK_SHORT_NAME", default="Bohlale Impact")
+NETWORK_TAGLINE = config("NETWORK_TAGLINE", default="Community Impact Platform")
 LOAD_DEMO_DATA_ALLOWED = ENVIRONMENT != "production"

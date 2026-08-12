@@ -32,7 +32,7 @@ def organisation_profile_pdf(request, slug):
         y -= gap
 
     line(f"Organisation Profile — {organisation.display_name}", 16, 28, bold=True)
-    line(f"Generated {request.user.get_full_name() or request.user.email} on the ANNET Digital Network platform", 9, 24)
+    line(f"Generated {request.user.get_full_name() or request.user.email} on the Bohlale Impact platform", 9, 24)
     line(f"Legal name: {organisation.legal_name}")
     line(f"Trading name: {organisation.trading_name or '—'}")
     line(f"Organisation type: {organisation.get_organisation_type_display()}")

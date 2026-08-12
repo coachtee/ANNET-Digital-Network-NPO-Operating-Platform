@@ -7,7 +7,7 @@
     <p>Organisation workspace overview</p>
   </div>
   <div class="flex gap-8">
-    {% if not organisation.is_annet_member %}
+    {% if not organisation.is_network_member %}
       <a href="{% url 'memberships:apply' slug=organisation.slug %}" class="btn btn-primary">Apply to join {{ NETWORK_SHORT_NAME }}</a>
     {% else %}
       <span class="badge badge-success">{{ NETWORK_SHORT_NAME }} Member</span>
@@ -39,7 +39,7 @@
     <a href="{% url 'impact:dashboard' slug=organisation.slug %}" class="btn btn-outline btn-sm">View Impact</a>
   </div>
   <div class="card">
-    <h3>ANNET Membership</h3>
+    <h3>Membership</h3>
     {% if membership_application %}
       <p class="text-muted">Status: <span class="badge badge-primary">{{ membership_application.get_status_display }}</span></p>
     {% else %}

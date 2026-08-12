@@ -8,9 +8,10 @@ from apps.core.permissions import NETWORK_ROLE_CHOICES
 
 
 class Network(TimeStampedModel):
-    """A network/umbrella body deployment of the platform (spec section 2).
-    ANNET is the anchor/initial Network record; the architecture supports
-    future deployments for other networks without code changes.
+    """A network/programme deployment on the platform (spec section 2).
+    Bohlale Impact is the anchor/initial Network record; the architecture
+    supports further networks/programmes (e.g. a partner programme like
+    Black Sash) without code changes — see BOHLALE_IMPACT_ASSESSMENT.md.
     """
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -25,7 +26,7 @@ class Network(TimeStampedModel):
 
 
 class NetworkStaffRole(TimeStampedModel):
-    """Grants a user network-level (ANNET-level) capabilities — distinct
+    """Grants a user network-level (network/programme) capabilities — distinct
     from any organisation membership they may separately hold."""
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)

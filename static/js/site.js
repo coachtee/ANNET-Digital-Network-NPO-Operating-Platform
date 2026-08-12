@@ -1,4 +1,4 @@
-// ANNET public site — small progressive-enhancement behaviours only.
+// Bohlale Impact public site — small progressive-enhancement behaviours only.
 // Nothing here is required for the page to work; JS failing/being
 // disabled just means the mobile menu stays a plain link list and
 // sections render fully visible instead of fading in.

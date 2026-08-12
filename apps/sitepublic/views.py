@@ -81,7 +81,7 @@ def directory(request):
             organisations = organisations.filter(organisation_type=data["organisation_type"])
         if data.get("verification_status"):
             organisations = organisations.filter(public_verification_status=data["verification_status"])
-        if data.get("annet_member"):
+        if data.get("network_member"):
             organisations = organisations.filter(network_memberships__status="approved").distinct()
         if data.get("sector"):
             # JSONField list-containment (`sectors__contains`) isn't

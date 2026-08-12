@@ -1,6 +1,6 @@
 Hi {{ user.first_name|default:user.email }},
 
-Please verify your email address for the ANNET Digital Network platform by clicking the link below:
+Please verify your email address for the Bohlale Impact platform by clicking the link below:
 
 {{ verify_url }}
 

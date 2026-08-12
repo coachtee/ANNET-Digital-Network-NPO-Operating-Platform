@@ -1,13 +1,13 @@
 {% extends "base.html" %}
-{% block title %}Our Network — {{ NETWORK_SHORT_NAME }}{% endblock %}
+{% block title %}Community — {{ NETWORK_SHORT_NAME }}{% endblock %}
 {% block content %}
 <div class="section">
   <div class="container">
-    <h1>Our Network</h1>
-    <p class="text-muted">A snapshot of the {{ NETWORK_SHORT_NAME }} network, aggregated from publicly listed organisation profiles.</p>
+    <h1>Community</h1>
+    <p class="text-muted">A snapshot of the {{ NETWORK_SHORT_NAME }} community, aggregated from publicly listed organisation profiles.</p>
     <div class="grid grid-2" style="margin:24px 0;">
       <div class="card"><div class="stat-value">{{ total_organisations }}</div><div class="stat-label">Publicly Listed Organisations</div></div>
-      <div class="card"><div class="stat-value">{{ member_organisations }}</div><div class="stat-label">{{ NETWORK_SHORT_NAME }} Member Organisations</div></div>
+      <div class="card"><div class="stat-value">{{ member_organisations }}</div><div class="stat-label">Active Members</div></div>
     </div>
     <a href="{% url 'sitepublic:directory' %}" class="btn btn-primary">Explore the Directory</a>
   </div>

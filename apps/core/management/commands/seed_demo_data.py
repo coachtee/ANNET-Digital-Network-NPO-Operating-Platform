@@ -106,10 +106,10 @@ class Command(BaseCommand):
         if not settings.LOAD_DEMO_DATA_ALLOWED:
             raise CommandError("Refusing to load demo data: ENVIRONMENT=production. This command is for development/staging only.")
 
-        self.stdout.write("Seeding ANNET Digital Network demonstration data...")
+        self.stdout.write("Seeding Bohlale Impact demonstration data...")
 
         network, _ = Network.objects.get_or_create(
-            slug="annet", defaults={"name": "ANNET", "tagline": "Unity. Collaboration. Impact."},
+            slug="bohlale-impact", defaults={"name": "Bohlale Impact", "tagline": "Community Impact Platform"},
         )
 
         superuser, created = User.objects.get_or_create(

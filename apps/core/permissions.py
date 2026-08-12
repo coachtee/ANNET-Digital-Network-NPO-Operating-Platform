@@ -10,7 +10,7 @@ Two independent scopes exist:
 
 - Organisation scope: what a user can do inside ONE organisation's
   workspace, granted via ``organisations.OrganisationMembership.role``.
-- Network scope: what a user can do at the ANNET network level (managing
+- Network scope: what a user can do at the network/programme level (managing
   members, applications, network dashboards), granted via
   ``networks.NetworkStaffRole.role``.
 
@@ -113,7 +113,7 @@ ORG_ROLE_CAPABILITIES = {
     },
 }
 
-# --- Network-scoped roles (ANNET-level) -----------------------------------
+# --- Network-scoped roles (network/programme level) -----------------------
 
 NETWORK_ROLE_ADMIN = "network_admin"
 NETWORK_ROLE_MEMBERSHIP_OFFICER = "membership_officer"

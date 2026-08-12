@@ -6,19 +6,18 @@
 <section class="hero">
   <div class="container hero-grid">
     <div>
-      <span class="hero-eyebrow">South Africa's National NPO Alliance</span>
-      <h1>Connecting South Africa's Civil Society</h1>
-      <p class="hero-lede">{{ NETWORK_SHORT_NAME }} is the united voice of NPO networks working together for a stronger, more accountable and more equitable South Africa.</p>
+      <span class="hero-eyebrow">South Africa's Community Impact Platform</span>
+      <h1>Connect. Manage. Measure Impact.</h1>
+      <p class="hero-lede">Bohlale Impact is where South African NPOs, NGOs, community organisations and advice offices build their organisation profile, find opportunities and partners, run their programmes, and demonstrate the difference they make.</p>
       <div class="hero-actions">
         <a href="{% url 'sitepublic:directory' %}" class="btn btn-primary">
-          Explore the Network {% icon "arrow-right" %}
+          Discover Organisations {% icon "arrow-right" %}
         </a>
-        <a href="{% url 'sitepublic:join' %}" class="btn btn-outline">Join the Alliance</a>
+        <a href="{% url 'sitepublic:join' %}" class="btn btn-outline">Join Bohlale Impact</a>
       </div>
     </div>
     <div class="hero-visual">
-      <span class="ring-accent"></span>
-      <img src="{% static 'img/annet-logo.png' %}" alt="{{ NETWORK_SHORT_NAME }} — Unity and Accountability">
+      <img src="{% static 'img/bohlale-logo.png' %}" alt="Bohlale Impact">
     </div>
   </div>
 </section>
@@ -40,7 +39,7 @@
       </div>
       <div class="stat-card">
         <span class="stat-icon">{% icon "network" %}</span>
-        <div><div class="stat-value">{{ national_networks }}</div><div class="stat-label">National Network{{ national_networks|pluralize }}</div></div>
+        <div><div class="stat-value">{{ national_networks }}</div><div class="stat-label">Programme{{ national_networks|pluralize }} &amp; Network{{ national_networks|pluralize }}</div></div>
       </div>
     </div>
   </div>
@@ -49,32 +48,32 @@
 <section class="section">
   <div class="container grid grid-2" style="align-items:center; gap:48px;">
     <div class="reveal">
-      <span class="text-muted" style="font-weight:700; letter-spacing:.04em; font-size:.78rem; text-transform:uppercase;">About {{ NETWORK_SHORT_NAME }}</span>
-      <h2>A National Umbrella Body for Civil Society</h2>
-      <p class="text-muted">{{ NETWORK_SHORT_NAME }} unites NPO networks across South Africa to strengthen governance, drive compliance readiness and amplify the collective voice of civil society.</p>
+      <span class="text-muted" style="font-weight:700; letter-spacing:.04em; font-size:.78rem; text-transform:uppercase;">What is Bohlale Impact</span>
+      <h2>A Digital Home for Community Organisations</h2>
+      <p class="text-muted">Bohlale Impact is a community and operating platform for South African NPOs, NGOs, community-based organisations, advice offices, foundations and social enterprises — built to grow with your organisation, not just list it.</p>
       <ul class="facts-list">
-        <li><span class="fact-icon">{% icon "calendar" %}</span><span>Founded in <strong>April 2020</strong> as a national umbrella body for NPO networks.</span></li>
-        <li><span class="fact-icon">{% icon "users" %}</span><span>Represents <strong>over 78,000 NPOs</strong> through its member networks.</span></li>
-        <li><span class="fact-icon">{% icon "network" %}</span><span>Founded by <strong>seven founding member networks</strong> committed to unity and accountability.</span></li>
-        <li><span class="fact-icon">{% icon "handshake" %}</span><span>Supported by <strong>CIBA</strong> as technical partner.</span></li>
+        <li><span class="fact-icon">{% icon "users" %}</span><span><strong>Connect</strong> — build a public organisation profile and become part of a national community of civil society organisations.</span></li>
+        <li><span class="fact-icon">{% icon "handshake" %}</span><span><strong>Collaborate</strong> — discover funding, training, tenders, events and partnerships, and apply to join programmes and networks.</span></li>
+        <li><span class="fact-icon">{% icon "shield-check" %}</span><span><strong>Manage</strong> — run your compliance, governance, programmes, people and finances from one organisation workspace.</span></li>
+        <li><span class="fact-icon">{% icon "badge-check" %}</span><span><strong>Measure Impact</strong> — capture the work you do and demonstrate it to funders, partners and your own board.</span></li>
       </ul>
     </div>
     <div class="facts-highlight reveal">
       <div class="facts-highlight-grid">
-        <div><div class="stat-value">2020</div><div class="stat-label">Founded</div></div>
-        <div><div class="stat-value">7</div><div class="stat-label">Founding Networks</div></div>
-        <div><div class="stat-value">78,000+</div><div class="stat-label">NPOs Represented</div></div>
-        <div><div class="stat-value">CIBA</div><div class="stat-label">Technical Partner</div></div>
+        <div><div class="stat-value">{{ registered_organisations }}</div><div class="stat-label">Organisations on the Platform</div></div>
+        <div><div class="stat-value">{{ provinces_represented }}</div><div class="stat-label">Provinces Represented</div></div>
+        <div><div class="stat-value">{{ sector_count }}</div><div class="stat-label">Sectors Represented</div></div>
+        <div><div class="stat-value">{{ national_networks }}</div><div class="stat-label">Programmes &amp; Networks</div></div>
       </div>
-      <p class="facts-highlight-note">These figures describe {{ NETWORK_SHORT_NAME }}'s national reach through its member networks — distinct from the live platform statistics above, which reflect organisations registered directly on this platform.</p>
+      <p class="facts-highlight-note">One connected platform — your organisation profile, workspace and records stay yours even if a specific programme or partnership ends.</p>
     </div>
   </div>
 </section>
 
 <section class="section section-muted">
   <div class="container">
-    <h2 style="text-align:center;" class="reveal">Find Organisations. Build Partnerships. Drive Change.</h2>
-    <p class="text-muted reveal" style="text-align:center;">Search the {{ NETWORK_SHORT_NAME }} directory by name, province, sector or registration status.</p>
+    <h2 style="text-align:center;" class="reveal">Find Organisations. Build Partnerships. Show Impact.</h2>
+    <p class="text-muted reveal" style="text-align:center;">Search the Bohlale Impact directory by name, province, sector or registration status.</p>
     <form method="get" action="{% url 'sitepublic:directory' %}" class="card search-panel reveal" style="margin-top:24px; padding:20px;">
       <div class="search-grid">
         <div class="form-group">{{ search_form.q.label_tag }}{{ search_form.q }}</div>
@@ -95,7 +94,7 @@
       <a href="{% url 'sitepublic:directory' %}" class="card resource-card hover-lift reveal">
         <span class="resource-icon">{% icon "users" %}</span>
         <h3>Explore Organisations</h3>
-        <p class="text-muted">Discover NPOs and networks working on the ground in communities across the country.</p>
+        <p class="text-muted">Discover NPOs, NGOs and community organisations working on the ground across the country.</p>
         <span class="resource-link">Browse Directory {% icon "arrow-right" %}</span>
       </a>
       <a href="{% url 'opportunities:public_list' %}?type=funding" class="card resource-card hover-lift reveal">
@@ -125,7 +124,7 @@
       <a href="{% url 'opportunities:public_list' %}?type=event" class="card resource-card hover-lift reveal">
         <span class="resource-icon">{% icon "calendar" %}</span>
         <h3>Events</h3>
-        <p class="text-muted">Network gatherings, workshops and sector convenings from across the alliance.</p>
+        <p class="text-muted">Community gatherings, workshops and sector convenings from across the platform.</p>
         <span class="resource-link">View Events {% icon "arrow-right" %}</span>
       </a>
     </div>
@@ -161,7 +160,7 @@
     {% else %}
     <div class="empty-state reveal" style="margin-top:20px; background:#fff;">
       <h3>No organisations have joined yet</h3>
-      <p>As NPOs complete their public profile, they'll be featured here.</p>
+      <p>As organisations complete their public profile, they'll be featured here.</p>
       <a href="{% url 'sitepublic:join' %}" class="btn btn-primary btn-sm" style="margin-top:8px;">Be the First to Join</a>
     </div>
     {% endif %}
@@ -171,10 +170,10 @@
 <section class="section">
   <div class="container grid grid-2" style="gap:32px;">
     <div class="reveal">
-      <span class="text-muted" style="font-weight:700; letter-spacing:.04em; font-size:.78rem; text-transform:uppercase;">National Impact</span>
-      <h2>A Stronger Network. Stronger Communities.</h2>
-      <p class="text-muted">{{ NETWORK_SHORT_NAME }} brings together NPO networks and organisations to amplify impact, influence policy and build a just and inclusive society.</p>
-      <a href="{% url 'sitepublic:our_network' %}" class="btn btn-outline">View Impact Insights</a>
+      <span class="text-muted" style="font-weight:700; letter-spacing:.04em; font-size:.78rem; text-transform:uppercase;">Community Impact</span>
+      <h2>A Stronger Community. Stronger Impact.</h2>
+      <p class="text-muted">Bohlale Impact brings together community organisations, funders and programmes to amplify impact, share resources and build a more connected civil society.</p>
+      <a href="{% url 'sitepublic:our_network' %}" class="btn btn-outline">View Community Overview</a>
     </div>
     <div class="card-flat reveal">
       <h3>Organisations by Province</h3>
@@ -211,7 +210,7 @@
       <div class="empty-state" style="margin-top:16px; background:#fff;">
         <span class="resource-icon" style="margin:0 auto 10px;">{% icon "newspaper" %}</span>
         <h3>No news published yet</h3>
-        <p>Network news, sector insights and member stories will appear here as they're published.</p>
+        <p>Community news, sector insights and member stories will appear here as they're published.</p>
         <a href="{% url 'sitepublic:insights' %}" class="btn btn-outline btn-sm" style="margin-top:8px;">Visit Insights</a>
       </div>
       {% endif %}
@@ -243,7 +242,7 @@
       <div class="empty-state" style="margin-top:16px; background:#fff;">
         <span class="resource-icon" style="margin:0 auto 10px;">{% icon "calendar" %}</span>
         <h3>No upcoming events</h3>
-        <p>Network gatherings and workshops will be listed here once scheduled.</p>
+        <p>Community gatherings and workshops will be listed here once scheduled.</p>
       </div>
       {% endif %}
     </div>
@@ -253,11 +252,8 @@
 <section class="section">
   <div class="container">
     <p class="text-muted reveal" style="text-align:center; font-weight:700; letter-spacing:.04em; font-size:.78rem; text-transform:uppercase;">In Partnership With</p>
-    <div class="partner-strip reveal">
+    <div class="reveal">
       <div class="partner-track">
-        {% for i in "123456" %}
-        <span class="partner-chip">{% icon "handshake" %} Partner Organisation</span>
-        {% endfor %}
         {% for i in "123456" %}
         <span class="partner-chip">{% icon "handshake" %} Partner Organisation</span>
         {% endfor %}
@@ -270,10 +266,10 @@
 <section class="section">
   <div class="container">
     <div class="cta-band reveal">
-      <h2>Ready to join {{ NETWORK_SHORT_NAME }}?</h2>
-      <p>Build your organisation profile, understand your compliance readiness, and become part of South Africa's national civil society network.</p>
+      <h2>Ready to join Bohlale Impact?</h2>
+      <p>Build your organisation profile, understand your compliance readiness, and become part of South Africa's community impact platform.</p>
       <div class="hero-actions" style="justify-content:center;">
-        <a href="{% url 'sitepublic:join' %}" class="btn btn-primary">Join the Alliance</a>
+        <a href="{% url 'sitepublic:join' %}" class="btn btn-primary">Join Bohlale Impact</a>
         <a href="{% url 'sitepublic:about' %}" class="btn btn-outline">Learn More</a>
       </div>
     </div>
