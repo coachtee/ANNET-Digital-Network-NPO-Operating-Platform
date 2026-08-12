@@ -3,7 +3,7 @@
 {% block content %}
 <div class="page-header">
   <div><h1>Opportunities</h1><p>{{ network.name }}</p></div>
-  <a href="{% url 'opportunities:create' %}" class="btn btn-primary">New opportunity</a>
+  <a href="{{ create_url }}" class="btn btn-primary">New opportunity</a>
 </div>
 {% if opportunities %}
 <table>

@@ -11,6 +11,7 @@ from django.utils.encoding import force_bytes, force_str
 from apps.accounts.forms import RegisterForm
 from apps.accounts.models import User
 from apps.audit.services import log_action
+from apps.networks.services import get_primary_network
 
 
 def register(request):
@@ -81,7 +82,18 @@ def post_login_redirect(request):
         messages.error(request, "This account cannot access the standard platform login.")
         return redirect("sitepublic:home")
     if request.user.is_platform_admin or request.user.network_staff_roles.exists():
-        return redirect("networks:dashboard")
+        # Not every network staff member administers the platform's own
+        # (primary) network — a Black-Sash-only admin, for example, has no
+        # role there at all and would 403 on networks:dashboard. Land them
+        # on a network dashboard they can actually reach.
+        primary_network = get_primary_network()
+        has_primary_role = request.user.is_platform_admin or request.user.network_staff_roles.filter(
+            network=primary_network, is_active=True
+        ).exists()
+        if has_primary_role:
+            return redirect("networks:dashboard")
+        staff_role = request.user.network_staff_roles.filter(is_active=True).select_related("network").first()
+        return redirect("networks:dashboard_for_network", network_slug=staff_role.network.slug)
     if request.user.active_memberships.exists():
         return redirect("organisations:workspace_home")
     return redirect("organisations:create")

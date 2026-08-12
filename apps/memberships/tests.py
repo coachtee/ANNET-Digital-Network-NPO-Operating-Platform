@@ -1,3 +1,4 @@
+from django.db import IntegrityError, transaction
 from django.test import TestCase
 from django.urls import reverse
 
@@ -8,6 +9,70 @@ from apps.networks.models import Network, NetworkStaffRole
 from apps.organisations.models import Organisation, OrganisationMembership
 
 PASSWORD = "TestPass!2026"
+
+
+class UniqueActiveApplicationConstraintTests(TestCase):
+    """An organisation must never hold two *live* applications against the
+    same network at once — enforced at the database level, not just in
+    view logic, so it holds regardless of how a row gets created."""
+
+    def setUp(self):
+        self.network = Network.objects.create(slug="bohlale-impact", name="Bohlale Impact")
+        self.other_network = Network.objects.create(slug="black-sash", name="Black Sash Community Monitoring Programme")
+        self.org = Organisation.objects.create(legal_name="Test Org", slug="test-org", organisation_type="npo")
+
+    def test_cannot_hold_two_submitted_applications_to_the_same_network(self):
+        MembershipApplication.objects.create(
+            organisation=self.org, network=self.network, status=MembershipApplication.STATUS_SUBMITTED,
+        )
+        with self.assertRaises(IntegrityError), transaction.atomic():
+            MembershipApplication.objects.create(
+                organisation=self.org, network=self.network, status=MembershipApplication.STATUS_SUBMITTED,
+            )
+
+    def test_cannot_hold_a_draft_alongside_an_approved_application(self):
+        MembershipApplication.objects.create(
+            organisation=self.org, network=self.network, status=MembershipApplication.STATUS_APPROVED,
+        )
+        with self.assertRaises(IntegrityError), transaction.atomic():
+            MembershipApplication.objects.create(
+                organisation=self.org, network=self.network, status=MembershipApplication.STATUS_DRAFT,
+            )
+
+    def test_re_application_after_decline_is_allowed(self):
+        # Terminal statuses don't block a new row — this is the documented
+        # "re-application after a decline" path (see the model docstring).
+        MembershipApplication.objects.create(
+            organisation=self.org, network=self.network, status=MembershipApplication.STATUS_DECLINED,
+        )
+        MembershipApplication.objects.create(
+            organisation=self.org, network=self.network, status=MembershipApplication.STATUS_DRAFT,
+        )
+        self.assertEqual(
+            MembershipApplication.objects.filter(organisation=self.org, network=self.network).count(), 2
+        )
+
+    def test_re_application_after_withdrawal_is_allowed(self):
+        MembershipApplication.objects.create(
+            organisation=self.org, network=self.network, status=MembershipApplication.STATUS_WITHDRAWN,
+        )
+        MembershipApplication.objects.create(
+            organisation=self.org, network=self.network, status=MembershipApplication.STATUS_SUBMITTED,
+        )
+        self.assertEqual(
+            MembershipApplication.objects.filter(organisation=self.org, network=self.network).count(), 2
+        )
+
+    def test_same_organisation_can_hold_active_applications_to_different_networks(self):
+        # The constraint is per (organisation, network) — not per
+        # organisation — which is the entire point of the generalisation.
+        MembershipApplication.objects.create(
+            organisation=self.org, network=self.network, status=MembershipApplication.STATUS_SUBMITTED,
+        )
+        MembershipApplication.objects.create(
+            organisation=self.org, network=self.other_network, status=MembershipApplication.STATUS_SUBMITTED,
+        )
+        self.assertEqual(MembershipApplication.objects.filter(organisation=self.org).count(), 2)
 
 
 class BlackSashProgrammeWorkflowTests(TestCase):

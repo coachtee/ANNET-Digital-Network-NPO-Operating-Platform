@@ -43,12 +43,17 @@
         <a href="{% url 'memberships:apply' slug=active_organisation.slug %}">Membership</a>
         <a href="{% url 'organisations:public_profile_settings' slug=active_organisation.slug %}">Settings</a>
       {% endif %}
-      {% if request.user.is_platform_admin or request.user.network_staff_roles.exists %}
+      {% if administered_networks %}
         <div class="sidebar-section-label">Programme Administration</div>
-        <a href="{% url 'networks:dashboard' %}">Network Dashboard</a>
-        <a href="{% url 'memberships:queue' %}">Membership Applications</a>
-        <a href="{% url 'networks:capacity' %}">Capacity Intelligence</a>
-        <a href="{% url 'opportunities:manage_list' %}">Opportunities</a>
+        {% for network in administered_networks %}
+          {% if administered_networks|length > 1 %}
+            <div class="sidebar-section-label" style="padding-top:2px;">{{ network.name }}</div>
+          {% endif %}
+          <a href="{% url 'networks:dashboard_for_network' network_slug=network.slug %}">Network Dashboard</a>
+          <a href="{% url 'memberships:queue_for_network' network_slug=network.slug %}">Membership Applications</a>
+          <a href="{% url 'networks:capacity_for_network' network_slug=network.slug %}">Capacity Intelligence</a>
+          <a href="{% url 'opportunities:manage_list_for_network' network_slug=network.slug %}">Opportunities</a>
+        {% endfor %}
       {% endif %}
     </nav>
   </aside>

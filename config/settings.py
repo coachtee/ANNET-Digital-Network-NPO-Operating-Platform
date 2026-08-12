@@ -115,6 +115,7 @@ TEMPLATES = [
                 "django.contrib.messages.context_processors.messages",
                 "apps.organisations.context_processors.active_organisation",
                 "apps.core.context_processors.platform_settings",
+                "apps.networks.context_processors.administered_networks",
             ],
         },
     },

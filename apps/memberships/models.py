@@ -58,6 +58,21 @@ class MembershipApplication(TimeStampedModel):
     class Meta:
         ordering = ["-created_at"]
         indexes = [models.Index(fields=["network", "status"])]
+        constraints = [
+            # An organisation may hold at most one *live* application per
+            # network at a time. STATUS_DECLINED/STATUS_WITHDRAWN are
+            # deliberately excluded — those are terminal, and a
+            # re-application after either creates a new row instead (see
+            # the class docstring), so they must never block a fresh one.
+            # (Class attributes aren't visible by bare name inside a nested
+            # Meta body, hence the literal strings rather than
+            # STATUS_DRAFT etc. here.)
+            models.UniqueConstraint(
+                fields=["organisation", "network"],
+                condition=models.Q(status__in=["draft", "submitted", "information_requested", "approved"]),
+                name="unique_active_application_per_organisation_network",
+            ),
+        ]
 
     def __str__(self):
         return f"{self.organisation} — {self.network} — {self.get_status_display()}"

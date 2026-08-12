@@ -3,8 +3,10 @@ from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
 from django.core.paginator import Paginator
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 
 from apps.core.permissions import has_network_capability
+from apps.networks.models import Network
 from apps.networks.services import get_primary_network
 from apps.opportunities.forms import OpportunityForm
 from apps.opportunities.models import Opportunity
@@ -27,19 +29,33 @@ def public_detail(request, opportunity_id):
     return render(request, "opportunities/public_detail.html", {"opportunity": opportunity})
 
 
-@login_required
-def manage_list(request):
-    network = get_primary_network()
+def _create_url_for(network):
+    if network == get_primary_network():
+        return reverse("opportunities:create")
+    return reverse("opportunities:create_for_network", kwargs={"network_slug": network.slug})
+
+
+def _manage_list(request, network):
     if not (request.user.is_platform_admin or has_network_capability(request.user, network, "network.opportunities.manage")):
         raise PermissionDenied
     return render(request, "opportunities/manage_list.html", {
         "network": network, "opportunities": Opportunity.objects.filter(network=network),
+        "create_url": _create_url_for(network),
     })
 
 
 @login_required
-def create_opportunity(request):
-    network = get_primary_network()
+def manage_list(request):
+    return _manage_list(request, get_primary_network())
+
+
+@login_required
+def manage_list_for_network(request, network_slug):
+    network = get_object_or_404(Network, slug=network_slug)
+    return _manage_list(request, network)
+
+
+def _create_opportunity(request, network):
     if not (request.user.is_platform_admin or has_network_capability(request.user, network, "network.opportunities.manage")):
         raise PermissionDenied
     form = OpportunityForm(request.POST or None)
@@ -48,5 +64,18 @@ def create_opportunity(request):
         opportunity.network = network
         opportunity.save()
         messages.success(request, "Opportunity saved.")
-        return redirect("opportunities:manage_list")
-    return render(request, "opportunities/opportunity_form.html", {"form": form})
+        if network == get_primary_network():
+            return redirect("opportunities:manage_list")
+        return redirect("opportunities:manage_list_for_network", network_slug=network.slug)
+    return render(request, "opportunities/opportunity_form.html", {"form": form, "network": network})
+
+
+@login_required
+def create_opportunity(request):
+    return _create_opportunity(request, get_primary_network())
+
+
+@login_required
+def create_opportunity_for_network(request, network_slug):
+    network = get_object_or_404(Network, slug=network_slug)
+    return _create_opportunity(request, network)
