@@ -8,6 +8,7 @@ from apps.audit.services import log_action
 from apps.compliance.services import sync_obligations_for_organisation
 from apps.core.permissions import ORG_ROLE_ADMIN
 from apps.governance.forms import GovernanceOfficialForm
+from apps.networks.services import get_primary_network
 from apps.organisations import forms as org_forms
 from apps.organisations.health import compute_health_check
 from apps.organisations.middleware import SESSION_KEY
@@ -153,7 +154,13 @@ def workspace_home(request):
         ).count(),
         "active_programmes": organisation.programmes.filter(status="active").count(),
         "active_projects": organisation.projects.filter(status="active").count(),
-        "membership_application": organisation.network_memberships.order_by("-created_at").first(),
+        # Scoped to the platform's own network specifically — an
+        # organisation can separately hold applications/memberships with
+        # other networks/programmes (e.g. Black Sash), which have their
+        # own status shown in their own context, not here.
+        "membership_application": organisation.network_memberships.filter(
+            network=get_primary_network()
+        ).order_by("-created_at").first(),
     }
     return render(request, "organisations/workspace_home.html", context)
 

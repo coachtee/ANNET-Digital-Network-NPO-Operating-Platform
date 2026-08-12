@@ -1,24 +1,25 @@
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
-from django.shortcuts import render
+from django.shortcuts import get_object_or_404, render
 
 from apps.core.permissions import has_network_capability
+from apps.networks.models import Network
 from apps.networks.services import get_primary_network
 from apps.organisations.health import compute_health_check
 from apps.organisations.models import Organisation, PROVINCE_CHOICES
 
 
-def _require_network_viewer(request):
-    network = get_primary_network()
+def _require_network_viewer(request, network):
     if not (request.user.is_platform_admin or has_network_capability(request.user, network, "network.dashboard.view")):
         raise PermissionDenied
     return network
 
 
-@login_required
-def dashboard(request):
-    network = _require_network_viewer(request)
-    member_organisations = Organisation.objects.filter(network_memberships__status="approved").distinct()
+def _dashboard(request, network):
+    _require_network_viewer(request, network)
+    member_organisations = Organisation.objects.filter(
+        network_memberships__network=network, network_memberships__status="approved"
+    ).distinct()
 
     province = request.GET.get("province")
     if province:
@@ -43,9 +44,21 @@ def dashboard(request):
 
 
 @login_required
-def capacity(request):
-    network = _require_network_viewer(request)
-    member_organisations = Organisation.objects.filter(network_memberships__status="approved").distinct()[:200]
+def dashboard(request):
+    return _dashboard(request, get_primary_network())
+
+
+@login_required
+def dashboard_for_network(request, network_slug):
+    network = get_object_or_404(Network, slug=network_slug)
+    return _dashboard(request, network)
+
+
+def _capacity(request, network):
+    _require_network_viewer(request, network)
+    member_organisations = Organisation.objects.filter(
+        network_memberships__network=network, network_memberships__status="approved"
+    ).distinct()[:200]
 
     needs = {"governance": [], "policies": [], "me": [], "financial_accountability": [], "compliance": []}
     for org in member_organisations:
@@ -61,3 +74,14 @@ def capacity(request):
         "compliance_needs": needs["compliance"],
     }
     return render(request, "networks/capacity.html", context)
+
+
+@login_required
+def capacity(request):
+    return _capacity(request, get_primary_network())
+
+
+@login_required
+def capacity_for_network(request, network_slug):
+    network = get_object_or_404(Network, slug=network_slug)
+    return _capacity(request, network)

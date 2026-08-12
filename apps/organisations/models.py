@@ -144,7 +144,17 @@ class Organisation(UUIDPrimaryKeyModel, TimeStampedModel):
 
     @property
     def is_network_member(self):
-        return self.network_memberships.filter(status="approved").exists()
+        """Approved member of the platform's own (primary) network
+        specifically — not just any network/programme. An organisation can
+        separately be an approved partner of other networks/programmes
+        (e.g. Black Sash) without that counting here; check
+        ``network_memberships.filter(network=..., status="approved")``
+        directly for a specific network/programme."""
+        from apps.networks.services import get_primary_network
+        primary_network = get_primary_network()
+        return primary_network is not None and self.network_memberships.filter(
+            network=primary_network, status="approved"
+        ).exists()
 
 
 class OrganisationMembership(TimeStampedModel):

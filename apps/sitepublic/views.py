@@ -2,6 +2,7 @@ from django.core.paginator import Paginator
 from django.shortcuts import get_object_or_404, render
 
 from apps.networks.models import Network
+from apps.networks.services import get_primary_network
 from apps.opportunities.models import Opportunity
 from apps.organisations.models import PROVINCE_CHOICES, Organisation
 from apps.sitepublic.forms import DirectorySearchForm
@@ -62,7 +63,12 @@ def our_network(request):
     public_orgs = _public_organisations()
     return render(request, "sitepublic/our_network.html", {
         "total_organisations": public_orgs.count(),
-        "member_organisations": public_orgs.filter(network_memberships__status="approved").distinct().count(),
+        # Scoped to the platform's own network — partner-programme
+        # memberships (e.g. Black Sash) are a separate relationship, not
+        # counted as a Bohlale Impact "member" here.
+        "member_organisations": public_orgs.filter(
+            network_memberships__network=get_primary_network(), network_memberships__status="approved"
+        ).distinct().count(),
     })
 
 
@@ -82,7 +88,9 @@ def directory(request):
         if data.get("verification_status"):
             organisations = organisations.filter(public_verification_status=data["verification_status"])
         if data.get("network_member"):
-            organisations = organisations.filter(network_memberships__status="approved").distinct()
+            organisations = organisations.filter(
+                network_memberships__network=get_primary_network(), network_memberships__status="approved"
+            ).distinct()
         if data.get("sector"):
             # JSONField list-containment (`sectors__contains`) isn't
             # supported on SQLite (only Postgres/MySQL), and this platform

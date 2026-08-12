@@ -1,7 +1,7 @@
 {% extends "workspace_base.html" %}
 {% block title %}Membership{% endblock %}
 {% block content %}
-<div class="page-header"><div><h1>{{ NETWORK_SHORT_NAME }} Membership</h1><p>{{ organisation.display_name }}</p></div></div>
+<div class="page-header"><div><h1>{{ network.name }} Membership</h1><p>{{ organisation.display_name }}</p></div></div>
 
 {% if application %}
 <div class="card-flat" style="margin-bottom:20px;">

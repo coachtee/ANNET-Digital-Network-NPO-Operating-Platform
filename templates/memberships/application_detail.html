@@ -1,7 +1,7 @@
 {% extends "workspace_base.html" %}
 {% block title %}{{ application.organisation.display_name }}{% endblock %}
 {% block content %}
-<div class="breadcrumbs"><a href="{% url 'memberships:queue' %}">Membership Applications</a> / {{ application.organisation.display_name }}</div>
+<div class="breadcrumbs"><a href="{{ queue_url }}">{{ network.name }} Applications</a> / {{ application.organisation.display_name }}</div>
 <div class="page-header"><div><h1>{{ application.organisation.display_name }}</h1><p>Status: <span class="badge badge-primary">{{ application.get_status_display }}</span></p></div></div>
 
 <div class="grid grid-2">

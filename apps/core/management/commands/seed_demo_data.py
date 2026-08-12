@@ -250,7 +250,7 @@ class Command(BaseCommand):
 
             if i < 3:
                 application, _ = MembershipApplication.objects.get_or_create(
-                    organisation=org,
+                    organisation=org, network=network,
                     defaults=dict(status=MembershipApplication.STATUS_APPROVED, motivation="Seeking to strengthen our network ties.",
                                   submitted_at=timezone.now(), decided_at=timezone.now(), decided_by=network_admin),
                 )
