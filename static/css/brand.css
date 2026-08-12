@@ -97,75 +97,31 @@ html { scroll-behavior: smooth; }
 .hero-actions { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 20px; }
 
 /* ---------------------------------------------------------------- */
-/* Hero visual: a South Africa network illustration. A flat, borderless
-   panel rather than a card — it should read as part of the hero surface,
-   not a boxed graphic sitting on top of it. */
+/* Hero visual: the canonical Bohlale Impact network artwork
+   (static/img/bohlale-impact-hero-network.png) — a supplied asset, used
+   as-is and never redrawn. It carries its own light background, so it
+   sits directly on the hero surface with no card border/shadow around
+   it. Sized by its own aspect ratio (1296x816) so it's never stretched
+   or cropped; the glow behind the hub is the only animated element,
+   layered underneath rather than touching the image itself. */
 /* ---------------------------------------------------------------- */
-.hero-visual {
-  position: relative; aspect-ratio: 4/3.1; display: flex; align-items: center; justify-content: center;
-  padding: 6px;
+.hero-visual { position: relative; display: flex; align-items: center; }
+.hero-visual-img { position: relative; z-index: 1; width: 100%; height: auto; display: block; }
+.hero-visual-glow {
+  position: absolute; z-index: 0; width: 20%; aspect-ratio: 1/1; border-radius: 50%;
+  left: 51.3%; top: 48.4%; transform: translate(-50%, -50%);
+  background: radial-gradient(circle, rgba(13,27,56,.35) 0%, rgba(13,27,56,0) 70%);
+  filter: blur(6px);
 }
-.sa-illustration { position: relative; width: 100%; height: 100%; }
-.sa-map-svg { position: absolute; inset: 0; width: 100%; height: 100%; }
-.sa-silhouette { fill: var(--color-primary); opacity: .94; }
-.sa-network .sa-line { stroke: var(--color-primary); stroke-width: 1; opacity: .28; }
-.sa-network .sa-line-thin { opacity: .16; }
-.sa-network .sa-node { fill: #fff; opacity: .9; }
-.sa-hub-ring { fill: none; stroke: #fff; stroke-width: 1.5; opacity: .55; }
-.sa-hub { fill: #fff; }
-.sa-hub-logo {
-  position: absolute; top: 46.7%; left: 50%; width: 11%; transform: translate(-50%, -50%);
-  display: block;
-}
-
 @media (prefers-reduced-motion: no-preference) {
-  .sa-network .sa-node-pulse { animation: sa-pulse 2.6s ease-in-out infinite; transform-origin: center; transform-box: fill-box; }
-  .sa-network .sa-node-pulse:nth-of-type(2) { animation-delay: .5s; }
-  .sa-network .sa-node-pulse:nth-of-type(4) { animation-delay: 1s; }
-  .sa-network .sa-node-pulse:nth-of-type(6) { animation-delay: 1.5s; }
+  .hero-visual-glow { animation: hero-glow-pulse 4.5s ease-in-out infinite; }
 }
-@keyframes sa-pulse {
-  0%, 100% { opacity: .9; transform: scale(1); }
-  50% { opacity: .35; transform: scale(1.9); }
+@keyframes hero-glow-pulse {
+  0%, 100% { opacity: .5; transform: translate(-50%, -50%) scale(1); }
+  50% { opacity: 1; transform: translate(-50%, -50%) scale(1.15); }
 }
 
-.sa-badge {
-  position: absolute; display: flex; flex-direction: column; align-items: center; gap: 6px;
-  width: 88px; text-align: center;
-}
-.sa-badge-icon {
-  width: 42px; height: 42px; border-radius: 50%; background: #fff; border: 1px solid var(--color-border);
-  color: var(--color-primary); display: flex; align-items: center; justify-content: center;
-  box-shadow: 0 2px 6px rgba(13,27,56,.08);
-}
-.sa-badge-icon svg { width: 19px; height: 19px; }
-.sa-badge span:last-child { font-size: .74rem; font-weight: 700; color: var(--color-charcoal); }
-
-.sa-badge-opportunities { top: 2%; left: -4%; }
-.sa-badge-partnerships  { top: 2%; right: -4%; }
-.sa-badge-resources     { top: 40%; left: -12%; }
-.sa-badge-support       { top: 40%; right: -12%; }
-.sa-badge-training      { bottom: 4%; left: -4%; }
-.sa-badge-impact        { bottom: 4%; right: -4%; }
-
-@media (max-width: 900px) {
-  .hero-visual { aspect-ratio: 4/3.4; margin-top: 20px; padding: 0 44px; }
-}
-
-/* Mobile: floating badges would collide with the narrower map, so they're
-   replaced with a compact legend row beneath it instead of being shrunk
-   in place — a deliberate mobile composition, not the desktop layout
-   scaled down. */
-@media (max-width: 640px) {
-  .hero-visual { display: block; aspect-ratio: auto; padding: 0; }
-  .sa-illustration { aspect-ratio: 1/1; max-width: 260px; margin: 0 auto; }
-  .sa-badge { display: none; }
-  .hero-visual::after {
-    content: "Opportunities \00b7  Partnerships \00b7  Resources \00b7  Support \00b7  Training \00b7  Impact";
-    display: block; margin: 14px auto 0; max-width: 300px; text-align: center;
-    font-size: .78rem; font-weight: 600; color: var(--color-text-muted); line-height: 1.7;
-  }
-}
+@media (max-width: 900px) { .hero-visual { margin-top: 24px; } }
 
 /* ---------------------------------------------------------------- */
 /* Stats strip — floats over the hero/content seam on desktop only;
