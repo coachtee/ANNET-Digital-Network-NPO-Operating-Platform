@@ -1,7 +1,7 @@
 {% extends "workspace_base.html" %}
 {% block title %}Launch Kiosk{% endblock %}
 {% block content %}
-<div class="page-header"><div><h1>Launch Kiosk</h1><p>{{ organisation.display_name }} — generates a time-limited, unauthenticated check-in link for one programme. No admin data is exposed at this link.</p></div></div>
+<div class="page-header"><div><h1>Launch Kiosk</h1><p>{{ organisation.display_name }}: generates a time-limited, unauthenticated check-in link for one programme. No admin data is exposed at this link.</p></div></div>
 
 {% if session %}
 <div class="alert alert-success">

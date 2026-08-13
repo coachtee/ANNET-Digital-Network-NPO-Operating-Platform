@@ -30,7 +30,7 @@
   <div class="card-flat">
     <h3>Indicators</h3>
     {% if indicators %}
-      <ul>{% for i in indicators %}<li>{{ i.name }} — {% if i.achievement_percent %}{{ i.achievement_percent }}% of target{% else %}no actuals yet{% endif %}</li>{% endfor %}</ul>
+      <ul>{% for i in indicators %}<li>{{ i.name }}: {% if i.achievement_percent %}{{ i.achievement_percent }}% of target{% else %}no actuals yet{% endif %}</li>{% endfor %}</ul>
     {% else %}<p class="text-muted">No indicators defined yet.</p>{% endif %}
     <a href="{% url 'monitoring_evaluation:dashboard' slug=organisation.slug %}" class="btn btn-outline btn-sm">Open M&amp;E</a>
   </div>

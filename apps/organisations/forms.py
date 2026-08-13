@@ -53,7 +53,7 @@ class OrganisationActivitiesForm(forms.Form):
     beneficiary_groups = forms.CharField(required=False, widget=forms.Textarea(attrs={"rows": 2}))
     sensitive_service_areas = forms.CharField(
         required=False, widget=forms.Textarea(attrs={"rows": 2}),
-        help_text="e.g. child protection, GBV support — flags enhanced access controls",
+        help_text="e.g. child protection, GBV support: flags enhanced access controls",
     )
 
     @staticmethod

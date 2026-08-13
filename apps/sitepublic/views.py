@@ -5,6 +5,7 @@ from apps.networks.models import Network
 from apps.networks.services import get_primary_network
 from apps.opportunities.models import Opportunity
 from apps.organisations.models import PROVINCE_CHOICES, Organisation
+from apps.resources.models import Resource
 from apps.sitepublic.forms import DirectorySearchForm
 
 
@@ -118,7 +119,15 @@ def join(request):
 
 
 def resources(request):
-    return render(request, "sitepublic/resources.html")
+    published = Resource.objects.filter(status=Resource.STATUS_PUBLISHED)
+    type_filter = request.GET.get("type")
+    if type_filter:
+        published = published.filter(resource_type=type_filter)
+    return render(request, "sitepublic/resources.html", {
+        "resources": published,
+        "type_choices": Resource.TYPE_CHOICES,
+        "type_filter": type_filter,
+    })
 
 
 def insights(request):

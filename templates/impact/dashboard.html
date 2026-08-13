@@ -1,7 +1,7 @@
 {% extends "workspace_base.html" %}
 {% block title %}Impact{% endblock %}
 {% block content %}
-<div class="page-header"><div><h1>Your Impact</h1><p>{{ organisation.display_name }} — figures are calculated from your own records.</p></div></div>
+<div class="page-header"><div><h1>Your Impact</h1><p>{{ organisation.display_name }}: figures are calculated from your own records.</p></div></div>
 
 <div class="metric-row">
   <div class="metric-card"><div class="stat-value">{{ active_programmes }}</div><div class="stat-label">Active Programmes</div></div>
@@ -28,6 +28,6 @@
       {% endfor %}
     </tbody>
   </table>
-  {% else %}<p class="text-muted">No indicators defined yet — set these up in M&amp;E.</p>{% endif %}
+  {% else %}<p class="text-muted">No indicators defined yet. Set these up in M&amp;E.</p>{% endif %}
 </div>
 {% endblock %}

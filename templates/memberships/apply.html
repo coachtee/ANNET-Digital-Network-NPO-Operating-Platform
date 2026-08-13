@@ -8,7 +8,7 @@
   <h3>Current status: <span class="badge badge-primary">{{ application.get_status_display }}</span></h3>
   {% if status_events %}
   <ul>
-    {% for e in status_events %}<li>{{ e.get_status_display }} — {{ e.created_at|date:"d M Y" }}{% if e.note %}: {{ e.note }}{% endif %}</li>{% endfor %}
+    {% for e in status_events %}<li>{{ e.get_status_display }} ({{ e.created_at|date:"d M Y" }}){% if e.note %}: {{ e.note }}{% endif %}</li>{% endfor %}
   </ul>
   {% endif %}
 </div>

@@ -17,7 +17,7 @@
   {% if can_manage %}
   <div class="card-flat">
     <h3>Record actual value</h3>
-    {% if indicator.auto_from_attendance %}<p class="field-hint">This indicator is linked to attendance — the actual value will be computed automatically from attendance records in the period you select.</p>{% endif %}
+    {% if indicator.auto_from_attendance %}<p class="field-hint">This indicator is linked to attendance. The actual value will be computed automatically from attendance records in the period you select.</p>{% endif %}
     <form method="post" novalidate>
       {% csrf_token %}
       {% include "partials/_form_fields.html" %}

@@ -1,7 +1,7 @@
 {% extends "workspace_base.html" %}
 {% block title %}Capacity Development Intelligence{% endblock %}
 {% block content %}
-<div class="page-header"><div><h1>Capacity Development Intelligence</h1><p>{{ network.name }} — organisations scoring below 50% on a health dimension.</p></div></div>
+<div class="page-header"><div><h1>Capacity Development Intelligence</h1><p>{{ network.name }}: organisations scoring below 50% on a health dimension.</p></div></div>
 
 <div class="grid grid-2">
   <div class="card-flat"><h3>Governance support needed ({{ governance_needs|length }})</h3><ul>{% for o in governance_needs %}<li>{{ o.display_name }}</li>{% endfor %}</ul></div>

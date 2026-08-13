@@ -24,6 +24,7 @@ from apps.organisations.models import Organisation, OrganisationMembership
 from apps.policies.models import Policy, PolicyVersion
 from apps.programmes.models import Activity, Programme
 from apps.projects.models import Project
+from apps.resources.models import Resource
 
 FICTIONAL_ORGS = [
     dict(legal_name="Siyafunda Community Technology Centre", organisation_type="npo", legal_structure="npc",
@@ -270,7 +271,37 @@ class Command(BaseCommand):
                           location="Johannesburg, GP"),
         )
 
+        Resource.objects.get_or_create(
+            title="Governance Toolkit",
+            defaults=dict(
+                resource_type=Resource.TYPE_TOOLKIT, category="Governance",
+                description="Board pack templates, meeting minute templates and governance checklists.",
+                external_url="https://example.org/resources/governance-toolkit.pdf",
+                status=Resource.STATUS_PUBLISHED, is_featured=True,
+                published_at=timezone.now(), created_by=superuser,
+            ),
+        )
+        Resource.objects.get_or_create(
+            title="Compliance Guides: DSD, CIPC, SARS and POPIA",
+            defaults=dict(
+                resource_type=Resource.TYPE_GUIDE, category="Compliance",
+                description="Plain-language guides to common DSD, CIPC, SARS and POPIA requirements.",
+                external_url="https://example.org/resources/compliance-guides.pdf",
+                status=Resource.STATUS_PUBLISHED, published_at=timezone.now(), created_by=superuser,
+            ),
+        )
+        Resource.objects.get_or_create(
+            title="M&E Starter Kit",
+            defaults=dict(
+                resource_type=Resource.TYPE_TEMPLATE, category="M&E",
+                description="Templates for a simple Theory of Change and indicator framework.",
+                external_url="https://example.org/resources/me-starter-kit.pdf",
+                status=Resource.STATUS_PUBLISHED, published_at=timezone.now(), created_by=superuser,
+            ),
+        )
+        self.stdout.write("  3 resources published.")
+
         self.stdout.write(self.style.SUCCESS(
             "Demo data loaded. Sign in as platform-admin@example.com / network-admin@example.com / admin0@example.com "
-            "(and admin1..admin4) with password DemoPass!2026 — see UAT_GUIDE.md."
+            "(and admin1..admin4) with password DemoPass!2026, see UAT_GUIDE.md."
         ))

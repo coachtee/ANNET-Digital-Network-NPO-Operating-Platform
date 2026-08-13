@@ -1,7 +1,7 @@
 {% extends "workspace_base.html" %}
 {% block title %}Record Attendance{% endblock %}
 {% block content %}
-<div class="page-header"><div><h1>Record Attendance</h1><p>{{ organisation.display_name }} — use a named beneficiary, or leave beneficiary blank and set a headcount for anonymous outreach.</p></div></div>
+<div class="page-header"><div><h1>Record Attendance</h1><p>{{ organisation.display_name }}: use a named beneficiary, or leave beneficiary blank and set a headcount for anonymous outreach.</p></div></div>
 <div class="card" style="max-width:560px;">
   <form method="post" novalidate>
     {% csrf_token %}

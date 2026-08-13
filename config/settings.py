@@ -79,6 +79,7 @@ LOCAL_APPS = [
     "apps.reporting",
     "apps.impact",
     "apps.opportunities",
+    "apps.resources",
     "apps.notifications",
     "apps.audit",
     "apps.sitepublic",

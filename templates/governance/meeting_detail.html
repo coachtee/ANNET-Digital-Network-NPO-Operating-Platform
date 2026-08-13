@@ -8,7 +8,7 @@
   <div class="card-flat">
     <h3>Resolutions</h3>
     {% if resolutions %}
-      <ul>{% for r in resolutions %}<li>{{ r.text }} — <span class="badge badge-neutral">{{ r.get_decision_display }}</span></li>{% endfor %}</ul>
+      <ul>{% for r in resolutions %}<li>{{ r.text }} <span class="badge badge-neutral">{{ r.get_decision_display }}</span></li>{% endfor %}</ul>
     {% else %}<p class="text-muted">No resolutions recorded yet.</p>{% endif %}
     {% if can_manage %}
     <form method="post" style="margin-top:12px;">

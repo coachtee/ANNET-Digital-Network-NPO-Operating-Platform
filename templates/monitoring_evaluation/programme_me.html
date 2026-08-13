@@ -1,5 +1,5 @@
 {% extends "workspace_base.html" %}
-{% block title %}{{ programme.name }} — M&amp;E{% endblock %}
+{% block title %}{{ programme.name }}: M&amp;E{% endblock %}
 {% block content %}
 <div class="breadcrumbs"><a href="{% url 'monitoring_evaluation:dashboard' slug=organisation.slug %}">M&amp;E</a> / {{ programme.name }}</div>
 <div class="page-header"><div><h1>{{ programme.name }}</h1><p>Outcomes, outputs and indicators</p></div></div>

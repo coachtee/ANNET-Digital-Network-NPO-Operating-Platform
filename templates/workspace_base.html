@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>{% block title %}My Organisation{% endblock %} — {{ NETWORK_SHORT_NAME }}</title>
+  <title>{% block title %}My Organisation{% endblock %}: {{ NETWORK_SHORT_NAME }}</title>
   {% include "partials/favicon.html" %}
   <link rel="stylesheet" href="{% static 'css/base.css' %}">
   {% block extra_head %}{% endblock %}
@@ -54,6 +54,10 @@
           <a href="{% url 'networks:capacity_for_network' network_slug=network.slug %}">Capacity Intelligence</a>
           <a href="{% url 'opportunities:manage_list_for_network' network_slug=network.slug %}">Opportunities</a>
         {% endfor %}
+      {% endif %}
+      {% if request.user.is_platform_admin %}
+        <div class="sidebar-section-label">Platform Administration</div>
+        <a href="{% url 'resources:manage_list' %}">Resources</a>
       {% endif %}
     </nav>
   </aside>

@@ -1,5 +1,5 @@
 {% extends "workspace_base.html" %}
-{% block title %}{{ project.name }} — Finance{% endblock %}
+{% block title %}{{ project.name }}: Finance{% endblock %}
 {% block content %}
 <div class="breadcrumbs"><a href="{% url 'expenses:list' slug=organisation.slug %}">Finance Lite</a> / {{ project.name }}</div>
 <div class="page-header"><div><h1>{{ project.name }}</h1><p>Budget vs. recorded expenditure</p></div></div>

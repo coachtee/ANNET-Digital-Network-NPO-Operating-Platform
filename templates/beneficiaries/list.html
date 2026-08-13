@@ -2,7 +2,7 @@
 {% block title %}Beneficiaries{% endblock %}
 {% block content %}
 <div class="page-header">
-  <div><h1>Beneficiaries</h1><p>{{ organisation.display_name }} — data minimisation applies; only capture what a programme needs.</p></div>
+  <div><h1>Beneficiaries</h1><p>{{ organisation.display_name }}: data minimisation applies; only capture what a programme needs.</p></div>
   {% if can_manage %}<a href="{% url 'beneficiaries:create' slug=organisation.slug %}" class="btn btn-primary">Add beneficiary</a>{% endif %}
 </div>
 {% if beneficiaries %}

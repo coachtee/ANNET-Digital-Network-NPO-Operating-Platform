@@ -50,7 +50,7 @@
     {% if evidence_items %}
       <ul>
         {% for item in evidence_items %}
-          <li><a href="{% url 'documents:download' slug=organisation.slug document_id=item.document.id %}">{{ item.document.title }}</a> — {{ item.created_at|date:"d M Y" }}</li>
+          <li><a href="{% url 'documents:download' slug=organisation.slug document_id=item.document.id %}">{{ item.document.title }}</a> ({{ item.created_at|date:"d M Y" }})</li>
         {% endfor %}
       </ul>
     {% else %}<p class="text-muted">No evidence uploaded yet.</p>{% endif %}
@@ -60,7 +60,7 @@
     {% if status_events %}
       <ul>
         {% for event in status_events %}
-          <li>{{ event.get_status_display }} — {{ event.actor|default:"System" }} ({{ event.created_at|date:"d M Y H:i" }})</li>
+          <li>{{ event.get_status_display }}, {{ event.actor|default:"System" }} ({{ event.created_at|date:"d M Y H:i" }})</li>
         {% endfor %}
       </ul>
     {% else %}<p class="text-muted">No history yet.</p>{% endif %}

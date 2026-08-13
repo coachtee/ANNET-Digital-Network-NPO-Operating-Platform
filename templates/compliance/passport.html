@@ -2,7 +2,7 @@
 {% block title %}Compliance Passport{% endblock %}
 {% block content %}
 <div class="page-header">
-  <div><h1>Compliance Passport</h1><p>{{ organisation.display_name }} — Compliance Readiness, not a certification of legal compliance.</p></div>
+  <div><h1>Compliance Passport</h1><p>{{ organisation.display_name }}: Compliance Readiness, not a certification of legal compliance.</p></div>
   <a href="{% url 'compliance:calendar' slug=organisation.slug %}" class="btn btn-outline">View Compliance Calendar</a>
 </div>
 

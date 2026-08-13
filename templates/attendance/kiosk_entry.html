@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Check In — {{ session.programme.name }}</title>
+  <title>Check In: {{ session.programme.name }}</title>
   {% include "partials/favicon.html" %}
   <link rel="stylesheet" href="{% static 'css/base.css' %}">
 </head>
@@ -10,7 +10,7 @@
   <div class="card" style="max-width:420px; text-align:center;">
     <h1>{{ session.programme.name }}</h1>
     {% if confirmation %}
-      <div class="alert alert-success">Thank you — you're checked in.</div>
+      <div class="alert alert-success">Thank you, you're checked in.</div>
     {% else %}
       <p class="text-muted">Tap below to check in. No personal details are required.</p>
       <form method="post">

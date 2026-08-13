@@ -1,0 +1,25 @@
+{% extends "workspace_base.html" %}
+{% block title %}Resources{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div><h1>Resources</h1><p>Guides, templates, policies and tools published to every organisation on {{ NETWORK_SHORT_NAME }}.</p></div>
+  <a href="{% url 'resources:create' %}" class="btn btn-primary">New resource</a>
+</div>
+{% if resources %}
+<table>
+  <thead><tr><th>Title</th><th>Type</th><th>Category</th><th>Status</th><th>Featured</th><th></th></tr></thead>
+  <tbody>
+    {% for r in resources %}
+    <tr>
+      <td>{{ r.title }}</td>
+      <td>{{ r.get_resource_type_display }}</td>
+      <td>{{ r.category|default:"—" }}</td>
+      <td><span class="badge {% if r.status == 'published' %}badge-success{% elif r.status == 'archived' %}badge-neutral{% else %}badge-warning{% endif %}">{{ r.get_status_display }}</span></td>
+      <td>{% if r.is_featured %}<span class="badge badge-primary">Featured</span>{% endif %}</td>
+      <td><a href="{% url 'resources:edit' resource_id=r.id %}">Edit</a></td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}<div class="empty-state"><h3>No resources yet.</h3><p>Publish your first guide, template or toolkit for organisations to use.</p></div>{% endif %}
+{% endblock %}

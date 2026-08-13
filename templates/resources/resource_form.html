@@ -1,0 +1,15 @@
+{% extends "workspace_base.html" %}
+{% block title %}{% if resource %}Edit Resource{% else %}New Resource{% endif %}{% endblock %}
+{% block content %}
+<div class="page-header"><div><h1>{% if resource %}Edit Resource{% else %}New Resource{% endif %}</h1></div></div>
+<div class="card" style="max-width:600px;">
+  <form method="post" enctype="multipart/form-data" novalidate>
+    {% csrf_token %}
+    {% if resource and resource.file %}
+      <div class="field-hint" style="margin-bottom:12px;">Current file: <a href="{{ resource.file.url }}">{{ resource.file.name }}</a> (upload a new file to replace it)</div>
+    {% endif %}
+    {% include "partials/_form_fields.html" %}
+    <button type="submit" class="btn btn-primary">Save</button>
+  </form>
+</div>
+{% endblock %}

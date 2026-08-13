@@ -14,7 +14,7 @@
     <a href="{% url 'compliance:passport' slug=application.organisation.slug %}" class="btn btn-outline btn-sm">View Compliance Passport</a>
 
     <h4 style="margin-top:16px;">History</h4>
-    <ul>{% for e in status_events %}<li>{{ e.get_status_display }} — {{ e.actor|default:"—" }} ({{ e.created_at|date:"d M Y H:i" }}){% if e.note %}: {{ e.note }}{% endif %}</li>{% endfor %}</ul>
+    <ul>{% for e in status_events %}<li>{{ e.get_status_display }}, {{ e.actor|default:"—" }} ({{ e.created_at|date:"d M Y H:i" }}){% if e.note %}: {{ e.note }}{% endif %}</li>{% endfor %}</ul>
   </div>
   {% if can_decide %}
   <div class="card-flat">
