@@ -101,6 +101,26 @@ class StaffOverviewMetricsTests(TestCase):
         self.assertIn(self.org_unverified, orgs)
         self.assertNotIn(self.org_verified, orgs)
 
+    def test_organisation_list_filters_by_verification_status(self):
+        resp = self.client.get(reverse("staffadmin:organisation_list"), {"verification_status": "verified"})
+        orgs = list(resp.context["page_obj"])
+        self.assertIn(self.org_verified, orgs)
+        self.assertNotIn(self.org_unverified, orgs)
+
+    def test_organisation_list_table_has_operational_columns_and_row_action(self):
+        resp = self.client.get(reverse("staffadmin:organisation_list"))
+        self.assertContains(resp, "Joined")
+        self.assertContains(resp, "Verified Org")
+        self.assertContains(resp, "View")
+
+    def test_overview_shows_breadcrumb_tabs_and_attention_table(self):
+        resp = self.client.get(reverse("staffadmin:overview"))
+        self.assertContains(resp, "Items Requiring Attention")
+        self.assertContains(resp, "Organisations awaiting verification")
+        self.assertContains(resp, "Membership applications pending review")
+        self.assertContains(resp, 'class="breadcrumbs"')
+        self.assertContains(resp, 'class="tabs"')
+
 
 class OpportunityEditTests(TestCase):
     def setUp(self):

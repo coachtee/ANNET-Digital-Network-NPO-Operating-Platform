@@ -1,8 +1,10 @@
 {% extends "staff_base.html" %}
 {% block title %}Networks & Programmes{% endblock %}
 {% block content %}
+<div class="breadcrumbs">Dashboard / Networks</div>
 <div class="page-header"><div><h1>Networks &amp; Programmes</h1><p>Every network/programme deployed on {{ NETWORK_SHORT_NAME }}: the platform's own network and any partner programmes, on the same architecture.</p></div></div>
 {% if rows %}
+<div class="card-flat" style="padding:0;">
 <table>
   <thead><tr><th>Network / Programme</th><th>Approved Members</th><th>Pending Applications</th><th>Staff</th><th></th></tr></thead>
   <tbody>
@@ -17,5 +19,6 @@
     {% endfor %}
   </tbody>
 </table>
+</div>
 {% else %}<div class="empty-state"><h3>No networks configured yet.</h3></div>{% endif %}
 {% endblock %}

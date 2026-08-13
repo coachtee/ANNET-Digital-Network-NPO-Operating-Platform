@@ -1,6 +1,7 @@
 {% extends "staff_base.html" %}
 {% block title %}Opportunities{% endblock %}
 {% block content %}
+<div class="breadcrumbs">Dashboard / Opportunities</div>
 <div class="page-header"><div><h1>Opportunities</h1><p>Funding, training, grants, tenders, partnerships and events across every network.</p></div></div>
 
 <div class="tabs">
@@ -11,6 +12,7 @@
 </div>
 
 {% if opportunities %}
+<div class="card-flat" style="padding:0;">
 <table>
   <thead><tr><th>Title</th><th>Network</th><th>Type</th><th>Status</th><th>Closing</th><th></th></tr></thead>
   <tbody>
@@ -26,5 +28,6 @@
     {% endfor %}
   </tbody>
 </table>
+</div>
 {% else %}<div class="empty-state"><h3>No opportunities match.</h3></div>{% endif %}
 {% endblock %}

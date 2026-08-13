@@ -172,3 +172,56 @@ class LogoUploadTests(TestCase):
             resp = self.client.post(self.url, {"public_about": "We do good work.", "public_logo": _tiny_png()})
         self.assertEqual(resp.status_code, 200)
         self.assertContains(resp, "exceeds the maximum")
+
+
+class WorkspaceDashboardTests(TestCase):
+    """The Organisation Dashboard's Health table must show every dimension
+    with its real, live-computed score -- an operational table, not a
+    fabricated summary."""
+
+    def setUp(self):
+        self.organisation = Organisation.objects.create(
+            legal_name="Dashboard Org", organisation_type="npo", province="GP",
+            onboarding_step=Organisation.ONBOARDING_COMPLETE,
+        )
+        self.user = User.objects.create_user(email="orgadmin@example.com", password="Sup3rSecurePass!23")
+        OrganisationMembership.objects.create(organisation=self.organisation, user=self.user, role=ORG_ROLE_ADMIN)
+        self.client.force_login(self.user)
+
+    def test_dashboard_shows_breadcrumb_summary_bar_and_tabs(self):
+        resp = self.client.get(reverse("organisations:workspace_home"))
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, 'class="breadcrumbs"')
+        self.assertContains(resp, 'class="summary-bar"')
+        self.assertContains(resp, 'class="tabs"')
+        self.assertContains(resp, "Province")
+        self.assertContains(resp, "Category")
+
+    def test_health_table_shows_all_seven_dimensions_with_real_scores(self):
+        resp = self.client.get(reverse("organisations:workspace_home"))
+        health_rows = resp.context["health_rows"]
+        self.assertEqual(len(health_rows), 7)
+        labels = {row["label"] for row in health_rows}
+        self.assertIn("Registration Readiness", labels)
+        self.assertIn("Financial Accountability", labels)
+        for row in health_rows:
+            self.assertIsInstance(row["score"], int)
+        self.assertContains(resp, "Registration Readiness")
+        self.assertContains(resp, "Financial Accountability")
+
+    def test_health_table_action_links_point_to_real_pages(self):
+        resp = self.client.get(reverse("organisations:workspace_home"))
+        governance_row = next(row for row in resp.context["health_rows"] if row["label"] == "Governance")
+        self.assertEqual(governance_row["fix_url"], reverse("governance:list", kwargs={"slug": self.organisation.slug}))
+
+    def test_tabs_link_to_existing_working_pages(self):
+        resp = self.client.get(reverse("organisations:workspace_home"))
+        for url in [
+            reverse("beneficiaries:list", kwargs={"slug": self.organisation.slug}),
+            reverse("programmes:list", kwargs={"slug": self.organisation.slug}),
+            reverse("projects:list", kwargs={"slug": self.organisation.slug}),
+            reverse("documents:list", kwargs={"slug": self.organisation.slug}),
+            reverse("monitoring_evaluation:dashboard", kwargs={"slug": self.organisation.slug}),
+        ]:
+            self.assertContains(resp, url)
+            self.assertEqual(self.client.get(url).status_code, 200)

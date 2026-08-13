@@ -1,47 +1,63 @@
 {% extends "staff_base.html" %}
 {% block title %}Overview{% endblock %}
 {% block content %}
+<div class="breadcrumbs">Dashboard</div>
 <div class="page-header"><div><h1>Platform Overview</h1><p>Bohlale Impact ecosystem, live from the database.</p></div></div>
 
-<div class="staff-metric-row">
-  <div class="metric-card"><div class="stat-value">{{ total_organisations }}</div><div class="stat-label">Organisations</div></div>
-  <div class="metric-card"><div class="stat-value">{{ verified_organisations }}</div><div class="stat-label">Verified</div></div>
-  <div class="metric-card"><div class="stat-value">{{ awaiting_verification }}</div><div class="stat-label">Awaiting Verification</div></div>
-  <div class="metric-card"><div class="stat-value">{{ network_count }}</div><div class="stat-label">Networks &amp; Programmes</div></div>
-  <div class="metric-card"><div class="stat-value">{{ pending_network_applications }}</div><div class="stat-label">Pending Applications</div></div>
-  <div class="metric-card"><div class="stat-value">{{ published_opportunities }}</div><div class="stat-label">Published Opportunities</div></div>
-  <div class="metric-card"><div class="stat-value">{{ published_resources }}</div><div class="stat-label">Published Resources</div></div>
+<div class="tabs">
+  <a href="{% url 'staffadmin:overview' %}" class="active">Dashboard</a>
+  <a href="{% url 'staffadmin:organisation_list' %}">Organisations</a>
+  <a href="{% url 'staffadmin:membership_overview' %}">Memberships</a>
+  <a href="{% url 'staffadmin:network_list' %}">Networks</a>
+  <a href="{% url 'staffadmin:opportunity_list' %}">Opportunities</a>
+  <a href="{% url 'resources:manage_list' %}">Resources</a>
+  <a href="{% url 'staffadmin:events' %}">Events</a>
+  <a href="{% url 'staffadmin:insights' %}">Insights</a>
+</div>
+
+<div class="summary-bar">
+  <div class="summary-bar-item"><div class="summary-bar-label">Organisations</div><div class="summary-bar-value">{{ total_organisations }}</div></div>
+  <div class="summary-bar-item"><div class="summary-bar-label">Verified</div><div class="summary-bar-value">{{ verified_organisations }}</div></div>
+  <div class="summary-bar-item"><div class="summary-bar-label">Networks &amp; Programmes</div><div class="summary-bar-value">{{ network_count }}</div></div>
+  <div class="summary-bar-item"><div class="summary-bar-label">Pending Applications</div><div class="summary-bar-value">{{ pending_network_applications }}</div></div>
+  <div class="summary-bar-item"><div class="summary-bar-label">Published Opportunities</div><div class="summary-bar-value">{{ published_opportunities }}</div></div>
+  <div class="summary-bar-item"><div class="summary-bar-label">Published Resources</div><div class="summary-bar-value">{{ published_resources }}</div></div>
+</div>
+
+<div class="section-block">
+  <h3>Items Requiring Attention</h3>
+  <div class="card-flat" style="padding:0;">
+    <table>
+      <thead><tr><th>Item</th><th>Count</th><th></th></tr></thead>
+      <tbody>
+        {% for row in attention_rows %}
+        <tr>
+          <td>{{ row.item }}</td>
+          <td><span class="badge {% if row.count %}badge-warning{% else %}badge-neutral{% endif %}">{{ row.count }}</span></td>
+          <td>{% if row.count %}<a href="{{ row.action_url }}" class="attention-fix">Review →</a>{% endif %}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
 </div>
 
 <div class="grid grid-2">
-  <div class="card-flat">
+  <div class="section-block">
     <h3>Organisations by Province</h3>
-    {% if province_counts %}
-      <table><tbody>{% for row in province_counts %}<tr><td>{{ row.label }}</td><td style="text-align:right; font-weight:700;">{{ row.count }}</td></tr>{% endfor %}</tbody></table>
-    {% else %}<p class="text-muted">No organisations with a province recorded yet.</p>{% endif %}
+    <div class="card-flat" style="padding:0;">
+      {% if province_counts %}
+        <table><tbody>{% for row in province_counts %}<tr><td>{{ row.label }}</td><td style="text-align:right; font-weight:700;">{{ row.count }}</td></tr>{% endfor %}</tbody></table>
+      {% else %}<p class="text-muted" style="padding:16px;">No organisations with a province recorded yet.</p>{% endif %}
+    </div>
   </div>
-  <div class="card-flat">
+  <div class="section-block">
     <h3>Organisations by Category</h3>
-    {% if category_counts %}
-      <table><tbody>{% for row in category_counts %}<tr><td>{{ row.label }}</td><td style="text-align:right; font-weight:700;">{{ row.count }}</td></tr>{% endfor %}</tbody></table>
-    {% else %}<p class="text-muted">No organisations recorded yet.</p>{% endif %}
+    <div class="card-flat" style="padding:0;">
+      {% if category_counts %}
+        <table><tbody>{% for row in category_counts %}<tr><td>{{ row.label }}</td><td style="text-align:right; font-weight:700;">{{ row.count }}</td></tr>{% endfor %}</tbody></table>
+      {% else %}<p class="text-muted" style="padding:16px;">No organisations recorded yet.</p>{% endif %}
+    </div>
   </div>
-</div>
-
-<div class="grid grid-2" style="margin-top:20px;">
-  {% if pending_network_applications %}
-  <div class="card">
-    <h3>Needs Attention</h3>
-    <p class="text-muted">{{ pending_network_applications }} membership application{{ pending_network_applications|pluralize }} awaiting review across all networks.</p>
-    <a href="{% url 'staffadmin:membership_overview' %}" class="btn btn-outline btn-sm">Review Memberships</a>
-  </div>
-  {% endif %}
-  {% if awaiting_verification %}
-  <div class="card">
-    <h3>Verification Queue</h3>
-    <p class="text-muted">{{ awaiting_verification }} publicly listed organisation{{ awaiting_verification|pluralize }} not yet verified.</p>
-    <a href="{% url 'staffadmin:organisation_list' %}" class="btn btn-outline btn-sm">View Organisations</a>
-  </div>
-  {% endif %}
 </div>
 {% endblock %}

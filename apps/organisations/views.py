@@ -170,17 +170,17 @@ def workspace_home(request):
 
     health = compute_health_check(organisation)
 
-    # One action per below-100 dimension keeps this a short, actionable
-    # list rather than a dump of every recommendation the Health Check has
-    # -- the full set is still one click away on the Health Check page.
-    needs_attention = []
-    for dim in health["dimensions"]:
-        if dim.score < 100 and dim.recommended_actions:
-            needs_attention.append({
-                "text": dim.recommended_actions[0], "dimension": dim.label,
-                "fix_url": _dimension_fix_url(organisation, dim.key),
-            })
-    needs_attention = needs_attention[:6]
+    # Every dimension, always -- an operational health table, not just the
+    # incomplete ones. A dimension already at 100 simply shows no action.
+    health_rows = [
+        {
+            "label": dim.label,
+            "score": dim.score,
+            "action": dim.recommended_actions[0] if dim.recommended_actions else "",
+            "fix_url": _dimension_fix_url(organisation, dim.key),
+        }
+        for dim in health["dimensions"]
+    ]
 
     primary_network = get_primary_network()
     network_memberships = organisation.network_memberships.select_related("network").order_by("-created_at")
@@ -188,7 +188,7 @@ def workspace_home(request):
     context = {
         "organisation": organisation,
         "health": health,
-        "needs_attention": needs_attention,
+        "health_rows": health_rows,
         "open_obligations": organisation.compliance_obligations.exclude(
             status__in=["submitted", "evidence_recorded", "not_applicable"]
         ).count(),
@@ -204,7 +204,7 @@ def workspace_home(request):
         "network_memberships": network_memberships,
         "primary_network": primary_network,
         "membership_application": network_memberships.filter(network=primary_network).first(),
-        "recent_activity": organisation.audit_entries.select_related("actor")[:6],
+        "recent_activity": organisation.audit_entries.select_related("actor")[:10],
     }
     return render(request, "organisations/workspace_home.html", context)
 

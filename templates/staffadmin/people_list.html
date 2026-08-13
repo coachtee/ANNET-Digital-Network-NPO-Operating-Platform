@@ -1,8 +1,10 @@
 {% extends "staff_base.html" %}
 {% block title %}People{% endblock %}
 {% block content %}
+<div class="breadcrumbs">Dashboard / People</div>
 <div class="page-header"><div><h1>People</h1><p>{{ page_obj.paginator.count }} registered account{{ page_obj.paginator.count|pluralize }} on {{ NETWORK_SHORT_NAME }}.</p></div></div>
 {% if page_obj %}
+<div class="card-flat" style="padding:0;">
 <table>
   <thead><tr><th>Name</th><th>Email</th><th>Organisation(s)</th><th>Network Staff</th><th>Joined</th></tr></thead>
   <tbody>
@@ -17,6 +19,7 @@
     {% endfor %}
   </tbody>
 </table>
+</div>
 {% if page_obj.has_other_pages %}
 <div class="pagination">
   {% for num in page_obj.paginator.page_range %}<a href="?page={{ num }}" class="{% if page_obj.number == num %}current{% endif %}">{{ num }}</a>{% endfor %}

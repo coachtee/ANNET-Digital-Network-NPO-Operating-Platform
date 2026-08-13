@@ -187,15 +187,25 @@ tr:last-child td { border-bottom: none; }
 .metric-card { border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: 16px; }
 .metric-card .stat-value { font-size: 1.6rem; }
 
-.attention-list, .activity-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
-.attention-list li, .activity-list li { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-bottom: 10px; border-bottom: 1px solid var(--color-border); font-size: .88rem; }
-.attention-list li:last-child, .activity-list li:last-child { border-bottom: none; padding-bottom: 0; }
-.activity-list li { flex-direction: column; align-items: flex-start; gap: 2px; }
 .attention-fix { font-weight: 700; white-space: nowrap; }
 
 .tabs { display: flex; flex-wrap: wrap; gap: 4px; border-bottom: 1px solid var(--color-border); margin-bottom: 20px; }
 .tabs a { padding: 9px 14px; font-size: .88rem; font-weight: 600; color: var(--color-text-muted); border-bottom: 2px solid transparent; white-space: nowrap; }
 .tabs a.active { color: var(--color-primary); border-bottom-color: var(--color-primary); }
+
+/* Compact operational summary strip -- thin-bordered row of label/value
+   pairs, used instead of large stat cards on dashboard pages. */
+.summary-bar { display: flex; flex-wrap: wrap; border: 1px solid var(--color-border); border-radius: var(--radius-md); margin-bottom: 20px; }
+.summary-bar-item { padding: 10px 18px; border-right: 1px solid var(--color-border); flex: 1 1 150px; min-width: 130px; }
+.summary-bar-item:last-child { border-right: none; }
+@media (max-width: 900px) { .summary-bar-item { flex-basis: 50%; border-bottom: 1px solid var(--color-border); } .summary-bar-item:nth-child(2n) { border-right: none; } }
+.summary-bar-label { font-size: .68rem; text-transform: uppercase; letter-spacing: .03em; color: var(--color-text-muted); font-weight: 700; margin-bottom: 3px; }
+.summary-bar-value { font-size: 1rem; font-weight: 700; }
+
+.section-block { margin-bottom: 20px; }
+.section-block h3 { font-size: 1rem; margin-bottom: 12px; }
+
+.quick-links { display: flex; flex-wrap: wrap; gap: 8px 24px; font-size: .85rem; margin-top: 4px; }
 
 .pagination { display: flex; gap: 6px; margin-top: 20px; }
 .pagination a, .pagination span { padding: 6px 11px; border: 1px solid var(--color-border); border-radius: var(--radius-sm); font-size: .82rem; }

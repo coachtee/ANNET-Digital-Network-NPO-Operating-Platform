@@ -20,8 +20,6 @@
 .staff-sidebar .sidebar-nav a.active { background: rgba(255,255,255,.12); border-left-color: #fff; color: #fff; }
 .staff-sidebar .sidebar-section-label { color: rgba(255,255,255,.5); }
 
-.staff-metric-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 16px; margin-bottom: 24px; }
-
 .coming-soon-badge {
   display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: .72rem; font-weight: 700;
   background: var(--color-warning-light); color: var(--color-warning); text-transform: uppercase; letter-spacing: .03em;

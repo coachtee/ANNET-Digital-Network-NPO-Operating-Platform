@@ -2,112 +2,126 @@
 {% load text_filters %}
 {% block title %}Overview{% endblock %}
 {% block content %}
+<div class="breadcrumbs">Dashboard</div>
 <div class="page-header">
   <div>
     <h1>{{ organisation.display_name }}</h1>
-    <p>
-      My Organisation on {{ NETWORK_SHORT_NAME }}
-      <span class="badge {% if health.overall >= 75 %}badge-success{% elif health.overall >= 40 %}badge-warning{% else %}badge-danger{% endif %}" style="margin-left:6px;">{{ health.overall }}% ready</span>
-      {% if organisation.is_network_member %}<span class="badge badge-success">{{ NETWORK_SHORT_NAME }} Member</span>{% endif %}
-    </p>
+    <p>My Organisation on {{ NETWORK_SHORT_NAME }}</p>
   </div>
   {% if not organisation.is_network_member %}
     <a href="{% url 'memberships:apply' slug=organisation.slug %}" class="btn btn-primary">Apply to join {{ NETWORK_SHORT_NAME }}</a>
   {% endif %}
 </div>
 
-<div class="metric-row">
-  <div class="metric-card"><div class="stat-value">{{ health.overall }}%</div><div class="stat-label">Overall Readiness</div></div>
-  <div class="metric-card"><div class="stat-value">{{ active_programmes }}</div><div class="stat-label">Active Programmes</div></div>
-  <div class="metric-card"><div class="stat-value">{{ document_count }}</div><div class="stat-label">Documents</div></div>
-  <div class="metric-card"><div class="stat-value">{{ open_obligations }}</div><div class="stat-label">Open Compliance Items</div></div>
+<div class="summary-bar">
+  <div class="summary-bar-item">
+    <div class="summary-bar-label">Organisation Health</div>
+    <div class="summary-bar-value">{{ health.overall }}%</div>
+  </div>
+  <div class="summary-bar-item">
+    <div class="summary-bar-label">Membership</div>
+    <div class="summary-bar-value">{% if membership_application %}{{ membership_application.get_status_display }}{% else %}Not applied{% endif %}</div>
+  </div>
+  <div class="summary-bar-item">
+    <div class="summary-bar-label">Province</div>
+    <div class="summary-bar-value">{{ organisation.get_province_display|default:"—" }}</div>
+  </div>
+  <div class="summary-bar-item">
+    <div class="summary-bar-label">Category</div>
+    <div class="summary-bar-value">{{ organisation.get_organisation_type_display }}</div>
+  </div>
+  <div class="summary-bar-item">
+    <div class="summary-bar-label">Active Programmes</div>
+    <div class="summary-bar-value">{{ active_programmes }}</div>
+  </div>
+  <div class="summary-bar-item">
+    <div class="summary-bar-label">Active Projects</div>
+    <div class="summary-bar-value">{{ active_projects }}</div>
+  </div>
+  <div class="summary-bar-item">
+    <div class="summary-bar-label">People Recorded</div>
+    <div class="summary-bar-value">{{ beneficiary_count }}</div>
+  </div>
+  <div class="summary-bar-item">
+    <div class="summary-bar-label">People Reached</div>
+    <div class="summary-bar-value">{{ people_reached }}</div>
+  </div>
 </div>
 
-<div class="grid grid-2" style="align-items:start;">
-  <div class="card-flat">
-    <h3>Needs Your Attention</h3>
-    {% if needs_attention %}
-      <ul class="attention-list">
-        {% for item in needs_attention %}
-        <li>
-          <span>{{ item.text }}</span>
-          {% if item.fix_url %}<a href="{{ item.fix_url }}" class="attention-fix">Fix →</a>{% endif %}
-        </li>
-        {% endfor %}
-      </ul>
-    {% else %}
-      <p class="text-muted">Nothing outstanding right now, your Health Check dimensions all look complete.</p>
-    {% endif %}
-  </div>
+<div class="tabs">
+  <a href="{% url 'organisations:workspace_home' %}" class="active">Overview</a>
+  <a href="{% url 'beneficiaries:list' slug=organisation.slug %}">People</a>
+  <a href="{% url 'programmes:list' slug=organisation.slug %}">Programmes</a>
+  <a href="{% url 'projects:list' slug=organisation.slug %}">Projects</a>
+  <a href="{% url 'documents:list' slug=organisation.slug %}">Documents</a>
+  <a href="{% url 'monitoring_evaluation:dashboard' slug=organisation.slug %}">M&amp;E</a>
+</div>
 
-  <div class="card-flat">
-    <h3>Recent Activity</h3>
+<div class="section-block">
+  <h3>Organisation Health</h3>
+  <div class="card-flat" style="padding:0;">
+    <table>
+      <thead><tr><th>Area</th><th>Score</th><th>Recommended Action</th><th></th></tr></thead>
+      <tbody>
+        {% for row in health_rows %}
+        <tr>
+          <td>{{ row.label }}</td>
+          <td><span class="badge {% if row.score >= 75 %}badge-success{% elif row.score >= 40 %}badge-warning{% else %}badge-danger{% endif %}">{{ row.score }}%</span></td>
+          <td>{{ row.action|default:"—" }}</td>
+          <td>{% if row.action and row.fix_url %}<a href="{{ row.fix_url }}" class="attention-fix">Fix →</a>{% endif %}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="section-block">
+  <h3>Recent Activity</h3>
+  <div class="card-flat" style="padding:0;">
     {% if recent_activity %}
-      <ul class="activity-list">
+    <table>
+      <thead><tr><th>Activity</th><th>By</th><th>When</th></tr></thead>
+      <tbody>
         {% for entry in recent_activity %}
-        <li>
-          <span>{{ entry.action|humanize_action }}</span>
-          <span class="text-muted">{{ entry.actor|default:"System" }} · {{ entry.created_at|timesince }} ago</span>
-        </li>
+        <tr>
+          <td>{{ entry.action|humanize_action }}</td>
+          <td>{{ entry.actor|default:"System" }}</td>
+          <td>{{ entry.created_at|timesince }} ago</td>
+        </tr>
         {% endfor %}
-      </ul>
+      </tbody>
+    </table>
     {% else %}
-      <p class="text-muted">No activity recorded yet.</p>
+    <p class="text-muted" style="padding:16px;">No activity recorded yet.</p>
     {% endif %}
   </div>
 </div>
 
-<div class="grid grid-2" style="align-items:start; margin-top:20px;">
-  <div class="card-flat">
-    <h3>Networks &amp; Programmes</h3>
+<div class="section-block">
+  <h3>Networks &amp; Programmes</h3>
+  <div class="card-flat" style="padding:0;">
     {% if network_memberships %}
-      <table>
-        <tbody>
-          {% for m in network_memberships %}
-          <tr>
-            <td>{{ m.network.name }}</td>
-            <td><span class="badge badge-neutral">{{ m.get_status_display }}</span></td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
+    <table>
+      <thead><tr><th>Network / Programme</th><th>Status</th></tr></thead>
+      <tbody>
+        {% for m in network_memberships %}
+        <tr>
+          <td>{{ m.network.name }}</td>
+          <td><span class="badge badge-neutral">{{ m.get_status_display }}</span></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
     {% else %}
-      <p class="text-muted">Not yet applied to any network or programme.</p>
+    <p class="text-muted" style="padding:16px;">Not yet applied to any network or programme.</p>
     {% endif %}
-    <a href="{% url 'memberships:apply' slug=organisation.slug %}" class="btn btn-outline btn-sm" style="margin-top:12px;">View Membership</a>
-  </div>
-
-  <div class="card-flat">
-    <h3>Programmes, People &amp; Impact</h3>
-    <div class="metric-row" style="margin-bottom:0;">
-      <div class="metric-card"><div class="stat-value">{{ active_programmes }}</div><div class="stat-label">Active Programmes</div></div>
-      <div class="metric-card"><div class="stat-value">{{ active_projects }}</div><div class="stat-label">Active Projects</div></div>
-      <div class="metric-card"><div class="stat-value">{{ beneficiary_count }}</div><div class="stat-label">People Recorded</div></div>
-      <div class="metric-card"><div class="stat-value">{{ people_reached }}</div><div class="stat-label">People Reached</div></div>
-    </div>
   </div>
 </div>
 
-<div class="grid grid-2" style="margin-top:20px;">
-  <div class="card">
-    <h3>Organisation Health</h3>
-    <p class="text-muted">See dimension-level scores and recommended actions.</p>
-    <a href="{% url 'organisations:health_check' slug=organisation.slug %}" class="btn btn-outline btn-sm">View Health Check</a>
-  </div>
-  <div class="card">
-    <h3>Compliance Passport</h3>
-    <p class="text-muted">Track applicable obligations, deadlines and evidence.</p>
-    <a href="{% url 'compliance:passport' slug=organisation.slug %}" class="btn btn-outline btn-sm">Open Compliance Passport</a>
-  </div>
-  <div class="card">
-    <h3>Impact Dashboard</h3>
-    <p class="text-muted">See reach, delivery and target achievement from your own records.</p>
-    <a href="{% url 'impact:dashboard' slug=organisation.slug %}" class="btn btn-outline btn-sm">View Impact</a>
-  </div>
-  <div class="card">
-    <h3>Document Vault</h3>
-    <p class="text-muted">Constitution, minutes, policies and evidence in one place.</p>
-    <a href="{% url 'documents:list' slug=organisation.slug %}" class="btn btn-outline btn-sm">Open Document Vault</a>
-  </div>
+<div class="quick-links">
+  <a href="{% url 'organisations:health_check' slug=organisation.slug %}">Full Health Check →</a>
+  <a href="{% url 'compliance:passport' slug=organisation.slug %}">Compliance Passport ({{ open_obligations }} open) →</a>
+  <a href="{% url 'impact:dashboard' slug=organisation.slug %}">Impact Dashboard →</a>
 </div>
 {% endblock %}

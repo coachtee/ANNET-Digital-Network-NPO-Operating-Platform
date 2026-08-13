@@ -1,7 +1,7 @@
 {% extends "staff_base.html" %}
 {% block title %}{{ organisation.display_name }}{% endblock %}
 {% block content %}
-<div class="breadcrumbs"><a href="{% url 'staffadmin:organisation_list' %}">Organisations</a> / {{ organisation.display_name }}</div>
+<div class="breadcrumbs"><a href="{% url 'staffadmin:overview' %}">Dashboard</a> / <a href="{% url 'staffadmin:organisation_list' %}">Organisations</a> / {{ organisation.display_name }}</div>
 <div class="page-header">
   <div>
     <h1>{{ organisation.display_name }}</h1>

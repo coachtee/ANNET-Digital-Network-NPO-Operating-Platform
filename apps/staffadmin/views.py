@@ -2,6 +2,7 @@ from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
 from django.core.paginator import Paginator
 from django.shortcuts import get_object_or_404, render
+from django.urls import reverse
 
 from apps.accounts.models import User
 from apps.core.permissions import has_platform_capability
@@ -36,18 +37,33 @@ def overview(request):
     category_counts = [row for row in category_counts if row["count"]]
     category_counts.sort(key=lambda r: -r["count"])
 
+    awaiting_verification = organisations.filter(is_publicly_listed=True, public_verification_status="unverified").count()
+    pending_network_applications = MembershipApplication.objects.filter(
+        status__in=[MembershipApplication.STATUS_SUBMITTED, MembershipApplication.STATUS_INFORMATION_REQUESTED]
+    ).count()
+
+    attention_rows = [
+        {
+            "item": "Organisations awaiting verification", "count": awaiting_verification,
+            "action_url": reverse("staffadmin:organisation_list") + "?verification_status=unverified",
+        },
+        {
+            "item": "Membership applications pending review", "count": pending_network_applications,
+            "action_url": reverse("staffadmin:membership_overview"),
+        },
+    ]
+
     context = {
         "total_organisations": organisations.count(),
         "verified_organisations": organisations.filter(public_verification_status="verified").count(),
-        "awaiting_verification": organisations.filter(is_publicly_listed=True, public_verification_status="unverified").count(),
+        "awaiting_verification": awaiting_verification,
         "network_count": Network.objects.count(),
-        "pending_network_applications": MembershipApplication.objects.filter(
-            status__in=[MembershipApplication.STATUS_SUBMITTED, MembershipApplication.STATUS_INFORMATION_REQUESTED]
-        ).count(),
+        "pending_network_applications": pending_network_applications,
         "published_opportunities": Opportunity.objects.filter(status=Opportunity.STATUS_PUBLISHED).count(),
         "published_resources": Resource.objects.filter(status=Resource.STATUS_PUBLISHED).count(),
         "province_counts": province_counts,
         "category_counts": category_counts,
+        "attention_rows": attention_rows,
     }
     return render(request, "staffadmin/overview.html", context)
 
@@ -66,12 +82,17 @@ def organisation_list(request):
     category = request.GET.get("category", "")
     if category:
         organisations = organisations.filter(organisation_type=category)
+    verification_status = request.GET.get("verification_status", "")
+    if verification_status:
+        organisations = organisations.filter(public_verification_status=verification_status)
 
     paginator = Paginator(organisations, 25)
     page = paginator.get_page(request.GET.get("page"))
     return render(request, "staffadmin/organisation_list.html", {
         "page_obj": page, "query": query, "province": province, "category": category,
+        "verification_status": verification_status,
         "province_choices": PROVINCE_CHOICES, "category_choices": ORGANISATION_TYPE_CHOICES,
+        "verification_status_choices": Organisation._meta.get_field("public_verification_status").choices,
     })
 
 
