@@ -1,3 +1,4 @@
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase
 from django.urls import reverse
 
@@ -6,6 +7,22 @@ from apps.core.permissions import NETWORK_ROLE_ADMIN
 from apps.networks.models import Network, NetworkStaffRole
 
 PASSWORD = "TestPass!2026"
+
+# Same root cause as apps.organisations.tests.LogoUploadTests: STORAGES had
+# no "default" entry, so any plain ImageField -- Network.logo included --
+# 500'd the moment a file was actually saved through it. There's no
+# view/form exposing Network.logo yet (only Django admin can set it today),
+# so this is a model-level regression test rather than an HTTP one.
+def _make_tiny_png_bytes():
+    import io as _io
+    from PIL import Image as _Image
+
+    buf = _io.BytesIO()
+    _Image.new("RGB", (2, 2), color=(10, 20, 30)).save(buf, format="PNG")
+    return buf.getvalue()
+
+
+_TINY_PNG_BYTES = _make_tiny_png_bytes()
 
 
 class AdministeredNetworksContextProcessorTests(TestCase):
@@ -42,3 +59,21 @@ class AdministeredNetworksContextProcessorTests(TestCase):
     def test_anonymous_visitor_sees_no_networks_and_no_extra_queries_crash(self):
         response = self.client.get(reverse("sitepublic:home"))
         self.assertEqual(list(response.context["administered_networks"]), [])
+
+
+class NetworkLogoUploadTests(TestCase):
+    def setUp(self):
+        self.network = Network.objects.create(slug="bohlale-impact", name="Bohlale Impact")
+
+    def tearDown(self):
+        self.network.refresh_from_db()
+        if self.network.logo:
+            self.network.logo.delete(save=False)
+
+    def test_saving_a_logo_persists_to_storage(self):
+        self.network.logo = SimpleUploadedFile("network-logo.png", _TINY_PNG_BYTES, content_type="image/png")
+        self.network.save()
+
+        self.network.refresh_from_db()
+        self.assertTrue(self.network.logo.name)
+        self.assertTrue(self.network.logo.storage.exists(self.network.logo.name))

@@ -205,6 +205,18 @@ STATIC_URL = "static/"
 STATICFILES_DIRS = [BASE_DIR / "static"]
 STATIC_ROOT = BASE_DIR / "staticfiles"
 STORAGES = {
+    # Django does not merge a project's STORAGES with its own built-in
+    # default -- setting this key at all replaces the whole dict. Omitting
+    # "default" left every plain FileField/ImageField (anything without an
+    # explicit storage=, e.g. Organisation.public_logo, Network.logo) with
+    # nowhere to resolve default_storage, raising InvalidStorageError the
+    # moment a file was actually saved through one (HTTP 500 on upload,
+    # confirmed via a forced default_storage lookup). Fields that already
+    # pass storage=private_storage (documents.Document, expenses.Expense)
+    # were unaffected, since that bypasses this registry entirely.
+    "default": {
+        "BACKEND": "django.core.files.storage.FileSystemStorage",
+    },
     "staticfiles": {
         # The manifest storage requires `collectstatic` to have been run
         # (it hashes filenames and needs staticfiles.json to resolve

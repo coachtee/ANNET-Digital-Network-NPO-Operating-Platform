@@ -1,9 +1,27 @@
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase
 from django.urls import reverse
 
 from apps.accounts.models import User
 from apps.core.permissions import ORG_ROLE_ADMIN
 from apps.organisations.models import Organisation, OrganisationMembership
+
+# A minimal, genuinely valid 2x2 PNG (not a hand-typed stub) -- exercises
+# real Pillow/ImageField validation, not just the extension check.
+def _make_tiny_png_bytes():
+    import io as _io
+    from PIL import Image as _Image
+
+    buf = _io.BytesIO()
+    _Image.new("RGB", (2, 2), color=(10, 20, 30)).save(buf, format="PNG")
+    return buf.getvalue()
+
+
+_TINY_PNG_BYTES = _make_tiny_png_bytes()
+
+
+def _tiny_png(name="logo.png"):
+    return SimpleUploadedFile(name, _TINY_PNG_BYTES, content_type="image/png")
 
 
 class SmokeTestGoldenPath(TestCase):
@@ -90,3 +108,67 @@ class TenantIsolationTests(TestCase):
         self.client.force_login(self.user_a)
         resp = self.client.get(reverse("organisations:org_360", args=[self.org_a.slug]))
         self.assertEqual(resp.status_code, 200)
+
+
+class LogoUploadTests(TestCase):
+    """Regression coverage for the confirmed P0 bug: STORAGES had no
+    "default" entry, so any plain ImageField/FileField (public_logo here,
+    Network.logo in apps.networks) 500'd the moment a file was actually
+    attached -- saving the form with no logo never touched storage and
+    always worked, which is why the bug went uncaught until now."""
+
+    def setUp(self):
+        self.organisation = Organisation.objects.create(legal_name="Logo Test Org", organisation_type="npo")
+        self.user = User.objects.create_user(email="admin@example.com", password="Sup3rSecurePass!23")
+        OrganisationMembership.objects.create(organisation=self.organisation, user=self.user, role=ORG_ROLE_ADMIN)
+        self.client.force_login(self.user)
+        self.url = reverse("organisations:public_profile_settings", args=[self.organisation.slug])
+
+    def tearDown(self):
+        # Uploaded test files land under MEDIA_ROOT for real (default_storage
+        # is genuine FileSystemStorage, not mocked) -- clean them up rather
+        # than leaving stray files in the dev media directory.
+        self.organisation.refresh_from_db()
+        if self.organisation.public_logo:
+            self.organisation.public_logo.delete(save=False)
+
+    def test_saving_profile_without_logo_still_works(self):
+        resp = self.client.post(self.url, {"public_about": "We do good work."})
+        self.assertEqual(resp.status_code, 302)
+
+    def test_uploading_a_valid_logo_succeeds(self):
+        resp = self.client.post(self.url, {
+            "public_about": "We do good work.",
+            "public_logo": _tiny_png(),
+        })
+        self.assertEqual(resp.status_code, 302)
+        self.organisation.refresh_from_db()
+        self.assertTrue(self.organisation.public_logo.name)
+        self.assertTrue(self.organisation.public_logo.storage.exists(self.organisation.public_logo.name))
+
+    def test_uploading_a_disallowed_extension_shows_validation_error_not_500(self):
+        # Valid image bytes (so Django's own Pillow-backed ImageField
+        # validation passes) but a format/extension outside
+        # ALLOWED_UPLOAD_EXTENSIONS, to isolate apps.core.validators'
+        # extension check specifically.
+        import io as _io
+
+        from PIL import Image as _Image
+
+        buf = _io.BytesIO()
+        _Image.new("RGB", (2, 2)).save(buf, format="BMP")
+        bad_file = SimpleUploadedFile("logo.bmp", buf.getvalue(), content_type="image/bmp")
+
+        resp = self.client.post(self.url, {"public_about": "We do good work.", "public_logo": bad_file})
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, "not allowed")
+        self.organisation.refresh_from_db()
+        self.assertFalse(self.organisation.public_logo)
+
+    def test_uploading_an_oversized_file_shows_validation_error_not_500(self):
+        from django.test import override_settings
+
+        with override_settings(MAX_UPLOAD_SIZE_BYTES=len(_TINY_PNG_BYTES) - 1):
+            resp = self.client.post(self.url, {"public_about": "We do good work.", "public_logo": _tiny_png()})
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, "exceeds the maximum")
