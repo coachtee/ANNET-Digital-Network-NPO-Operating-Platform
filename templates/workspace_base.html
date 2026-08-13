@@ -1,4 +1,4 @@
-{% load static %}<!DOCTYPE html>
+{% load static icons %}<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -10,60 +10,84 @@
 </head>
 <body>
 <div class="app-shell">
+  <div class="sidebar-backdrop" data-mobile-nav-backdrop></div>
   <aside class="app-sidebar">
     <a href="{% url 'sitepublic:home' %}" class="brand">
-      <img src="{% static 'img/bohlale-logo.png' %}" alt="{{ NETWORK_SHORT_NAME }} logo" style="width:32px;height:32px;">
+      <img src="{% static 'img/bohlale-logo.png' %}" alt="{{ NETWORK_SHORT_NAME }} logo" style="width:32px;height:32px;flex-shrink:0;">
       <span>{{ NETWORK_SHORT_NAME }}</span>
     </a>
+    <button type="button" class="sidebar-toggle" data-sidebar-toggle aria-label="Collapse navigation" aria-expanded="true">
+      {% icon "chevron-down" %}
+    </button>
     <nav class="sidebar-nav">
       {% if active_organisation %}
-        <div class="sidebar-section-label">Overview</div>
-        <a href="{% url 'organisations:workspace_home' %}" class="{% if request.resolver_match.url_name == 'workspace_home' %}active{% endif %}">Organisation Dashboard</a>
-        <a href="{% url 'organisations:org_360' slug=active_organisation.slug %}">Organisation Profile</a>
-        <div class="sidebar-section-label">Governance &amp; Compliance</div>
-        <a href="{% url 'compliance:passport' slug=active_organisation.slug %}">Compliance Passport</a>
-        <a href="{% url 'compliance:calendar' slug=active_organisation.slug %}">Compliance Calendar</a>
-        <a href="{% url 'organisations:health_check' slug=active_organisation.slug %}">Health Check</a>
-        <a href="{% url 'governance:list' slug=active_organisation.slug %}">Governance</a>
-        <a href="{% url 'policies:list' slug=active_organisation.slug %}">Policies</a>
-        <div class="sidebar-section-label">Operations</div>
-        <a href="{% url 'grants:list' slug=active_organisation.slug %}">Grants</a>
-        <a href="{% url 'projects:list' slug=active_organisation.slug %}">Projects</a>
-        <a href="{% url 'programmes:list' slug=active_organisation.slug %}">Programmes</a>
-        <a href="{% url 'beneficiaries:list' slug=active_organisation.slug %}">People</a>
-        <a href="{% url 'attendance:list' slug=active_organisation.slug %}">Attendance</a>
-        <a href="{% url 'expenses:list' slug=active_organisation.slug %}">Finance Lite</a>
-        <div class="sidebar-section-label">Evidence</div>
-        <a href="{% url 'documents:list' slug=active_organisation.slug %}">Documents</a>
-        <div class="sidebar-section-label">Impact</div>
-        <a href="{% url 'monitoring_evaluation:dashboard' slug=active_organisation.slug %}">M&amp;E</a>
-        <a href="{% url 'impact:dashboard' slug=active_organisation.slug %}">Impact Dashboard</a>
-        <a href="{% url 'reporting:list' slug=active_organisation.slug %}">Reports</a>
-        <div class="sidebar-section-label">Administration</div>
-        <a href="{% url 'memberships:apply' slug=active_organisation.slug %}">Membership</a>
-        <a href="{% url 'organisations:public_profile_settings' slug=active_organisation.slug %}">Settings</a>
+        <div class="sidebar-group">
+          <div class="sidebar-section-label"><span>Overview</span></div>
+          <a href="{% url 'organisations:workspace_home' %}" class="sidebar-link {% if request.resolver_match.url_name == 'workspace_home' %}active{% endif %}" data-label="Dashboard">{% icon "grid" %}<span class="sidebar-link-label">Dashboard</span></a>
+          <a href="{% url 'organisations:org_360' slug=active_organisation.slug %}" class="sidebar-link" data-label="Organisation Profile">{% icon "building" %}<span class="sidebar-link-label">Organisation Profile</span></a>
+        </div>
+        <div class="sidebar-group">
+          <div class="sidebar-section-label"><span>Manage</span></div>
+          <a href="{% url 'beneficiaries:list' slug=active_organisation.slug %}" class="sidebar-link" data-label="People">{% icon "users" %}<span class="sidebar-link-label">People</span></a>
+          <a href="{% url 'programmes:list' slug=active_organisation.slug %}" class="sidebar-link" data-label="Programmes">{% icon "layers" %}<span class="sidebar-link-label">Programmes</span></a>
+          <a href="{% url 'projects:list' slug=active_organisation.slug %}" class="sidebar-link" data-label="Projects">{% icon "briefcase" %}<span class="sidebar-link-label">Projects</span></a>
+          <a href="{% url 'grants:list' slug=active_organisation.slug %}" class="sidebar-link" data-label="Grants">{% icon "coins" %}<span class="sidebar-link-label">Grants</span></a>
+          <a href="{% url 'attendance:list' slug=active_organisation.slug %}" class="sidebar-link" data-label="Attendance">{% icon "calendar" %}<span class="sidebar-link-label">Attendance</span></a>
+          <a href="{% url 'expenses:list' slug=active_organisation.slug %}" class="sidebar-link" data-label="Finance Lite">{% icon "wallet" %}<span class="sidebar-link-label">Finance Lite</span></a>
+        </div>
+        <div class="sidebar-group">
+          <div class="sidebar-section-label"><span>Governance &amp; Compliance</span></div>
+          <a href="{% url 'compliance:passport' slug=active_organisation.slug %}" class="sidebar-link" data-label="Compliance Passport">{% icon "shield-check" %}<span class="sidebar-link-label">Compliance Passport</span></a>
+          <a href="{% url 'compliance:calendar' slug=active_organisation.slug %}" class="sidebar-link" data-label="Compliance Calendar">{% icon "calendar" %}<span class="sidebar-link-label">Compliance Calendar</span></a>
+          <a href="{% url 'organisations:health_check' slug=active_organisation.slug %}" class="sidebar-link" data-label="Health Check">{% icon "gauge" %}<span class="sidebar-link-label">Health Check</span></a>
+          <a href="{% url 'governance:list' slug=active_organisation.slug %}" class="sidebar-link" data-label="Governance">{% icon "shield" %}<span class="sidebar-link-label">Governance</span></a>
+          <a href="{% url 'policies:list' slug=active_organisation.slug %}" class="sidebar-link" data-label="Policies">{% icon "file-text" %}<span class="sidebar-link-label">Policies</span></a>
+        </div>
+        <div class="sidebar-group">
+          <div class="sidebar-section-label"><span>Evidence</span></div>
+          <a href="{% url 'documents:list' slug=active_organisation.slug %}" class="sidebar-link" data-label="Documents">{% icon "book-open" %}<span class="sidebar-link-label">Documents</span></a>
+        </div>
+        <div class="sidebar-group">
+          <div class="sidebar-section-label"><span>Impact</span></div>
+          <a href="{% url 'monitoring_evaluation:dashboard' slug=active_organisation.slug %}" class="sidebar-link" data-label="M&amp;E">{% icon "bar-chart" %}<span class="sidebar-link-label">M&amp;E</span></a>
+          <a href="{% url 'impact:dashboard' slug=active_organisation.slug %}" class="sidebar-link" data-label="Impact Dashboard">{% icon "trending-up" %}<span class="sidebar-link-label">Impact Dashboard</span></a>
+          <a href="{% url 'reporting:list' slug=active_organisation.slug %}" class="sidebar-link" data-label="Reports">{% icon "bar-chart" %}<span class="sidebar-link-label">Reports</span></a>
+        </div>
+        <div class="sidebar-group">
+          <div class="sidebar-section-label"><span>Administration</span></div>
+          <a href="{% url 'memberships:apply' slug=active_organisation.slug %}" class="sidebar-link" data-label="Membership">{% icon "user-check" %}<span class="sidebar-link-label">Membership</span></a>
+          <a href="{% url 'organisations:public_profile_settings' slug=active_organisation.slug %}" class="sidebar-link" data-label="Settings">{% icon "settings" %}<span class="sidebar-link-label">Settings</span></a>
+        </div>
       {% endif %}
       {% if administered_networks %}
-        <div class="sidebar-section-label">Programme Administration</div>
-        {% for network in administered_networks %}
-          {% if administered_networks|length > 1 %}
-            <div class="sidebar-section-label" style="padding-top:2px;">{{ network.name }}</div>
-          {% endif %}
-          <a href="{% url 'networks:dashboard_for_network' network_slug=network.slug %}">Network Dashboard</a>
-          <a href="{% url 'memberships:queue_for_network' network_slug=network.slug %}">Membership Applications</a>
-          <a href="{% url 'networks:capacity_for_network' network_slug=network.slug %}">Capacity Intelligence</a>
-          <a href="{% url 'opportunities:manage_list_for_network' network_slug=network.slug %}">Opportunities</a>
-        {% endfor %}
+        <div class="sidebar-group">
+          <div class="sidebar-section-label"><span>Programme Administration</span></div>
+          {% for network in administered_networks %}
+            {% if administered_networks|length > 1 %}
+              <div class="sidebar-section-label" style="padding-top:2px;"><span>{{ network.name }}</span></div>
+            {% endif %}
+            <a href="{% url 'networks:dashboard_for_network' network_slug=network.slug %}" class="sidebar-link" data-label="Network Dashboard">{% icon "network" %}<span class="sidebar-link-label">Network Dashboard</span></a>
+            <a href="{% url 'memberships:queue_for_network' network_slug=network.slug %}" class="sidebar-link" data-label="Membership Applications">{% icon "user-check" %}<span class="sidebar-link-label">Membership Applications</span></a>
+            <a href="{% url 'networks:capacity_for_network' network_slug=network.slug %}" class="sidebar-link" data-label="Capacity Intelligence">{% icon "bar-chart" %}<span class="sidebar-link-label">Capacity Intelligence</span></a>
+            <a href="{% url 'opportunities:manage_list_for_network' network_slug=network.slug %}" class="sidebar-link" data-label="Opportunities">{% icon "compass" %}<span class="sidebar-link-label">Opportunities</span></a>
+          {% endfor %}
+        </div>
       {% endif %}
       {% if request.user.is_platform_admin %}
-        <div class="sidebar-section-label">Platform Administration</div>
-        <a href="{% url 'resources:manage_list' %}">Resources</a>
+        <div class="sidebar-group">
+          <div class="sidebar-section-label"><span>Platform Administration</span></div>
+          <a href="{% url 'resources:manage_list' %}" class="sidebar-link" data-label="Resources">{% icon "book-open" %}<span class="sidebar-link-label">Resources</span></a>
+        </div>
       {% endif %}
     </nav>
   </aside>
   <div class="app-main">
     <div class="app-topbar">
-      <div class="flex items-center gap-16">
+      <div class="app-topbar-left">
+        <button type="button" class="mobile-nav-toggle" data-mobile-nav-toggle aria-label="Toggle navigation" aria-expanded="false">
+          <span class="icon-menu">{% icon "menu" %}</span>
+          <span class="icon-close">{% icon "x" %}</span>
+        </button>
         {% if user_organisation_memberships|length > 1 %}
         <form method="post" action="{% url 'organisations:switch' %}" class="flex items-center gap-8">
           {% csrf_token %}
@@ -75,6 +99,8 @@
         </form>
         {% elif active_organisation %}
           <strong>{{ active_organisation.display_name }}</strong>
+        {% else %}
+          <strong>My Organisation</strong>
         {% endif %}
       </div>
       <div class="flex items-center gap-16">
@@ -93,5 +119,6 @@
     </div>
   </div>
 </div>
+<script src="{% static 'js/app-shell.js' %}"></script>
 </body>
 </html>

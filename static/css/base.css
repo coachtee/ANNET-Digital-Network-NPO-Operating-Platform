@@ -155,30 +155,102 @@ tr:last-child td { border-bottom: none; }
 .footer-operator-link:hover { opacity: 1; }
 @media (max-width: 900px) { .footer-cols { grid-template-columns: 1fr 1fr; } }
 
-/* --- Authenticated workspace shell --- */
-.app-shell { display: flex; min-height: 100vh; }
+/* --- Authenticated workspace shell ---
+   Collapsible icon+label sidebar, grouped nav sections, and a mobile
+   off-canvas drawer. Mechanics (collapse, tooltips, drawer) live here once
+   and are shared by both the organisation workspace and the staff portal;
+   staffadmin.css only re-colours it for the navy sidebar. */
+.app-shell { display: flex; min-height: 100vh; position: relative; }
 .app-sidebar {
-  width: 240px; flex-shrink: 0; background: var(--color-surface);
-  border-right: 1px solid var(--color-border); padding: 18px 12px;
+  width: 220px; flex-shrink: 0; background: var(--color-surface);
+  border-right: 1px solid var(--color-border); padding: 14px 10px;
   position: sticky; top: 0; height: 100vh; overflow-y: auto;
 }
-.app-sidebar .brand { padding: 0 8px 18px; }
-.sidebar-nav a {
-  display: flex; align-items: center; gap: 10px; padding: 9px 10px;
-  border-radius: var(--radius-sm); color: var(--color-text); font-size: .88rem; font-weight: 500;
-  border-left: 3px solid transparent;
+.app-sidebar .brand { padding: 4px 8px 14px; }
+.app-sidebar.collapsed { width: 60px; }
+.app-sidebar.collapsed .brand span { display: none; }
+
+.sidebar-toggle {
+  display: flex; align-items: center; justify-content: center; width: 100%;
+  padding: 7px; margin-bottom: 8px; border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm); background: none; cursor: pointer; color: var(--color-text-muted);
 }
-.sidebar-nav a:hover { background: var(--color-surface-muted); text-decoration: none; }
-.sidebar-nav a.active { background: var(--color-surface-muted); border-left-color: var(--color-primary); font-weight: 700; }
-.sidebar-section-label { font-size: .68rem; text-transform: uppercase; letter-spacing: .04em; color: var(--color-text-muted); padding: 16px 10px 6px; font-weight: 700; }
+.sidebar-toggle:hover { background: var(--color-surface-muted); }
+.sidebar-toggle .icon { width: 16px; height: 16px; transform: rotate(90deg); }
+.app-sidebar.collapsed .sidebar-toggle .icon { transform: rotate(-90deg); }
+
+.sidebar-group { margin-bottom: 2px; }
+.sidebar-section-label { font-size: .66rem; text-transform: uppercase; letter-spacing: .04em; color: var(--color-text-muted); padding: 14px 10px 5px; font-weight: 700; white-space: nowrap; overflow: hidden; }
+.app-sidebar.collapsed .sidebar-section-label { padding: 10px 0 4px; text-align: center; }
+.app-sidebar.collapsed .sidebar-section-label span { display: none; }
+.app-sidebar.collapsed .sidebar-section-label::before { content: ""; display: block; height: 1px; background: var(--color-border); margin: 0 6px; }
+
+.sidebar-nav a, .sidebar-link {
+  display: flex; align-items: center; gap: 10px; padding: 8px 10px;
+  border-radius: var(--radius-sm); color: var(--color-text); font-size: .86rem; font-weight: 500;
+  border-left: 3px solid transparent; white-space: nowrap; overflow: hidden;
+}
+.sidebar-nav a:hover, .sidebar-link:hover { background: var(--color-surface-muted); text-decoration: none; }
+.sidebar-nav a.active, .sidebar-link.active { background: var(--color-surface-muted); border-left-color: var(--color-primary); font-weight: 700; }
+.sidebar-link .icon { width: 18px; height: 18px; flex-shrink: 0; }
+.sidebar-link-label { overflow: hidden; text-overflow: ellipsis; }
+
+.app-sidebar.collapsed .sidebar-link { justify-content: center; padding: 8px; position: relative; }
+.app-sidebar.collapsed .sidebar-link-label { display: none; }
+
+/* JS-positioned (not CSS ::after) because the sidebar needs overflow-y:auto
+   for long nav lists, and per the CSS overflow spec that forces overflow-x
+   to clip too -- an ::after escaping via left:100% would be cut off. */
+.sidebar-tooltip {
+  position: fixed; background: var(--color-primary); color: #fff; padding: 5px 10px;
+  border-radius: var(--radius-sm); font-size: .78rem; font-weight: 600; white-space: nowrap;
+  z-index: 70; pointer-events: none;
+}
+
+.sidebar-backdrop { display: none; }
 
 .app-main { flex: 1; min-width: 0; }
-.app-topbar { display: flex; align-items: center; justify-content: space-between; padding: 14px 28px; border-bottom: 1px solid var(--color-border); background: #fff; position: sticky; top: 0; z-index: 10; }
-.app-content { padding: 28px; max-width: 1180px; }
+.app-topbar { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 12px 28px; border-bottom: 1px solid var(--color-border); background: #fff; position: sticky; top: 0; z-index: 10; }
+.app-topbar-left { display: flex; align-items: center; gap: 14px; min-width: 0; }
+.app-content { padding: 24px 28px; max-width: 1180px; }
 .breadcrumbs { font-size: .82rem; color: var(--color-text-muted); margin-bottom: 10px; }
 .breadcrumbs a { color: var(--color-text-muted); }
 .page-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 24px; flex-wrap: wrap; }
 .page-header p { color: var(--color-text-muted); margin: 4px 0 0; }
+
+.mobile-nav-toggle {
+  display: none; align-items: center; justify-content: center; width: 34px; height: 34px;
+  border: 1px solid var(--color-border); border-radius: var(--radius-sm); background: none; cursor: pointer; color: var(--color-text);
+  flex-shrink: 0;
+}
+.mobile-nav-toggle .icon { width: 18px; height: 18px; }
+.mobile-nav-toggle .icon-close { display: none; }
+
+@media (max-width: 880px) {
+  .sidebar-toggle { display: none; }
+  .app-sidebar {
+    position: fixed; top: 0; left: 0; z-index: 60; width: 240px !important;
+    transform: translateX(-100%); box-shadow: 0 0 0 rgba(0,0,0,0);
+  }
+  .app-sidebar.collapsed { width: 240px !important; }
+  .app-sidebar.collapsed .sidebar-link-label,
+  .app-sidebar.collapsed .sidebar-section-label span,
+  .app-sidebar.collapsed .brand span { display: inline; }
+  .app-sidebar.collapsed .staff-badge { display: inline-block; }
+  .app-sidebar.collapsed .sidebar-section-label::before { display: none; }
+  .app-sidebar.collapsed .sidebar-link { justify-content: flex-start; padding: 8px 10px; }
+  .app-shell.mobile-nav-open .app-sidebar { transform: translateX(0); }
+  .sidebar-backdrop {
+    display: block; position: fixed; inset: 0; background: rgba(13,27,56,.45); z-index: 55;
+    opacity: 0; pointer-events: none;
+  }
+  .app-shell.mobile-nav-open .sidebar-backdrop { opacity: 1; pointer-events: auto; }
+  .mobile-nav-toggle { display: inline-flex; }
+  .app-shell.mobile-nav-open .mobile-nav-toggle .icon-menu { display: none; }
+  .app-shell.mobile-nav-open .mobile-nav-toggle .icon-close { display: block; }
+  .app-content { padding: 20px 16px; }
+  .app-topbar { padding: 12px 16px; }
+}
 
 .empty-state { text-align: center; padding: 48px 24px; border: 1px dashed var(--color-border); border-radius: var(--radius-md); color: var(--color-text-muted); }
 .empty-state h3 { color: var(--color-text); }

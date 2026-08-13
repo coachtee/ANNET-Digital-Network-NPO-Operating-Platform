@@ -57,6 +57,15 @@ class StaffPortalAccessControlTests(TestCase):
         self.assertEqual(resp.status_code, 200)
         self.assertContains(resp, "Org A")
 
+    def test_shell_has_collapsible_icon_sidebar_and_mobile_drawer_toggle(self):
+        self.client.login(email=self.platform_admin.email, password=PASSWORD)
+        resp = self.client.get(reverse("staffadmin:overview"))
+        self.assertContains(resp, "data-sidebar-toggle")
+        self.assertContains(resp, "data-mobile-nav-toggle")
+        self.assertContains(resp, "data-mobile-nav-backdrop")
+        self.assertContains(resp, 'class="sidebar-link')
+        self.assertContains(resp, 'src="/static/js/app-shell.js"')
+
 
 class StaffOverviewMetricsTests(TestCase):
     """Every figure on the staff Overview must come from a real query --

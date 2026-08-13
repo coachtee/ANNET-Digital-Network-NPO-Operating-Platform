@@ -197,6 +197,14 @@ class WorkspaceDashboardTests(TestCase):
         self.assertContains(resp, "Province")
         self.assertContains(resp, "Category")
 
+    def test_shell_has_collapsible_icon_sidebar_and_mobile_drawer_toggle(self):
+        resp = self.client.get(reverse("organisations:workspace_home"))
+        self.assertContains(resp, "data-sidebar-toggle")
+        self.assertContains(resp, "data-mobile-nav-toggle")
+        self.assertContains(resp, "data-mobile-nav-backdrop")
+        self.assertContains(resp, 'class="sidebar-link')
+        self.assertContains(resp, 'src="/static/js/app-shell.js"')
+
     def test_health_table_shows_all_seven_dimensions_with_real_scores(self):
         resp = self.client.get(reverse("organisations:workspace_home"))
         health_rows = resp.context["health_rows"]

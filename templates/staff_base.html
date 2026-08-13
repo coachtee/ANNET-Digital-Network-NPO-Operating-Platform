@@ -1,4 +1,4 @@
-{% load static %}<!DOCTYPE html>
+{% load static icons %}<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -11,35 +11,61 @@
 </head>
 <body>
 <div class="app-shell staff-shell">
+  <div class="sidebar-backdrop" data-mobile-nav-backdrop></div>
   <aside class="app-sidebar staff-sidebar">
     <a href="{% url 'staffadmin:overview' %}" class="brand">
-      <img src="{% static 'img/bohlale-logo.png' %}" alt="{{ NETWORK_SHORT_NAME }} logo" style="width:32px;height:32px;">
+      <img src="{% static 'img/bohlale-logo.png' %}" alt="{{ NETWORK_SHORT_NAME }} logo" style="width:32px;height:32px;flex-shrink:0;">
       <span>{{ NETWORK_SHORT_NAME }}</span>
     </a>
-    <div class="staff-badge">Platform Administration</div>
+    <div class="staff-badge"><span>Platform Administration</span></div>
+    <button type="button" class="sidebar-toggle" data-sidebar-toggle aria-label="Collapse navigation" aria-expanded="true">
+      {% icon "chevron-down" %}
+    </button>
     <nav class="sidebar-nav">
-      <a href="{% url 'staffadmin:overview' %}" class="{% if request.resolver_match.url_name == 'overview' %}active{% endif %}">Overview</a>
-      <a href="{% url 'staffadmin:organisation_list' %}" class="{% if 'organisation' in request.resolver_match.url_name %}active{% endif %}">Organisations</a>
-      <a href="{% url 'staffadmin:people_list' %}" class="{% if request.resolver_match.url_name == 'people_list' %}active{% endif %}">People</a>
-      <a href="{% url 'staffadmin:network_list' %}" class="{% if request.resolver_match.url_name == 'network_list' %}active{% endif %}">Networks &amp; Programmes</a>
-      <a href="{% url 'staffadmin:membership_overview' %}" class="{% if request.resolver_match.url_name == 'membership_overview' %}active{% endif %}">Memberships</a>
-      <a href="{% url 'staffadmin:opportunity_list' %}" class="{% if request.resolver_match.url_name == 'opportunity_list' %}active{% endif %}">Opportunities</a>
-      <a href="{% url 'resources:manage_list' %}">Resources</a>
-      <a href="{% url 'staffadmin:events' %}" class="{% if request.resolver_match.url_name == 'events' %}active{% endif %}">Events</a>
-      <a href="{% url 'staffadmin:insights' %}" class="{% if request.resolver_match.url_name == 'insights' %}active{% endif %}">Insights</a>
-      <a href="{% url 'staffadmin:partnerships' %}" class="{% if request.resolver_match.url_name == 'partnerships' %}active{% endif %}">Partnerships</a>
-      <a href="{% url 'staffadmin:reports' %}" class="{% if request.resolver_match.url_name == 'reports' %}active{% endif %}">Reports</a>
-      <a href="{% url 'staffadmin:documents' %}" class="{% if request.resolver_match.url_name == 'documents' %}active{% endif %}">Documents</a>
-      <div class="sidebar-section-label">Administration</div>
-      <a href="{% url 'staffadmin:staff' %}" class="{% if request.resolver_match.url_name == 'staff' %}active{% endif %}">Staff &amp; Permissions</a>
-      <a href="{% url 'staffadmin:settings' %}" class="{% if request.resolver_match.url_name == 'settings' %}active{% endif %}">Settings</a>
-      <div class="sidebar-section-label">Switch</div>
-      <a href="{% url 'organisations:workspace_home' %}">My Organisation</a>
+      <div class="sidebar-group">
+        <div class="sidebar-section-label"><span>Overview</span></div>
+        <a href="{% url 'staffadmin:overview' %}" class="sidebar-link {% if request.resolver_match.url_name == 'overview' %}active{% endif %}" data-label="Dashboard">{% icon "grid" %}<span class="sidebar-link-label">Dashboard</span></a>
+      </div>
+      <div class="sidebar-group">
+        <div class="sidebar-section-label"><span>Manage</span></div>
+        <a href="{% url 'staffadmin:organisation_list' %}" class="sidebar-link {% if 'organisation' in request.resolver_match.url_name %}active{% endif %}" data-label="Organisations">{% icon "building" %}<span class="sidebar-link-label">Organisations</span></a>
+        <a href="{% url 'staffadmin:people_list' %}" class="sidebar-link {% if request.resolver_match.url_name == 'people_list' %}active{% endif %}" data-label="People">{% icon "users" %}<span class="sidebar-link-label">People</span></a>
+        <a href="{% url 'staffadmin:network_list' %}" class="sidebar-link {% if request.resolver_match.url_name == 'network_list' %}active{% endif %}" data-label="Networks">{% icon "network" %}<span class="sidebar-link-label">Networks &amp; Programmes</span></a>
+        <a href="{% url 'staffadmin:membership_overview' %}" class="sidebar-link {% if request.resolver_match.url_name == 'membership_overview' %}active{% endif %}" data-label="Memberships">{% icon "user-check" %}<span class="sidebar-link-label">Memberships</span></a>
+      </div>
+      <div class="sidebar-group">
+        <div class="sidebar-section-label"><span>Content</span></div>
+        <a href="{% url 'staffadmin:opportunity_list' %}" class="sidebar-link {% if request.resolver_match.url_name == 'opportunity_list' %}active{% endif %}" data-label="Opportunities">{% icon "compass" %}<span class="sidebar-link-label">Opportunities</span></a>
+        <a href="{% url 'resources:manage_list' %}" class="sidebar-link" data-label="Resources">{% icon "book-open" %}<span class="sidebar-link-label">Resources</span></a>
+        <a href="{% url 'staffadmin:events' %}" class="sidebar-link {% if request.resolver_match.url_name == 'events' %}active{% endif %}" data-label="Events">{% icon "calendar" %}<span class="sidebar-link-label">Events</span></a>
+        <a href="{% url 'staffadmin:insights' %}" class="sidebar-link {% if request.resolver_match.url_name == 'insights' %}active{% endif %}" data-label="Insights">{% icon "lightbulb" %}<span class="sidebar-link-label">Insights</span></a>
+        <a href="{% url 'staffadmin:partnerships' %}" class="sidebar-link {% if request.resolver_match.url_name == 'partnerships' %}active{% endif %}" data-label="Partnerships">{% icon "handshake" %}<span class="sidebar-link-label">Partnerships</span></a>
+      </div>
+      <div class="sidebar-group">
+        <div class="sidebar-section-label"><span>Impact</span></div>
+        <a href="{% url 'staffadmin:reports' %}" class="sidebar-link {% if request.resolver_match.url_name == 'reports' %}active{% endif %}" data-label="Reports">{% icon "bar-chart" %}<span class="sidebar-link-label">Reports</span></a>
+      </div>
+      <div class="sidebar-group">
+        <div class="sidebar-section-label"><span>Administration</span></div>
+        <a href="{% url 'staffadmin:documents' %}" class="sidebar-link {% if request.resolver_match.url_name == 'documents' %}active{% endif %}" data-label="Documents">{% icon "file-text" %}<span class="sidebar-link-label">Documents</span></a>
+        <a href="{% url 'staffadmin:staff' %}" class="sidebar-link {% if request.resolver_match.url_name == 'staff' %}active{% endif %}" data-label="Staff &amp; Permissions">{% icon "badge-check" %}<span class="sidebar-link-label">Staff &amp; Permissions</span></a>
+        <a href="{% url 'staffadmin:settings' %}" class="sidebar-link {% if request.resolver_match.url_name == 'settings' %}active{% endif %}" data-label="Settings">{% icon "settings" %}<span class="sidebar-link-label">Settings</span></a>
+      </div>
+      <div class="sidebar-group">
+        <div class="sidebar-section-label"><span>Switch</span></div>
+        <a href="{% url 'organisations:workspace_home' %}" class="sidebar-link" data-label="My Organisation">{% icon "building" %}<span class="sidebar-link-label">My Organisation</span></a>
+      </div>
     </nav>
   </aside>
   <div class="app-main">
     <div class="app-topbar">
-      <div class="flex items-center gap-16"><strong>Bohlale Impact Staff</strong></div>
+      <div class="app-topbar-left">
+        <button type="button" class="mobile-nav-toggle" data-mobile-nav-toggle aria-label="Toggle navigation" aria-expanded="false">
+          <span class="icon-menu">{% icon "menu" %}</span>
+          <span class="icon-close">{% icon "x" %}</span>
+        </button>
+        <strong>Bohlale Impact Staff</strong>
+      </div>
       <div class="flex items-center gap-16">
         <span class="text-muted">{{ request.user.get_full_name|default:request.user.email }}</span>
         <a href="{% url 'accounts:logout' %}" class="btn btn-ghost btn-sm">Sign out</a>
@@ -55,5 +81,6 @@
     </div>
   </div>
 </div>
+<script src="{% static 'js/app-shell.js' %}"></script>
 </body>
 </html>
