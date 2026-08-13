@@ -29,10 +29,13 @@
 {% if past_officials %}
 <h3 style="margin-top:24px;">Historical officials</h3>
 <table>
-  <thead><tr><th>Name</th><th>Position</th><th>Status</th><th>Term end</th></tr></thead>
+  <thead><tr><th>Name</th><th>Position</th><th>Status</th><th>Term end</th><th>Evidence</th></tr></thead>
   <tbody>
     {% for o in past_officials %}
-    <tr><td>{{ o.full_name }}</td><td>{{ o.get_position_display }}</td><td>{{ o.get_status_display }}</td><td>{{ o.term_end|default:"—" }}</td></tr>
+    <tr>
+      <td>{{ o.full_name }}</td><td>{{ o.get_position_display }}</td><td><span class="badge badge-neutral">{{ o.get_status_display }}</span></td><td>{{ o.term_end|default:"—" }}</td>
+      <td>{% if o.resignation_document %}<a href="{% url 'documents:download' slug=organisation.slug document_id=o.resignation_document.id %}">Download</a>{% else %}—{% endif %}</td>
+    </tr>
     {% endfor %}
   </tbody>
 </table>
@@ -41,10 +44,16 @@
 <h3 style="margin-top:24px;">Meetings</h3>
 {% if meetings %}
 <table>
-  <thead><tr><th>Type</th><th>Date</th><th>Held</th></tr></thead>
+  <thead><tr><th>Meeting</th><th>Date</th><th>Status</th><th>Minutes</th><th>Resolutions</th></tr></thead>
   <tbody>
     {% for m in meetings %}
-    <tr><td><a href="{% url 'governance:meeting_detail' slug=organisation.slug meeting_id=m.id %}">{{ m.get_meeting_type_display }}</a></td><td>{{ m.scheduled_date|date:"d M Y H:i" }}</td><td>{{ m.is_held|yesno:"Yes,No" }}</td></tr>
+    <tr>
+      <td><a href="{% url 'governance:meeting_detail' slug=organisation.slug meeting_id=m.id %}">{{ m.get_meeting_type_display }}</a></td>
+      <td>{{ m.scheduled_date|date:"d M Y H:i" }}</td>
+      <td><span class="badge {% if m.is_held %}badge-success{% else %}badge-neutral{% endif %}">{{ m.is_held|yesno:"Held,Scheduled" }}</span></td>
+      <td>{% if m.minutes_document %}<a href="{% url 'documents:download' slug=organisation.slug document_id=m.minutes_document.id %}">View</a>{% else %}—{% endif %}</td>
+      <td>{{ m.resolutions.count }}</td>
+    </tr>
     {% endfor %}
   </tbody>
 </table>

@@ -1,0 +1,49 @@
+{% extends "workspace_base.html" %}
+{% block title %}{{ document.title }}{% endblock %}
+{% block content %}
+<div class="breadcrumbs"><a href="{% url 'documents:list' slug=organisation.slug %}">Document Vault</a> / {{ document.title }}</div>
+<div class="page-header">
+  <div>
+    <h1>{{ document.title }}</h1>
+    <p>{{ document.get_category_display }} · Version {{ document.version }} · <span class="badge {% if document.status == 'active' %}badge-success{% else %}badge-neutral{% endif %}">{{ document.get_status_display }}</span></p>
+  </div>
+  {% if can_manage %}
+  <div class="flex gap-8">
+    <a href="{% url 'documents:new_version' slug=organisation.slug document_id=document.id %}" class="btn btn-outline">Replace / upload new version</a>
+    {% if document.status == 'active' %}
+    <form method="post" action="{% url 'documents:archive' slug=organisation.slug document_id=document.id %}">
+      {% csrf_token %}
+      <button type="submit" class="btn btn-outline">Archive</button>
+    </form>
+    {% endif %}
+  </div>
+  {% endif %}
+</div>
+
+<div class="grid grid-2">
+  <div class="card-flat">
+    <h3>Details</h3>
+    <table>
+      <tr><td>Description</td><td>{{ document.description|default:"—" }}</td></tr>
+      <tr><td>Visibility</td><td>{{ document.get_visibility_display }}</td></tr>
+      <tr><td>Uploaded by</td><td>{{ document.uploaded_by|default:"—" }}</td></tr>
+      <tr><td>Uploaded</td><td>{{ document.created_at|date:"d M Y H:i" }}</td></tr>
+      {% if related_object %}<tr><td>Related to</td><td>{{ related_object }}</td></tr>{% endif %}
+    </table>
+    <a href="{% url 'documents:download' slug=organisation.slug document_id=document.id %}" class="btn btn-primary btn-sm" style="margin-top:12px;">Download</a>
+  </div>
+  <div class="card-flat">
+    <h3>Version history</h3>
+    {% if version_history %}
+      <ul>
+        <li><strong>Version {{ document.version }} (current)</strong>, uploaded {{ document.created_at|date:"d M Y" }}</li>
+        {% for old in version_history %}
+          <li>Version {{ old.version }}, uploaded {{ old.created_at|date:"d M Y" }} <a href="{% url 'documents:download' slug=organisation.slug document_id=old.id %}">Download</a></li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <p class="text-muted">This is the only version on record.</p>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

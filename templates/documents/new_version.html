@@ -1,0 +1,12 @@
+{% extends "workspace_base.html" %}
+{% block title %}New Version: {{ document.title }}{% endblock %}
+{% block content %}
+<div class="page-header"><div><h1>Upload new version</h1><p>{{ document.title }}, currently version {{ document.version }}.</p></div></div>
+<div class="card" style="max-width:600px;">
+  <form method="post" enctype="multipart/form-data" novalidate>
+    {% csrf_token %}
+    {% include "partials/_form_fields.html" %}
+    <button type="submit" class="btn btn-primary">Save as version {{ document.version|add:1 }}</button>
+  </form>
+</div>
+{% endblock %}

@@ -44,12 +44,16 @@ class GovernanceOfficial(TimeStampedModel):
     term_end = models.DateField(null=True, blank=True)
     status = models.CharField(max_length=15, choices=STATUS_CHOICES, default=STATUS_ACTIVE)
     resignation_note = models.TextField(blank=True)
+    resignation_document = models.ForeignKey(
+        "documents.Document", on_delete=models.SET_NULL, null=True, blank=True, related_name="+",
+        help_text="Resignation letter, board resolution or other supporting evidence.",
+    )
 
     class Meta:
         ordering = ["-status", "full_name"]
 
     def __str__(self):
-        return f"{self.full_name} — {self.get_position_display()}"
+        return f"{self.full_name} ({self.get_position_display()})"
 
 
 class GovernanceMeeting(TimeStampedModel):
@@ -79,7 +83,7 @@ class GovernanceMeeting(TimeStampedModel):
         ordering = ["-scheduled_date"]
 
     def __str__(self):
-        return f"{self.get_meeting_type_display()} — {self.scheduled_date:%Y-%m-%d}"
+        return f"{self.get_meeting_type_display()} ({self.scheduled_date:%Y-%m-%d})"
 
 
 class MeetingAttendance(models.Model):
@@ -94,14 +98,32 @@ class MeetingAttendance(models.Model):
 
 
 class Resolution(TimeStampedModel):
+    DECISION_APPROVED = "approved"
+    DECISION_REJECTED = "rejected"
+    DECISION_DEFERRED = "deferred"
+    DECISION_NOTED = "noted"
+    DECISION_CHOICES = [
+        (DECISION_APPROVED, "Approved"),
+        (DECISION_REJECTED, "Rejected"),
+        (DECISION_DEFERRED, "Deferred"),
+        (DECISION_NOTED, "Noted"),
+    ]
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     meeting = models.ForeignKey(GovernanceMeeting, on_delete=models.CASCADE, related_name="resolutions")
+    reference_number = models.CharField(max_length=50, blank=True, help_text="e.g. BR-2026-01")
     text = models.TextField()
-    decision = models.CharField(
-        max_length=15,
-        choices=[("approved", "Approved"), ("rejected", "Rejected"), ("deferred", "Deferred")],
-        default="approved",
+    decision = models.CharField(max_length=15, choices=DECISION_CHOICES, default=DECISION_APPROVED)
+    document = models.ForeignKey(
+        "documents.Document", on_delete=models.SET_NULL, null=True, blank=True, related_name="+",
+        help_text="The formal signed resolution document, if one was captured.",
     )
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="+"
+    )
+
+    class Meta:
+        ordering = ["-created_at"]
 
     def __str__(self):
         return self.text[:80]

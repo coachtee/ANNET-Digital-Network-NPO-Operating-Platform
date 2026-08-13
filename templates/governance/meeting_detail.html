@@ -8,10 +8,18 @@
   <div class="card-flat">
     <h3>Resolutions</h3>
     {% if resolutions %}
-      <ul>{% for r in resolutions %}<li>{{ r.text }} <span class="badge badge-neutral">{{ r.get_decision_display }}</span></li>{% endfor %}</ul>
+      <ul>
+        {% for r in resolutions %}
+        <li>
+          {% if r.reference_number %}<strong>{{ r.reference_number }}</strong>: {% endif %}{{ r.text }}
+          <span class="badge badge-neutral">{{ r.get_decision_display }}</span>
+          {% if r.document %}<a href="{% url 'documents:download' slug=organisation.slug document_id=r.document.id %}">Document</a>{% endif %}
+        </li>
+        {% endfor %}
+      </ul>
     {% else %}<p class="text-muted">No resolutions recorded yet.</p>{% endif %}
     {% if can_manage %}
-    <form method="post" style="margin-top:12px;">
+    <form method="post" enctype="multipart/form-data" style="margin-top:12px;">
       {% csrf_token %}
       {% include "partials/_form_fields.html" with form=resolution_form %}
       <button type="submit" class="btn btn-outline btn-sm">Add resolution</button>
@@ -22,8 +30,16 @@
     <h3>Minutes</h3>
     {% if meeting.minutes_document %}
       <a href="{% url 'documents:download' slug=organisation.slug document_id=meeting.minutes_document.id %}">Download minutes</a>
+      <p class="text-muted" style="font-size:.82rem; margin-top:4px;">Uploaded {{ meeting.minutes_document.created_at|date:"d M Y" }} by {{ meeting.minutes_document.uploaded_by|default:"—" }}</p>
     {% else %}
-      <p class="text-muted">No minutes uploaded yet. Upload minutes from the <a href="{% url 'documents:upload' slug=organisation.slug %}">Document Vault</a> and link them here.</p>
+      <p class="text-muted">No minutes uploaded yet.</p>
+    {% endif %}
+    {% if can_manage %}
+    <form method="post" enctype="multipart/form-data" action="{% url 'governance:upload_minutes' slug=organisation.slug meeting_id=meeting.id %}" style="margin-top:12px;">
+      {% csrf_token %}
+      {% include "partials/_form_fields.html" with form=minutes_form %}
+      <button type="submit" class="btn btn-outline btn-sm">{% if meeting.minutes_document %}Replace minutes{% else %}Upload minutes{% endif %}</button>
+    </form>
     {% endif %}
   </div>
 </div>

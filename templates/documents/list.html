@@ -5,14 +5,20 @@
   <div><h1>Document Vault</h1><p>{{ organisation.display_name }}</p></div>
   <a href="{% url 'documents:upload' slug=organisation.slug %}" class="btn btn-primary">Upload document</a>
 </div>
+<div class="tabs">
+  <a href="{% url 'documents:list' slug=organisation.slug %}" class="{% if not show_archived %}active{% endif %}">Active</a>
+  <a href="?show=archived" class="{% if show_archived %}active{% endif %}">Archived</a>
+</div>
 {% if documents %}
 <table>
-  <thead><tr><th>Title</th><th>Visibility</th><th>Uploaded by</th><th>Date</th><th></th></tr></thead>
+  <thead><tr><th>Title</th><th>Category</th><th>Visibility</th><th>Version</th><th>Uploaded by</th><th>Date</th><th></th></tr></thead>
   <tbody>
     {% for doc in documents %}
     <tr>
-      <td>{{ doc.title }}</td>
+      <td><a href="{% url 'documents:detail' slug=organisation.slug document_id=doc.id %}">{{ doc.title }}</a></td>
+      <td>{{ doc.get_category_display }}</td>
       <td><span class="badge badge-neutral">{{ doc.get_visibility_display }}</span></td>
+      <td>{{ doc.version }}</td>
       <td>{{ doc.uploaded_by }}</td>
       <td>{{ doc.created_at|date:"d M Y" }}</td>
       <td><a href="{% url 'documents:download' slug=organisation.slug document_id=doc.id %}">Download</a></td>
@@ -22,8 +28,12 @@
 </table>
 {% else %}
 <div class="empty-state">
+  {% if show_archived %}
+  <h3>No archived documents.</h3>
+  {% else %}
   <h3>No documents yet.</h3>
   <p>Upload evidence, board minutes, agreements or policies to keep them safely stored and linked to your records.</p>
+  {% endif %}
 </div>
 {% endif %}
 {% endblock %}
