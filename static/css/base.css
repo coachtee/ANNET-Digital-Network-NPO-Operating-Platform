@@ -151,6 +151,8 @@ tr:last-child td { border-bottom: none; }
 .site-footer a { color: var(--color-text-muted); }
 .footer-cols { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 24px; margin-bottom: 24px; }
 .footer-bottom { border-top: 1px solid var(--color-border); padding-top: 16px; color: var(--color-text-muted); font-size: .82rem; }
+.footer-operator-link { opacity: .55; }
+.footer-operator-link:hover { opacity: 1; }
 @media (max-width: 900px) { .footer-cols { grid-template-columns: 1fr 1fr; } }
 
 /* --- Authenticated workspace shell --- */

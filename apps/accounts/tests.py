@@ -91,3 +91,44 @@ class PostLoginRedirectTests(TestCase):
 
         response = self.client.get(reverse("accounts:post_login_redirect"))
         self.assertRedirects(response, reverse("organisations:create"))
+
+
+class StaffLoginEntryPointTests(TestCase):
+    """The discreet footer "Operator" link points at a separate login page
+    (accounts:staff_login), but authentication and post-login routing are
+    identical to the normal login page -- there is no separate auth
+    backend or relaxed permission check for this entry point."""
+
+    def setUp(self):
+        self.bohlale_impact = Network.objects.create(slug="bohlale-impact", name="Bohlale Impact")
+
+    def test_platform_admin_signing_in_via_staff_login_lands_on_staff_administration(self):
+        admin = User.objects.create_user(email="root@example.org", password=PASSWORD, is_platform_admin=True)
+        response = self.client.post(
+            reverse("accounts:staff_login"), {"username": admin.email, "password": PASSWORD}, follow=True,
+        )
+        self.assertRedirects(response, reverse("staffadmin:overview"))
+
+    def test_organisation_user_signing_in_via_staff_login_still_lands_on_organisation_dashboard(self):
+        organisation = Organisation.objects.create(
+            legal_name="Org A", organisation_type="npo", onboarding_step=Organisation.ONBOARDING_COMPLETE,
+        )
+        user = User.objects.create_user(email="orgadmin@example.org", password=PASSWORD)
+        OrganisationMembership.objects.create(organisation=organisation, user=user, role=ORG_ROLE_ADMIN)
+
+        response = self.client.post(
+            reverse("accounts:staff_login"), {"username": user.email, "password": PASSWORD}, follow=True,
+        )
+        self.assertRedirects(response, reverse("organisations:workspace_home"))
+        # Signing in through the operator page grants no extra access.
+        staff_response = self.client.get(reverse("staffadmin:overview"))
+        self.assertEqual(staff_response.status_code, 403)
+
+    def test_network_admin_signing_in_via_staff_login_lands_on_network_dashboard(self):
+        user = User.objects.create_user(email="netadmin@example.org", password=PASSWORD)
+        NetworkStaffRole.objects.create(network=self.bohlale_impact, user=user, role=NETWORK_ROLE_ADMIN)
+
+        response = self.client.post(
+            reverse("accounts:staff_login"), {"username": user.email, "password": PASSWORD}, follow=True,
+        )
+        self.assertRedirects(response, reverse("networks:dashboard"))

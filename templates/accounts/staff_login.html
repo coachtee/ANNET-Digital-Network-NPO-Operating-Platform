@@ -1,0 +1,22 @@
+{% extends "accounts/_auth_shell.html" %}
+{% block title %}Operator Sign In: {{ NETWORK_SHORT_NAME }}{% endblock %}
+{% block auth_title %}{{ NETWORK_SHORT_NAME }} Operator Sign In{% endblock %}
+{% block auth_subtitle %}<p class="text-muted" style="margin-top:-8px;">For Bohlale Impact staff and programme administrators. Organisation users should use the regular <a href="{% url 'accounts:login' %}">sign in</a> page.</p>{% endblock %}
+{% block auth_content %}
+<form method="post" novalidate>
+  {% csrf_token %}
+  <div class="form-group">
+    <label for="{{ form.username.id_for_label }}">Email address</label>
+    {{ form.username }}
+  </div>
+  <div class="form-group">
+    <label for="{{ form.password.id_for_label }}">Password</label>
+    {{ form.password }}
+  </div>
+  <input type="hidden" name="next" value="{{ next }}">
+  <button type="submit" class="btn btn-primary btn-block">Sign in</button>
+</form>
+<p class="text-muted" style="margin-top:16px;">
+  <a href="{% url 'accounts:password_reset' %}">Forgot your password?</a>
+</p>
+{% endblock %}
