@@ -81,13 +81,15 @@ def post_login_redirect(request):
         logout(request)
         messages.error(request, "This account cannot access the standard platform login.")
         return redirect("sitepublic:home")
-    if request.user.is_platform_admin or request.user.network_staff_roles.exists():
+    if request.user.is_platform_admin:
+        return redirect("staffadmin:overview")
+    if request.user.network_staff_roles.exists():
         # Not every network staff member administers the platform's own
         # (primary) network — a Black-Sash-only admin, for example, has no
         # role there at all and would 403 on networks:dashboard. Land them
         # on a network dashboard they can actually reach.
         primary_network = get_primary_network()
-        has_primary_role = request.user.is_platform_admin or request.user.network_staff_roles.filter(
+        has_primary_role = request.user.network_staff_roles.filter(
             network=primary_network, is_active=True
         ).exists()
         if has_primary_role:
