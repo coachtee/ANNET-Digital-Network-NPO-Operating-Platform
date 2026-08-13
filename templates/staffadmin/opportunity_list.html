@@ -1,0 +1,30 @@
+{% extends "staff_base.html" %}
+{% block title %}Opportunities{% endblock %}
+{% block content %}
+<div class="page-header"><div><h1>Opportunities</h1><p>Funding, training, grants, tenders, partnerships and events across every network.</p></div></div>
+
+<div class="tabs">
+  <a href="{% url 'staffadmin:opportunity_list' %}" class="{% if not status %}active{% endif %}">All</a>
+  {% for code, label in status_choices %}
+    <a href="?status={{ code }}" class="{% if status == code %}active{% endif %}">{{ label }}</a>
+  {% endfor %}
+</div>
+
+{% if opportunities %}
+<table>
+  <thead><tr><th>Title</th><th>Network</th><th>Type</th><th>Status</th><th>Closing</th><th></th></tr></thead>
+  <tbody>
+    {% for o in opportunities %}
+    <tr>
+      <td>{{ o.title }}</td>
+      <td>{{ o.network.name }}</td>
+      <td>{{ o.get_opportunity_type_display }}</td>
+      <td><span class="badge {% if o.status == 'published' %}badge-success{% elif o.status == 'closed' %}badge-neutral{% else %}badge-warning{% endif %}">{{ o.get_status_display }}</span></td>
+      <td>{{ o.closing_date|default:"—" }}</td>
+      <td><a href="{% url 'opportunities:edit' opportunity_id=o.id %}">Edit</a></td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}<div class="empty-state"><h3>No opportunities match.</h3></div>{% endif %}
+{% endblock %}

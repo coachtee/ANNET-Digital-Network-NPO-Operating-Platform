@@ -1,6 +1,7 @@
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 
@@ -8,6 +9,7 @@ from apps.audit.services import log_action
 from apps.compliance.services import sync_obligations_for_organisation
 from apps.core.permissions import ORG_ROLE_ADMIN
 from apps.governance.forms import GovernanceOfficialForm
+from apps.impact.services import people_reached_for_organisation
 from apps.networks.services import get_primary_network
 from apps.organisations import forms as org_forms
 from apps.organisations.health import compute_health_check
@@ -137,6 +139,27 @@ def onboarding_step(request, slug, step):
     return redirect("organisations:onboarding_step", slug=slug, step=Organisation.ONBOARDING_IDENTITY)
 
 
+# Where "fix" from the Needs Attention list should send a user for each
+# Health Check dimension -- built from URLs that already exist elsewhere
+# in the workspace, not new pages.
+_DIMENSION_FIX_URL_NAME = {
+    "registration": ("organisations:org_360", {}),
+    "compliance": ("compliance:passport", {}),
+    "governance": ("governance:list", {}),
+    "policies": ("policies:list", {}),
+    "programme_management": ("programmes:list", {}),
+    "me": ("monitoring_evaluation:dashboard", {}),
+    "financial_accountability": ("expenses:list", {}),
+}
+
+
+def _dimension_fix_url(organisation, dimension_key):
+    url_name, _ = _DIMENSION_FIX_URL_NAME.get(dimension_key, (None, {}))
+    if not url_name:
+        return None
+    return reverse(url_name, kwargs={"slug": organisation.slug})
+
+
 @login_required
 def workspace_home(request):
     organisation = request.organisation
@@ -146,21 +169,42 @@ def workspace_home(request):
         return redirect("organisations:onboarding_step", slug=organisation.slug, step=organisation.onboarding_step)
 
     health = compute_health_check(organisation)
+
+    # One action per below-100 dimension keeps this a short, actionable
+    # list rather than a dump of every recommendation the Health Check has
+    # -- the full set is still one click away on the Health Check page.
+    needs_attention = []
+    for dim in health["dimensions"]:
+        if dim.score < 100 and dim.recommended_actions:
+            needs_attention.append({
+                "text": dim.recommended_actions[0], "dimension": dim.label,
+                "fix_url": _dimension_fix_url(organisation, dim.key),
+            })
+    needs_attention = needs_attention[:6]
+
+    primary_network = get_primary_network()
+    network_memberships = organisation.network_memberships.select_related("network").order_by("-created_at")
+
     context = {
         "organisation": organisation,
         "health": health,
+        "needs_attention": needs_attention,
         "open_obligations": organisation.compliance_obligations.exclude(
             status__in=["submitted", "evidence_recorded", "not_applicable"]
         ).count(),
         "active_programmes": organisation.programmes.filter(status="active").count(),
         "active_projects": organisation.projects.filter(status="active").count(),
-        # Scoped to the platform's own network specifically — an
-        # organisation can separately hold applications/memberships with
-        # other networks/programmes (e.g. Black Sash), which have their
-        # own status shown in their own context, not here.
-        "membership_application": organisation.network_memberships.filter(
-            network=get_primary_network()
-        ).order_by("-created_at").first(),
+        "document_count": organisation.documents.filter(status="active").count(),
+        "beneficiary_count": organisation.beneficiaries.count(),
+        "people_reached": people_reached_for_organisation(organisation),
+        # Every network/programme this organisation has ever applied to or
+        # joined, not just the platform's own -- an org can independently
+        # hold memberships with several networks/programmes at once (e.g.
+        # a partner programme like Black Sash) alongside its own workspace.
+        "network_memberships": network_memberships,
+        "primary_network": primary_network,
+        "membership_application": network_memberships.filter(network=primary_network).first(),
+        "recent_activity": organisation.audit_entries.select_related("actor")[:6],
     }
     return render(request, "organisations/workspace_home.html", context)
 

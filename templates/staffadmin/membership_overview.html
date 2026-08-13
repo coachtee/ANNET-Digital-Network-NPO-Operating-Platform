@@ -1,0 +1,20 @@
+{% extends "staff_base.html" %}
+{% block title %}Memberships{% endblock %}
+{% block content %}
+<div class="page-header"><div><h1>Memberships</h1><p>Application queues across every network and programme.</p></div></div>
+{% if rows %}
+<table>
+  <thead><tr><th>Network / Programme</th><th>Pending Review</th><th>Approved</th><th></th></tr></thead>
+  <tbody>
+    {% for row in rows %}
+    <tr>
+      <td>{{ row.network.name }}</td>
+      <td>{% if row.pending %}<span class="badge badge-warning">{{ row.pending }} pending</span>{% else %}0{% endif %}</td>
+      <td>{{ row.approved }}</td>
+      <td><a href="{% url 'memberships:queue_for_network' network_slug=row.network.slug %}">Review Queue</a></td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}<div class="empty-state"><h3>No networks configured yet.</h3></div>{% endif %}
+{% endblock %}

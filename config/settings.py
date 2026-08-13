@@ -80,6 +80,7 @@ LOCAL_APPS = [
     "apps.impact",
     "apps.opportunities",
     "apps.resources",
+    "apps.staffadmin",
     "apps.notifications",
     "apps.audit",
     "apps.sitepublic",

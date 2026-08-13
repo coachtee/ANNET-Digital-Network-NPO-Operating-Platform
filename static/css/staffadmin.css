@@ -1,0 +1,28 @@
+/* Bohlale Impact Staff Administration -- same design system as the
+   organisation workspace (base.css), but a dark sidebar marks it clearly
+   as a different, platform-level area rather than any one organisation's
+   workspace. Restrained: no gradients, no extra colours beyond navy/white,
+   same compact controls and thin borders as everywhere else. */
+
+.staff-sidebar {
+  background: var(--color-primary); border-right: none;
+}
+.staff-sidebar .brand { color: #fff; }
+.staff-sidebar .brand span { color: #fff; }
+.staff-badge {
+  margin: 0 8px 14px; padding: 4px 10px; border-radius: 999px;
+  background: rgba(255,255,255,.12); color: rgba(255,255,255,.85);
+  font-size: .68rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em;
+  display: inline-block;
+}
+.staff-sidebar .sidebar-nav a { color: rgba(255,255,255,.78); }
+.staff-sidebar .sidebar-nav a:hover { background: rgba(255,255,255,.08); color: #fff; }
+.staff-sidebar .sidebar-nav a.active { background: rgba(255,255,255,.12); border-left-color: #fff; color: #fff; }
+.staff-sidebar .sidebar-section-label { color: rgba(255,255,255,.5); }
+
+.staff-metric-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 16px; margin-bottom: 24px; }
+
+.coming-soon-badge {
+  display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: .72rem; font-weight: 700;
+  background: var(--color-warning-light); color: var(--color-warning); text-transform: uppercase; letter-spacing: .03em;
+}

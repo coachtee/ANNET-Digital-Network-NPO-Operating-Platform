@@ -1,0 +1,45 @@
+{% extends "staff_base.html" %}
+{% block title %}{{ organisation.display_name }}{% endblock %}
+{% block content %}
+<div class="breadcrumbs"><a href="{% url 'staffadmin:organisation_list' %}">Organisations</a> / {{ organisation.display_name }}</div>
+<div class="page-header">
+  <div>
+    <h1>{{ organisation.display_name }}</h1>
+    <p>
+      <span class="badge {% if organisation.public_verification_status == 'verified' %}badge-success{% else %}badge-neutral{% endif %}">{{ organisation.get_public_verification_status_display }}</span>
+      <span class="badge badge-neutral">{{ organisation.get_organisation_type_display }}</span>
+      {% if organisation.is_publicly_listed %}<span class="badge badge-primary">Publicly Listed</span>{% endif %}
+    </p>
+  </div>
+  {% if organisation.is_publicly_listed %}<a href="{% url 'sitepublic:organisation_profile' slug=organisation.slug %}" class="btn btn-outline">View Public Profile</a>{% endif %}
+</div>
+
+<div class="grid grid-2">
+  <div class="card-flat">
+    <h3>Organisation Details</h3>
+    <table>
+      <tr><td>Legal name</td><td>{{ organisation.legal_name }}</td></tr>
+      <tr><td>Trading name</td><td>{{ organisation.trading_name|default:"—" }}</td></tr>
+      <tr><td>Legal structure</td><td>{{ organisation.get_legal_structure_display|default:"Not set" }}</td></tr>
+      <tr><td>Province</td><td>{{ organisation.get_province_display|default:"—" }}</td></tr>
+      <tr><td>Municipality</td><td>{{ organisation.municipality|default:"—" }}</td></tr>
+      <tr><td>Email</td><td>{{ organisation.email|default:"—" }}</td></tr>
+      <tr><td>Phone</td><td>{{ organisation.phone_number|default:"—" }}</td></tr>
+      <tr><td>Website</td><td>{{ organisation.website|default:"—" }}</td></tr>
+      <tr><td>Sectors</td><td>{{ organisation.sectors|join:", "|default:"—" }}</td></tr>
+      <tr><td>Onboarding</td><td>{{ organisation.get_onboarding_step_display }}</td></tr>
+      <tr><td>Joined</td><td>{{ organisation.created_at|date:"d M Y" }}</td></tr>
+    </table>
+    <p class="field-hint" style="margin-top:12px;">Governance, documents, finance and beneficiary records are private to the organisation's own workspace and are not shown here.</p>
+  </div>
+  <div class="card-flat">
+    <h3>Networks &amp; Programmes</h3>
+    {% if network_memberships %}
+      <table>
+        <thead><tr><th>Network</th><th>Status</th></tr></thead>
+        <tbody>{% for m in network_memberships %}<tr><td>{{ m.network.name }}</td><td><span class="badge badge-neutral">{{ m.get_status_display }}</span></td></tr>{% endfor %}</tbody>
+      </table>
+    {% else %}<p class="text-muted">No network or programme applications yet.</p>{% endif %}
+  </div>
+</div>
+{% endblock %}

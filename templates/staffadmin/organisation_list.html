@@ -1,0 +1,55 @@
+{% extends "staff_base.html" %}
+{% block title %}Organisations{% endblock %}
+{% block content %}
+<div class="page-header"><div><h1>Organisations</h1><p>{{ page_obj.paginator.count }} organisation{{ page_obj.paginator.count|pluralize }} on {{ NETWORK_SHORT_NAME }}.</p></div></div>
+
+<form method="get" class="card-flat" style="margin-bottom:20px;">
+  <div class="grid grid-3">
+    <div class="form-group" style="margin-bottom:0;">
+      <label for="id_q">Search</label>
+      <input type="text" id="id_q" name="q" value="{{ query }}" placeholder="Organisation name">
+    </div>
+    <div class="form-group" style="margin-bottom:0;">
+      <label for="id_province">Province</label>
+      <select id="id_province" name="province">
+        <option value="">All Provinces</option>
+        {% for code, label in province_choices %}<option value="{{ code }}" {% if province == code %}selected{% endif %}>{{ label }}</option>{% endfor %}
+      </select>
+    </div>
+    <div class="form-group" style="margin-bottom:0;">
+      <label for="id_category">Category</label>
+      <select id="id_category" name="category">
+        <option value="">All Categories</option>
+        {% for code, label in category_choices %}<option value="{{ code }}" {% if category == code %}selected{% endif %}>{{ label }}</option>{% endfor %}
+      </select>
+    </div>
+  </div>
+  <button type="submit" class="btn btn-primary btn-sm" style="margin-top:12px;">Filter</button>
+</form>
+
+{% if page_obj %}
+<table>
+  <thead><tr><th>Organisation</th><th>Category</th><th>Province</th><th>Verification</th><th>Listed</th></tr></thead>
+  <tbody>
+    {% for org in page_obj %}
+    <tr>
+      <td><a href="{% url 'staffadmin:organisation_detail' slug=org.slug %}">{{ org.display_name }}</a></td>
+      <td>{{ org.get_organisation_type_display }}</td>
+      <td>{{ org.get_province_display|default:"—" }}</td>
+      <td><span class="badge {% if org.public_verification_status == 'verified' %}badge-success{% else %}badge-neutral{% endif %}">{{ org.get_public_verification_status_display }}</span></td>
+      <td>{{ org.is_publicly_listed|yesno:"Yes,No" }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% if page_obj.has_other_pages %}
+<div class="pagination">
+  {% for num in page_obj.paginator.page_range %}
+    <a href="?page={{ num }}{% if query %}&q={{ query }}{% endif %}{% if province %}&province={{ province }}{% endif %}{% if category %}&category={{ category }}{% endif %}" class="{% if page_obj.number == num %}current{% endif %}">{{ num }}</a>
+  {% endfor %}
+</div>
+{% endif %}
+{% else %}
+<div class="empty-state"><h3>No organisations match.</h3></div>
+{% endif %}
+{% endblock %}

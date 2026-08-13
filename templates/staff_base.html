@@ -1,0 +1,59 @@
+{% load static %}<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Platform Administration{% endblock %}: {{ NETWORK_SHORT_NAME }}</title>
+  {% include "partials/favicon.html" %}
+  <link rel="stylesheet" href="{% static 'css/base.css' %}">
+  <link rel="stylesheet" href="{% static 'css/staffadmin.css' %}">
+  {% block extra_head %}{% endblock %}
+</head>
+<body>
+<div class="app-shell staff-shell">
+  <aside class="app-sidebar staff-sidebar">
+    <a href="{% url 'staffadmin:overview' %}" class="brand">
+      <img src="{% static 'img/bohlale-logo.png' %}" alt="{{ NETWORK_SHORT_NAME }} logo" style="width:32px;height:32px;">
+      <span>{{ NETWORK_SHORT_NAME }}</span>
+    </a>
+    <div class="staff-badge">Platform Administration</div>
+    <nav class="sidebar-nav">
+      <a href="{% url 'staffadmin:overview' %}" class="{% if request.resolver_match.url_name == 'overview' %}active{% endif %}">Overview</a>
+      <a href="{% url 'staffadmin:organisation_list' %}" class="{% if 'organisation' in request.resolver_match.url_name %}active{% endif %}">Organisations</a>
+      <a href="{% url 'staffadmin:people_list' %}" class="{% if request.resolver_match.url_name == 'people_list' %}active{% endif %}">People</a>
+      <a href="{% url 'staffadmin:network_list' %}" class="{% if request.resolver_match.url_name == 'network_list' %}active{% endif %}">Networks &amp; Programmes</a>
+      <a href="{% url 'staffadmin:membership_overview' %}" class="{% if request.resolver_match.url_name == 'membership_overview' %}active{% endif %}">Memberships</a>
+      <a href="{% url 'staffadmin:opportunity_list' %}" class="{% if request.resolver_match.url_name == 'opportunity_list' %}active{% endif %}">Opportunities</a>
+      <a href="{% url 'resources:manage_list' %}">Resources</a>
+      <a href="{% url 'staffadmin:events' %}" class="{% if request.resolver_match.url_name == 'events' %}active{% endif %}">Events</a>
+      <a href="{% url 'staffadmin:insights' %}" class="{% if request.resolver_match.url_name == 'insights' %}active{% endif %}">Insights</a>
+      <a href="{% url 'staffadmin:partnerships' %}" class="{% if request.resolver_match.url_name == 'partnerships' %}active{% endif %}">Partnerships</a>
+      <a href="{% url 'staffadmin:reports' %}" class="{% if request.resolver_match.url_name == 'reports' %}active{% endif %}">Reports</a>
+      <a href="{% url 'staffadmin:documents' %}" class="{% if request.resolver_match.url_name == 'documents' %}active{% endif %}">Documents</a>
+      <div class="sidebar-section-label">Administration</div>
+      <a href="{% url 'staffadmin:staff' %}" class="{% if request.resolver_match.url_name == 'staff' %}active{% endif %}">Staff &amp; Permissions</a>
+      <a href="{% url 'staffadmin:settings' %}" class="{% if request.resolver_match.url_name == 'settings' %}active{% endif %}">Settings</a>
+      <div class="sidebar-section-label">Switch</div>
+      <a href="{% url 'organisations:workspace_home' %}">My Organisation</a>
+    </nav>
+  </aside>
+  <div class="app-main">
+    <div class="app-topbar">
+      <div class="flex items-center gap-16"><strong>Bohlale Impact Staff</strong></div>
+      <div class="flex items-center gap-16">
+        <span class="text-muted">{{ request.user.get_full_name|default:request.user.email }}</span>
+        <a href="{% url 'accounts:logout' %}" class="btn btn-ghost btn-sm">Sign out</a>
+      </div>
+    </div>
+    <div class="app-content">
+      {% if messages %}
+        {% for message in messages %}
+          <div class="alert alert-{{ message.tags|default:'info' }}">{{ message }}</div>
+        {% endfor %}
+      {% endif %}
+      {% block content %}{% endblock %}
+    </div>
+  </div>
+</div>
+</body>
+</html>

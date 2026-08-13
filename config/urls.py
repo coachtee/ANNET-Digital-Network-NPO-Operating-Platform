@@ -29,6 +29,7 @@ urlpatterns = [
     path("membership/", include("apps.memberships.urls")),
     path("opportunities/", include("apps.opportunities.urls")),
     path("platform/resources/", include("apps.resources.urls")),
+    path("platform-admin/", include("apps.staffadmin.urls")),
     path("", include("apps.sitepublic.urls")),
 ]
 

@@ -4,6 +4,7 @@ from django.core.exceptions import PermissionDenied
 from django.core.paginator import Paginator
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
+from django.views.decorators.http import require_POST
 
 from apps.core.permissions import has_network_capability
 from apps.networks.models import Network
@@ -79,3 +80,30 @@ def create_opportunity(request):
 def create_opportunity_for_network(request, network_slug):
     network = get_object_or_404(Network, slug=network_slug)
     return _create_opportunity(request, network)
+
+
+@login_required
+def edit_opportunity(request, opportunity_id):
+    opportunity = get_object_or_404(Opportunity, id=opportunity_id)
+    if not (request.user.is_platform_admin or has_network_capability(request.user, opportunity.network, "network.opportunities.manage")):
+        raise PermissionDenied
+    form = OpportunityForm(request.POST or None, instance=opportunity)
+    if request.method == "POST" and form.is_valid():
+        form.save()
+        messages.success(request, "Opportunity saved.")
+        if opportunity.network == get_primary_network():
+            return redirect("opportunities:manage_list")
+        return redirect("opportunities:manage_list_for_network", network_slug=opportunity.network.slug)
+    return render(request, "opportunities/opportunity_form.html", {"form": form, "network": opportunity.network, "opportunity": opportunity})
+
+
+@login_required
+@require_POST
+def archive_opportunity(request, opportunity_id):
+    opportunity = get_object_or_404(Opportunity, id=opportunity_id)
+    if not (request.user.is_platform_admin or has_network_capability(request.user, opportunity.network, "network.opportunities.manage")):
+        raise PermissionDenied
+    opportunity.status = Opportunity.STATUS_CLOSED
+    opportunity.save(update_fields=["status"])
+    messages.success(request, "Opportunity closed.")
+    return redirect(request.POST.get("next") or "staffadmin:opportunity_list")

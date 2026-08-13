@@ -10,5 +10,7 @@ urlpatterns = [
     path("manage/create/", views.create_opportunity, name="create"),
     path("manage/network/<slug:network_slug>/", views.manage_list_for_network, name="manage_list_for_network"),
     path("manage/network/<slug:network_slug>/create/", views.create_opportunity_for_network, name="create_for_network"),
+    path("manage/<uuid:opportunity_id>/edit/", views.edit_opportunity, name="edit"),
+    path("manage/<uuid:opportunity_id>/archive/", views.archive_opportunity, name="archive"),
     path("<uuid:opportunity_id>/", views.public_detail, name="public_detail"),
 ]

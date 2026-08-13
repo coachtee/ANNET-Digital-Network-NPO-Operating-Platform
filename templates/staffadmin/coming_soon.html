@@ -1,0 +1,10 @@
+{% extends "staff_base.html" %}
+{% block title %}{{ title }}{% endblock %}
+{% block content %}
+<div class="page-header"><div><h1>{{ title }}</h1></div></div>
+<div class="empty-state">
+  <span class="coming-soon-badge">Coming soon</span>
+  <h3 style="margin-top:12px;">{{ title }} management isn't built yet</h3>
+  <p>This area doesn't have a backing model in the platform yet, so there's nothing real to manage here. It's listed now so the Staff Administration navigation matches where {{ NETWORK_SHORT_NAME }} is headed, without faking data in the meantime.</p>
+</div>
+{% endblock %}

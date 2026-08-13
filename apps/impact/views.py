@@ -2,8 +2,8 @@ from django.contrib.auth.decorators import login_required
 from django.db.models import Sum
 from django.shortcuts import render
 
-from apps.attendance.models import AttendanceRecord
 from apps.grants.models import Grant
+from apps.impact.services import people_reached_for_organisation
 from apps.monitoring_evaluation.models import Indicator
 from apps.organisations.services import get_organisation_or_404_for_user
 from apps.programmes.models import Activity
@@ -19,10 +19,7 @@ def impact_dashboard(request, slug):
     programmes = organisation.programmes.all()
     active_programmes = programmes.filter(status="active").count()
 
-    attendance = AttendanceRecord.objects.filter(organisation=organisation)
-    named_reached = attendance.filter(beneficiary__isnull=False).values("beneficiary").distinct().count()
-    anonymous_reached = attendance.filter(beneficiary__isnull=True).aggregate(total=Sum("headcount"))["total"] or 0
-    people_reached = named_reached + anonymous_reached
+    people_reached = people_reached_for_organisation(organisation)
 
     activities_delivered = Activity.objects.filter(programme__organisation=organisation, status="delivered").count()
 

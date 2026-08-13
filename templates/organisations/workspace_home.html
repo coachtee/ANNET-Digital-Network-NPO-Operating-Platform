@@ -1,28 +1,94 @@
 {% extends "workspace_base.html" %}
+{% load text_filters %}
 {% block title %}Overview{% endblock %}
 {% block content %}
 <div class="page-header">
   <div>
     <h1>{{ organisation.display_name }}</h1>
-    <p>Organisation workspace overview</p>
+    <p>
+      My Organisation on {{ NETWORK_SHORT_NAME }}
+      <span class="badge {% if health.overall >= 75 %}badge-success{% elif health.overall >= 40 %}badge-warning{% else %}badge-danger{% endif %}" style="margin-left:6px;">{{ health.overall }}% ready</span>
+      {% if organisation.is_network_member %}<span class="badge badge-success">{{ NETWORK_SHORT_NAME }} Member</span>{% endif %}
+    </p>
   </div>
-  <div class="flex gap-8">
-    {% if not organisation.is_network_member %}
-      <a href="{% url 'memberships:apply' slug=organisation.slug %}" class="btn btn-primary">Apply to join {{ NETWORK_SHORT_NAME }}</a>
-    {% else %}
-      <span class="badge badge-success">{{ NETWORK_SHORT_NAME }} Member</span>
-    {% endif %}
-  </div>
+  {% if not organisation.is_network_member %}
+    <a href="{% url 'memberships:apply' slug=organisation.slug %}" class="btn btn-primary">Apply to join {{ NETWORK_SHORT_NAME }}</a>
+  {% endif %}
 </div>
 
 <div class="metric-row">
   <div class="metric-card"><div class="stat-value">{{ health.overall }}%</div><div class="stat-label">Overall Readiness</div></div>
-  <div class="metric-card"><div class="stat-value">{{ open_obligations }}</div><div class="stat-label">Open Compliance Items</div></div>
   <div class="metric-card"><div class="stat-value">{{ active_programmes }}</div><div class="stat-label">Active Programmes</div></div>
-  <div class="metric-card"><div class="stat-value">{{ active_projects }}</div><div class="stat-label">Active Projects</div></div>
+  <div class="metric-card"><div class="stat-value">{{ document_count }}</div><div class="stat-label">Documents</div></div>
+  <div class="metric-card"><div class="stat-value">{{ open_obligations }}</div><div class="stat-label">Open Compliance Items</div></div>
 </div>
 
-<div class="grid grid-2">
+<div class="grid grid-2" style="align-items:start;">
+  <div class="card-flat">
+    <h3>Needs Your Attention</h3>
+    {% if needs_attention %}
+      <ul class="attention-list">
+        {% for item in needs_attention %}
+        <li>
+          <span>{{ item.text }}</span>
+          {% if item.fix_url %}<a href="{{ item.fix_url }}" class="attention-fix">Fix →</a>{% endif %}
+        </li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <p class="text-muted">Nothing outstanding right now, your Health Check dimensions all look complete.</p>
+    {% endif %}
+  </div>
+
+  <div class="card-flat">
+    <h3>Recent Activity</h3>
+    {% if recent_activity %}
+      <ul class="activity-list">
+        {% for entry in recent_activity %}
+        <li>
+          <span>{{ entry.action|humanize_action }}</span>
+          <span class="text-muted">{{ entry.actor|default:"System" }} · {{ entry.created_at|timesince }} ago</span>
+        </li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <p class="text-muted">No activity recorded yet.</p>
+    {% endif %}
+  </div>
+</div>
+
+<div class="grid grid-2" style="align-items:start; margin-top:20px;">
+  <div class="card-flat">
+    <h3>Networks &amp; Programmes</h3>
+    {% if network_memberships %}
+      <table>
+        <tbody>
+          {% for m in network_memberships %}
+          <tr>
+            <td>{{ m.network.name }}</td>
+            <td><span class="badge badge-neutral">{{ m.get_status_display }}</span></td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <p class="text-muted">Not yet applied to any network or programme.</p>
+    {% endif %}
+    <a href="{% url 'memberships:apply' slug=organisation.slug %}" class="btn btn-outline btn-sm" style="margin-top:12px;">View Membership</a>
+  </div>
+
+  <div class="card-flat">
+    <h3>Programmes, People &amp; Impact</h3>
+    <div class="metric-row" style="margin-bottom:0;">
+      <div class="metric-card"><div class="stat-value">{{ active_programmes }}</div><div class="stat-label">Active Programmes</div></div>
+      <div class="metric-card"><div class="stat-value">{{ active_projects }}</div><div class="stat-label">Active Projects</div></div>
+      <div class="metric-card"><div class="stat-value">{{ beneficiary_count }}</div><div class="stat-label">People Recorded</div></div>
+      <div class="metric-card"><div class="stat-value">{{ people_reached }}</div><div class="stat-label">People Reached</div></div>
+    </div>
+  </div>
+</div>
+
+<div class="grid grid-2" style="margin-top:20px;">
   <div class="card">
     <h3>Organisation Health</h3>
     <p class="text-muted">See dimension-level scores and recommended actions.</p>
@@ -39,13 +105,9 @@
     <a href="{% url 'impact:dashboard' slug=organisation.slug %}" class="btn btn-outline btn-sm">View Impact</a>
   </div>
   <div class="card">
-    <h3>Membership</h3>
-    {% if membership_application %}
-      <p class="text-muted">Status: <span class="badge badge-primary">{{ membership_application.get_status_display }}</span></p>
-    {% else %}
-      <p class="text-muted">You haven't applied to join {{ NETWORK_SHORT_NAME }} yet.</p>
-    {% endif %}
-    <a href="{% url 'memberships:apply' slug=organisation.slug %}" class="btn btn-outline btn-sm">View Membership</a>
+    <h3>Document Vault</h3>
+    <p class="text-muted">Constitution, minutes, policies and evidence in one place.</p>
+    <a href="{% url 'documents:list' slug=organisation.slug %}" class="btn btn-outline btn-sm">Open Document Vault</a>
   </div>
 </div>
 {% endblock %}

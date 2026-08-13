@@ -1,0 +1,21 @@
+{% extends "staff_base.html" %}
+{% block title %}Networks & Programmes{% endblock %}
+{% block content %}
+<div class="page-header"><div><h1>Networks &amp; Programmes</h1><p>Every network/programme deployed on {{ NETWORK_SHORT_NAME }}: the platform's own network and any partner programmes, on the same architecture.</p></div></div>
+{% if rows %}
+<table>
+  <thead><tr><th>Network / Programme</th><th>Approved Members</th><th>Pending Applications</th><th>Staff</th><th></th></tr></thead>
+  <tbody>
+    {% for row in rows %}
+    <tr>
+      <td>{{ row.network.name }}</td>
+      <td>{{ row.approved_members }}</td>
+      <td>{{ row.pending_applications }}</td>
+      <td>{{ row.staff_count }}</td>
+      <td><a href="{% url 'networks:dashboard_for_network' network_slug=row.network.slug %}">Open Dashboard</a></td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}<div class="empty-state"><h3>No networks configured yet.</h3></div>{% endif %}
+{% endblock %}
