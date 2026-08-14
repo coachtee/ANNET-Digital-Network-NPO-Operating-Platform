@@ -16,6 +16,7 @@ urlpatterns = [
     path("<slug:slug>/<uuid:project_id>/tasks/<uuid:task_id>/edit/", views.project_task_edit, name="task_edit"),
     path("<slug:slug>/<uuid:project_id>/tasks/<uuid:task_id>/delete/", views.project_task_delete, name="task_delete"),
     path("<slug:slug>/<uuid:project_id>/people/", views.project_people, name="people"),
+    path("<slug:slug>/<uuid:project_id>/people/<uuid:membership_id>/remove/", views.remove_project_member, name="remove_team_member"),
     path("<slug:slug>/<uuid:project_id>/budget/", views.project_budget, name="budget"),
     path("<slug:slug>/<uuid:project_id>/expenses/", views.project_expenses, name="expenses"),
     path("<slug:slug>/<uuid:project_id>/evidence/", views.project_evidence, name="evidence"),

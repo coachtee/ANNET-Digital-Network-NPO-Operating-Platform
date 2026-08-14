@@ -5,6 +5,23 @@ from django.db import models
 
 from apps.core.models import TimeStampedModel
 
+# Shared by ProgrammeMembership and projects.ProjectMembership -- what a
+# person *does* within a Programme/Project. Deliberately distinct from
+# apps.core.permissions system roles (what a user can do in Bohlale) --
+# see ProgrammeMembership's docstring.
+TEAM_ROLE_CHOICES = [
+    ("programme_manager", "Programme Manager"),
+    ("programme_coordinator", "Programme Coordinator"),
+    ("project_manager", "Project Manager"),
+    ("me_officer", "M&E Officer"),
+    ("finance_administrator", "Finance / Administrator"),
+    ("facilitator", "Facilitator"),
+    ("volunteer", "Volunteer"),
+    ("data_reporting_officer", "Data / Reporting Officer"),
+    ("community_liaison", "Community Liaison"),
+    ("other", "Other"),
+]
+
 
 class Programme(TimeStampedModel):
     """Ongoing mission delivery (spec section 23) — may span multiple
@@ -125,3 +142,32 @@ class Activity(TimeStampedModel):
 
     def __str__(self):
         return f"{self.programme.name} — {self.name}"
+
+
+class ProgrammeMembership(TimeStampedModel):
+    """Who is responsible for delivering this Programme -- distinct from
+    the organisation's general membership (an org may have 20 people but
+    only a handful working on any one Programme) and distinct from
+    beneficiaries reached through its activities. Also distinct from
+    apps.core.permissions system roles: a Programme role describes what
+    someone does *on this Programme*, not what they're allowed to do in
+    Bohlale generally."""
+
+    STATUS_ACTIVE = "active"
+    STATUS_INACTIVE = "inactive"
+    STATUS_CHOICES = [(STATUS_ACTIVE, "Active"), (STATUS_INACTIVE, "Inactive")]
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    programme = models.ForeignKey(Programme, on_delete=models.CASCADE, related_name="team_memberships")
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="programme_memberships")
+    role = models.CharField(max_length=30, choices=TEAM_ROLE_CHOICES)
+    start_date = models.DateField(null=True, blank=True)
+    end_date = models.DateField(null=True, blank=True)
+    responsibilities = models.TextField(blank=True)
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default=STATUS_ACTIVE)
+
+    class Meta:
+        ordering = ["-status", "role"]
+
+    def __str__(self):
+        return f"{self.user} — {self.get_role_display()} ({self.programme.name})"

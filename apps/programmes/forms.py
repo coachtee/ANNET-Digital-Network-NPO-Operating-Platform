@@ -1,10 +1,37 @@
 from django import forms
 
-from apps.programmes.models import Activity, Programme
+from apps.programmes.models import Activity, Programme, ProgrammeMembership
 
 
 def _to_list(value):
     return [v.strip() for v in value.split(",") if v.strip()]
+
+
+class ProgrammeMembershipForm(forms.ModelForm):
+    """Assign an existing organisation member to the Programme Team --
+    never creates a new person, only references one. Scoped to active
+    members of the organisation so this can never reach outside it."""
+
+    class Meta:
+        model = ProgrammeMembership
+        fields = ["user", "role", "start_date", "end_date", "responsibilities", "status"]
+        labels = {"user": "Person"}
+        widgets = {
+            "start_date": forms.DateInput(attrs={"type": "date"}),
+            "end_date": forms.DateInput(attrs={"type": "date"}),
+            "responsibilities": forms.Textarea(attrs={"rows": 2}),
+        }
+
+    def __init__(self, *args, organisation=None, programme=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        if organisation is not None:
+            self.fields["user"].queryset = self.fields["user"].queryset.filter(
+                organisation_memberships__organisation=organisation, organisation_memberships__is_active=True
+            ).distinct()
+        if programme is not None:
+            self.fields["user"].queryset = self.fields["user"].queryset.exclude(
+                programme_memberships__programme=programme, programme_memberships__status=ProgrammeMembership.STATUS_ACTIVE,
+            )
 
 
 class ProgrammeWizardDetailsForm(forms.ModelForm):

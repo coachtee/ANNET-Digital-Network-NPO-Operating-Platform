@@ -39,6 +39,7 @@ def project_workspace_summary(project, organisation):
         "activity_count": project.activities.count(),
         "task_count": project.tasks.count(),
         "people_reached": people_reached_for_project(project),
+        "team_count": project.team_memberships.filter(status="active").count(),
         "budget_planned": finance["planned"],
         "budget_spent": finance["actual"],
         "evidence_count": evidence_count,

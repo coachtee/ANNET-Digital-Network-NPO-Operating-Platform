@@ -30,6 +30,9 @@
       {% for label, met in readiness.checks %}
       <li class="{% if met %}readiness-met{% else %}readiness-missing{% endif %}">{% if met %}✓{% else %}○{% endif %} {{ label }}</li>
       {% endfor %}
+      {% for label, met in readiness.recommended %}
+      <li class="{% if met %}readiness-met{% else %}readiness-missing{% endif %}">{% if met %}✓{% else %}⚠{% endif %} {{ label }} <span class="text-muted">(recommended)</span></li>
+      {% endfor %}
     </ul>
     {% if not readiness.is_ready %}
     <a href="{% url 'programmes:plan' slug=organisation.slug programme_id=programme.id %}" class="btn btn-primary btn-sm">Complete Programme Plan</a>
@@ -72,6 +75,22 @@
         </tbody>
       </table>
       {% else %}<p class="text-muted" style="padding:16px;">No projects yet.</p>{% endif %}
+    </div>
+  </div>
+
+  <div class="section-block">
+    <h3>Programme Team</h3>
+    <div class="card-flat">
+      {% if team_memberships %}
+      <p>{{ team_count }} active member{{ team_count|pluralize }}</p>
+      <ul class="wizard-inline-list">
+        {% for m in team_memberships %}
+        <li>{{ m.get_role_display }}: {{ m.user.get_full_name|default:m.user.email }}</li>
+        {% endfor %}
+      </ul>
+      {% if team_count > 4 %}<p class="field-hint mb-0">+ {{ team_count|add:"-4" }} others</p>{% endif %}
+      {% else %}<p class="text-muted mb-0">No team assigned yet.</p>{% endif %}
+      <a href="{% url 'programmes:team' slug=organisation.slug programme_id=programme.id %}" class="btn btn-outline btn-sm" style="margin-top:8px;">View Programme Team</a>
     </div>
   </div>
 

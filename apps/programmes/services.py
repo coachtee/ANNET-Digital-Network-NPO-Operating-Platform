@@ -49,7 +49,17 @@ def compute_programme_readiness(programme):
         ("Target defined", programme.indicators.exclude(target_value__isnull=True).exists()),
     ]
     missing = [label for label, met in checks if not met]
-    return {"checks": checks, "missing": missing, "is_ready": not missing}
+
+    # Recommended, not required -- shown alongside the gate but never
+    # part of is_ready, so an unassigned team never blocks Project
+    # creation the way a missing Outcome/Output/Indicator/Target does.
+    has_manager = programme.team_memberships.filter(role="programme_manager", status="active").exists()
+    recommended = [("Programme Manager assigned", has_manager)]
+
+    return {
+        "checks": checks, "missing": missing, "is_ready": not missing,
+        "recommended": recommended, "recommended_missing": [label for label, met in recommended if not met],
+    }
 
 
 def compute_programme_attention(programme, organisation):

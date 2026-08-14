@@ -11,11 +11,10 @@ from apps.core.permissions import has_org_capability
 from apps.documents.forms import DocumentUploadForm
 from apps.documents.models import Document
 from apps.expenses.forms import BudgetForm, BudgetLineForm, ExpenseForm
-from apps.impact.services import beneficiaries_for_project
 from apps.organisations.services import get_organisation_or_404_for_user
 from apps.programmes.forms import ActivityForm
-from apps.projects.forms import ProjectForm, ProjectTaskForm
-from apps.projects.models import Project, ProjectTask
+from apps.projects.forms import ProjectForm, ProjectMembershipForm, ProjectTaskForm
+from apps.projects.models import Project, ProjectMembership, ProjectTask
 from apps.projects.services import (
     compute_project_attention,
     compute_project_progress,
@@ -271,14 +270,44 @@ def project_task_delete(request, slug, project_id, task_id):
 
 @login_required
 def project_people(request, slug, project_id):
+    """Project Team -- who is responsible for delivering this project.
+    Distinct from People Reached (beneficiaries), which stays a summary
+    figure on the Overview tab."""
     organisation = get_organisation_or_404_for_user(request.user, slug)
     project = get_object_or_404(Project, id=project_id, organisation=organisation)
+    can_manage = has_org_capability(request.user, organisation, "projects.manage")
+
+    form = None
+    if can_manage:
+        form = ProjectMembershipForm(
+            request.POST if request.method == "POST" else None, organisation=organisation, project=project,
+        )
+        if request.method == "POST" and form.is_valid():
+            membership = form.save(commit=False)
+            membership.project = project
+            membership.save()
+            messages.success(request, "Added to the project team.")
+            return redirect("projects:people", slug=slug, project_id=project.id)
+
     context = {
-        "organisation": organisation, "project": project, "active_tab": "people",
-        "beneficiaries": beneficiaries_for_project(project),
+        "organisation": organisation, "project": project, "active_tab": "people", "can_manage": can_manage, "form": form,
+        "memberships": project.team_memberships.select_related("user").all(),
     }
     context.update(project_workspace_summary(project, organisation))
     return render(request, "projects/project_people.html", context)
+
+
+@login_required
+def remove_project_member(request, slug, project_id, membership_id):
+    organisation = get_organisation_or_404_for_user(request.user, slug)
+    project = get_object_or_404(Project, id=project_id, organisation=organisation)
+    if not has_org_capability(request.user, organisation, "projects.manage"):
+        raise PermissionDenied
+    membership = get_object_or_404(ProjectMembership, id=membership_id, project=project)
+    if request.method == "POST":
+        membership.delete()
+        messages.success(request, "Removed from the project team.")
+    return redirect("projects:people", slug=slug, project_id=project.id)
 
 
 @login_required

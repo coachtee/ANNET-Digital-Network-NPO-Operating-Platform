@@ -4,6 +4,7 @@ from django.conf import settings
 from django.db import models
 
 from apps.core.models import TimeStampedModel
+from apps.programmes.models import TEAM_ROLE_CHOICES
 
 
 class Project(TimeStampedModel):
@@ -68,3 +69,29 @@ class ProjectTask(TimeStampedModel):
 
     def __str__(self):
         return self.title
+
+
+class ProjectMembership(TimeStampedModel):
+    """Who is responsible for delivering this Project -- mirrors
+    programmes.ProgrammeMembership, and is a distinct concept from
+    People Reached (beneficiaries reached through the project's
+    activities)."""
+
+    STATUS_ACTIVE = "active"
+    STATUS_INACTIVE = "inactive"
+    STATUS_CHOICES = [(STATUS_ACTIVE, "Active"), (STATUS_INACTIVE, "Inactive")]
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name="team_memberships")
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="project_memberships")
+    role = models.CharField(max_length=30, choices=TEAM_ROLE_CHOICES)
+    start_date = models.DateField(null=True, blank=True)
+    end_date = models.DateField(null=True, blank=True)
+    responsibilities = models.TextField(blank=True)
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default=STATUS_ACTIVE)
+
+    class Meta:
+        ordering = ["-status", "role"]
+
+    def __str__(self):
+        return f"{self.user} — {self.get_role_display()} ({self.project.name})"

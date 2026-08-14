@@ -525,3 +525,58 @@ class ProgrammeReadinessTests(TestCase):
         self._make_ready()
         resp = self.client.get(reverse("programmes:detail", kwargs={"slug": self.organisation.slug, "programme_id": self.programme.id}))
         self.assertContains(resp, "Programme ready")
+
+
+class ProgrammeTeamTests(TestCase):
+    """The Programme Team is who is responsible for delivering it --
+    distinct from the organisation's general membership and from
+    beneficiaries reached."""
+
+    def setUp(self):
+        self.organisation = Organisation.objects.create(legal_name="Org A", organisation_type="npo")
+        self.user = User.objects.create_user(email="admin@example.com", password=PASSWORD)
+        OrganisationMembership.objects.create(organisation=self.organisation, user=self.user, role=ORG_ROLE_ADMIN)
+        self.client.force_login(self.user)
+        self.manager = User.objects.create_user(email="manager@example.com", password=PASSWORD, first_name="Thabiso")
+        OrganisationMembership.objects.create(organisation=self.organisation, user=self.manager, role=ORG_ROLE_ADMIN)
+        self.programme = Programme.objects.create(organisation=self.organisation, name="Youth Digital Skills")
+        self.url = reverse("programmes:team", kwargs={"slug": self.organisation.slug, "programme_id": self.programme.id})
+
+    def test_add_programme_manager_references_the_existing_user(self):
+        resp = self.client.post(self.url, {"user": str(self.manager.id), "role": "programme_manager", "status": "active"})
+        self.assertRedirects(resp, self.url)
+        from apps.programmes.models import ProgrammeMembership
+
+        membership = ProgrammeMembership.objects.get(programme=self.programme)
+        self.assertEqual(membership.user_id, self.manager.id)
+        self.assertEqual(User.objects.count(), 2)
+
+    def test_someone_outside_the_organisation_cannot_be_added(self):
+        from apps.programmes.forms import ProgrammeMembershipForm
+
+        outsider = User.objects.create_user(email="outsider@example.com", password=PASSWORD)
+        form = ProgrammeMembershipForm(
+            {"user": str(outsider.id), "role": "volunteer", "status": "active"},
+            organisation=self.organisation, programme=self.programme,
+        )
+        self.assertFalse(form.is_valid())
+
+    def test_programme_manager_assigned_satisfies_the_recommended_readiness_check(self):
+        self.assertIn(
+            "Programme Manager assigned",
+            compute_programme_readiness(self.programme)["recommended_missing"],
+        )
+        from apps.programmes.models import ProgrammeMembership
+
+        ProgrammeMembership.objects.create(programme=self.programme, user=self.manager, role="programme_manager")
+        self.assertNotIn(
+            "Programme Manager assigned",
+            compute_programme_readiness(self.programme)["recommended_missing"],
+        )
+
+    def test_programme_overview_shows_the_team_summary(self):
+        from apps.programmes.models import ProgrammeMembership
+
+        ProgrammeMembership.objects.create(programme=self.programme, user=self.manager, role="programme_manager")
+        resp = self.client.get(reverse("programmes:detail", kwargs={"slug": self.organisation.slug, "programme_id": self.programme.id}))
+        self.assertContains(resp, "Programme Manager: Thabiso")

@@ -9,7 +9,8 @@ from apps.core.permissions import ORG_ROLE_ADMIN
 from apps.expenses.models import Budget, BudgetLine, Expense
 from apps.organisations.models import Organisation, OrganisationMembership
 from apps.programmes.models import Activity, Programme
-from apps.projects.models import Project, ProjectTask
+from apps.projects.forms import ProjectMembershipForm
+from apps.projects.models import Project, ProjectMembership, ProjectTask
 from apps.projects.services import (
     compute_project_attention,
     compute_project_progress,
@@ -246,9 +247,10 @@ class ProjectTaskTests(TestCase):
         self.assertIsNone(task.activity)
 
 
-class ProjectPeopleTests(TestCase):
-    """People remain connected to service delivery -- reached through an
-    Activity, never made children of a Task."""
+class PeopleReachedServiceTests(TestCase):
+    """People Reached stays connected to service delivery -- reached
+    through an Activity, never made children of a Task -- and stays a
+    concept distinct from the Project Team (see ProjectTeamTests)."""
 
     def setUp(self):
         self.organisation = Organisation.objects.create(legal_name="Org A", organisation_type="npo")
@@ -264,7 +266,9 @@ class ProjectPeopleTests(TestCase):
             organisation=self.organisation, programme=self.programme, first_name="Thandiwe", last_name="M",
         )
 
-    def test_people_tab_only_shows_beneficiaries_reached_through_this_project(self):
+    def test_beneficiaries_for_project_only_includes_those_reached_through_this_project(self):
+        from apps.impact.services import beneficiaries_for_project
+
         AttendanceRecord.objects.create(
             organisation=self.organisation, programme=self.programme, activity=self.activity,
             beneficiary=self.beneficiary, attendance_date="2026-01-10",
@@ -274,10 +278,53 @@ class ProjectPeopleTests(TestCase):
             organisation=self.organisation, programme=self.programme, activity=self.other_activity,
             headcount=5, attendance_date="2026-01-11",
         )
-        resp = self.client.get(reverse("projects:people", kwargs={"slug": self.organisation.slug, "project_id": self.project.id}))
-        self.assertEqual(resp.status_code, 200)
-        self.assertEqual(list(resp.context["beneficiaries"]), [self.beneficiary])
+        self.assertEqual(list(beneficiaries_for_project(self.project)), [self.beneficiary])
+
+    def test_people_reached_appears_on_overview_not_the_people_tab(self):
+        AttendanceRecord.objects.create(
+            organisation=self.organisation, programme=self.programme, activity=self.activity,
+            beneficiary=self.beneficiary, attendance_date="2026-01-10",
+        )
+        resp = self.client.get(reverse("projects:detail", kwargs={"slug": self.organisation.slug, "project_id": self.project.id}))
         self.assertEqual(resp.context["people_reached"], 1)
+        resp = self.client.get(reverse("projects:people", kwargs={"slug": self.organisation.slug, "project_id": self.project.id}))
+        self.assertNotIn("beneficiaries", resp.context)
+
+
+class ProjectTeamTests(TestCase):
+    """The Project's People tab is the Project Team -- who delivers it --
+    never confused with beneficiaries reached (see PeopleReachedServiceTests)."""
+
+    def setUp(self):
+        self.organisation = Organisation.objects.create(legal_name="Org A", organisation_type="npo")
+        self.user = User.objects.create_user(email="admin@example.com", password=PASSWORD)
+        OrganisationMembership.objects.create(organisation=self.organisation, user=self.user, role=ORG_ROLE_ADMIN)
+        self.client.force_login(self.user)
+        self.facilitator = User.objects.create_user(email="facilitator@example.com", password=PASSWORD, first_name="Nomsa")
+        OrganisationMembership.objects.create(organisation=self.organisation, user=self.facilitator, role=ORG_ROLE_ADMIN)
+        self.project = Project.objects.create(organisation=self.organisation, name="Bootcamp")
+        self.url = reverse("projects:people", kwargs={"slug": self.organisation.slug, "project_id": self.project.id})
+
+    def test_add_person_to_project_team_references_the_existing_user_not_a_new_one(self):
+        resp = self.client.post(self.url, {"user": str(self.facilitator.id), "role": "facilitator", "status": "active"})
+        self.assertRedirects(resp, self.url)
+        membership = ProjectMembership.objects.get(project=self.project)
+        self.assertEqual(membership.user_id, self.facilitator.id)
+        self.assertEqual(User.objects.count(), 2)  # no duplicate person created
+
+    def test_person_already_outside_the_organisation_cannot_be_added(self):
+        outsider = User.objects.create_user(email="outsider@example.com", password=PASSWORD)
+        form = ProjectMembershipForm({"user": str(outsider.id), "role": "volunteer", "status": "active"}, organisation=self.organisation, project=self.project)
+        self.assertFalse(form.is_valid())
+
+    def test_remove_team_member(self):
+        membership = ProjectMembership.objects.create(project=self.project, user=self.facilitator, role="facilitator")
+        url = reverse("projects:remove_team_member", kwargs={
+            "slug": self.organisation.slug, "project_id": self.project.id, "membership_id": membership.id,
+        })
+        resp = self.client.post(url)
+        self.assertRedirects(resp, self.url)
+        self.assertFalse(ProjectMembership.objects.filter(id=membership.id).exists())
 
 
 class ProjectFormsScopingTests(TestCase):

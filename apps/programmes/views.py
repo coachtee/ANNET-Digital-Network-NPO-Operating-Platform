@@ -14,6 +14,7 @@ from apps.monitoring_evaluation.forms import IndicatorForm, OutcomeForm, OutputF
 from apps.organisations.services import get_organisation_or_404_for_user
 from apps.programmes.forms import (
     ActivityForm,
+    ProgrammeMembershipForm,
     ProgrammePlanForm,
     ProgrammeWizardDetailsForm,
     ProgrammeWizardFundingForm,
@@ -21,7 +22,7 @@ from apps.programmes.forms import (
     ProgrammeWizardWhyForm,
     ProgrammeWizardWhoWhereForm,
 )
-from apps.programmes.models import Activity, Programme
+from apps.programmes.models import Activity, Programme, ProgrammeMembership
 from apps.programmes.services import (
     compute_programme_attention,
     compute_programme_progress,
@@ -255,6 +256,8 @@ def programme_detail(request, slug, programme_id):
         "progress": compute_programme_progress(programme),
         "budget": programme_budget_summary(programme),
         "indicators": programme.indicators.select_related("outcome", "output")[:5],
+        "team_memberships": programme.team_memberships.select_related("user").filter(status=ProgrammeMembership.STATUS_ACTIVE)[:4],
+        "team_count": programme.team_memberships.filter(status=ProgrammeMembership.STATUS_ACTIVE).count(),
         "projects": programme.projects.all()[:5],
         "upcoming_activities": programme.activities.filter(
             status="planned", scheduled_date__gte=today
@@ -285,6 +288,45 @@ def programme_plan(request, slug, programme_id):
         "active_tab": "plan", "form": form, "editing": editing and can_manage,
         "outcomes": programme.outcomes.all(),
     })
+
+
+@login_required
+def programme_team(request, slug, programme_id):
+    """Who is responsible for delivering this Programme -- distinct from
+    People Reached (beneficiaries), which stays on the Overview tab."""
+    organisation = get_organisation_or_404_for_user(request.user, slug)
+    programme = get_object_or_404(Programme, id=programme_id, organisation=organisation)
+    can_manage = has_org_capability(request.user, organisation, "programmes.manage")
+
+    form = None
+    if can_manage:
+        form = ProgrammeMembershipForm(
+            request.POST if request.method == "POST" else None, organisation=organisation, programme=programme,
+        )
+        if request.method == "POST" and form.is_valid():
+            membership = form.save(commit=False)
+            membership.programme = programme
+            membership.save()
+            messages.success(request, "Added to the programme team.")
+            return redirect("programmes:team", slug=slug, programme_id=programme.id)
+
+    return render(request, "programmes/programme_team.html", {
+        "organisation": organisation, "programme": programme, "can_manage": can_manage,
+        "active_tab": "people", "form": form,
+        "memberships": programme.team_memberships.select_related("user").all(),
+    })
+
+
+@login_required
+def remove_programme_member(request, slug, programme_id, membership_id):
+    organisation = get_organisation_or_404_for_user(request.user, slug)
+    programme = get_object_or_404(Programme, id=programme_id, organisation=organisation)
+    _require_manage(request, organisation)
+    membership = get_object_or_404(ProgrammeMembership, id=membership_id, programme=programme)
+    if request.method == "POST":
+        membership.delete()
+        messages.success(request, "Removed from the programme team.")
+    return redirect("programmes:team", slug=slug, programme_id=programme.id)
 
 
 def _save_activity_form(form, programme, organisation, request):

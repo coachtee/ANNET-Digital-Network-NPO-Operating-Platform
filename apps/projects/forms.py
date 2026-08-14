@@ -1,6 +1,6 @@
 from django import forms
 
-from apps.projects.models import Project, ProjectTask
+from apps.projects.models import Project, ProjectMembership, ProjectTask
 
 
 class ProjectForm(forms.ModelForm):
@@ -49,6 +49,32 @@ class ProjectForm(forms.ModelForm):
                     + ", ".join(readiness["missing"]) + ". Complete the Programme Plan first."
                 )
         return programme
+
+
+class ProjectMembershipForm(forms.ModelForm):
+    """Assign an existing organisation member to the Project Team --
+    mirrors ProgrammeMembershipForm. Never creates a new person."""
+
+    class Meta:
+        model = ProjectMembership
+        fields = ["user", "role", "start_date", "end_date", "responsibilities", "status"]
+        labels = {"user": "Person"}
+        widgets = {
+            "start_date": forms.DateInput(attrs={"type": "date"}),
+            "end_date": forms.DateInput(attrs={"type": "date"}),
+            "responsibilities": forms.Textarea(attrs={"rows": 2}),
+        }
+
+    def __init__(self, *args, organisation=None, project=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        if organisation is not None:
+            self.fields["user"].queryset = self.fields["user"].queryset.filter(
+                organisation_memberships__organisation=organisation, organisation_memberships__is_active=True
+            ).distinct()
+        if project is not None:
+            self.fields["user"].queryset = self.fields["user"].queryset.exclude(
+                project_memberships__project=project, project_memberships__status=ProjectMembership.STATUS_ACTIVE,
+            )
 
 
 class ProjectTaskForm(forms.ModelForm):

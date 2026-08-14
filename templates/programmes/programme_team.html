@@ -1,17 +1,17 @@
 {% extends "workspace_base.html" %}
-{% block title %}{{ project.name }}: Team{% endblock %}
+{% block title %}{{ programme.name }}: Team{% endblock %}
 {% block content %}
-{% include "projects/_project_workspace_header.html" %}
+{% include "programmes/_workspace_header.html" %}
 
 <div class="page-header" style="margin-bottom:12px;">
-  <div><p class="mb-0 text-muted">Who is responsible for delivering this project -- distinct from the people it reaches (see Overview).</p></div>
+  <div><p class="mb-0 text-muted">Who is responsible for delivering this programme -- distinct from the people it reaches.</p></div>
   {% if can_manage %}<button type="button" class="btn btn-primary" data-modal-open="team-modal">+ Add Person</button>{% endif %}
 </div>
 
 <div class="card-flat" style="padding:0;">
   {% if memberships %}
   <table>
-    <thead><tr><th>Person</th><th>Project Role</th><th>Start</th><th>Status</th><th></th></tr></thead>
+    <thead><tr><th>Person</th><th>Role</th><th>Start</th><th>Status</th><th></th></tr></thead>
     <tbody>
       {% for m in memberships %}
       <tr>
@@ -21,7 +21,7 @@
         <td><span class="badge {% if m.status == 'active' %}badge-success{% else %}badge-neutral{% endif %}">{{ m.get_status_display }}</span></td>
         <td>
           {% if can_manage %}
-          <form method="post" action="{% url 'projects:remove_team_member' slug=organisation.slug project_id=project.id membership_id=m.id %}" style="display:inline;" onsubmit="return confirm('Remove {{ m.user.get_full_name|default:m.user.email }} from this project team?');">
+          <form method="post" action="{% url 'programmes:remove_team_member' slug=organisation.slug programme_id=programme.id membership_id=m.id %}" style="display:inline;" onsubmit="return confirm('Remove {{ m.user.get_full_name|default:m.user.email }} from this programme team?');">
             {% csrf_token %}
             <button type="submit" class="btn btn-ghost btn-sm">Remove</button>
           </form>
@@ -31,10 +31,10 @@
       {% endfor %}
     </tbody>
   </table>
-  {% else %}<div class="empty-state"><h3>No team assigned yet.</h3><p>Assign a Project Manager and the people delivering this project.</p></div>{% endif %}
+  {% else %}<div class="empty-state"><h3>No team assigned yet.</h3><p>Assign a Programme Manager and the people who will deliver this programme.</p></div>{% endif %}
 </div>
 
 {% if can_manage %}
-{% include "partials/_modal.html" with modal_id="team-modal" title="Add Project Team Member" form=form submit_label="Add Person" %}
+{% include "partials/_modal.html" with modal_id="team-modal" title="Add Programme Team Member" form=form submit_label="Add Person" %}
 {% endif %}
 {% endblock %}
