@@ -18,8 +18,11 @@ def document_list(request, slug):
     show_archived = request.GET.get("show") == "archived"
     status = Document.STATUS_ARCHIVED if show_archived else Document.STATUS_ACTIVE
     documents = organisation.documents.select_related("uploaded_by").filter(status=status)
+    category = request.GET.get("category")
+    if category:
+        documents = documents.filter(category=category)
     return render(request, "documents/list.html", {
-        "organisation": organisation, "documents": documents, "show_archived": show_archived,
+        "organisation": organisation, "documents": documents, "show_archived": show_archived, "category": category,
     })
 
 

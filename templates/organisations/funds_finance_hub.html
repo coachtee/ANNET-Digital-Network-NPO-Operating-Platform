@@ -1,0 +1,27 @@
+{% extends "workspace_base.html" %}
+{% block title %}Funds & Finance{% endblock %}
+{% block content %}
+<div class="breadcrumbs">Funds &amp; Finance</div>
+<div class="page-header">
+  <div><h1>Funds &amp; Finance</h1><p>Funding, budgets and expenditure across your organisation.</p></div>
+</div>
+
+<div class="grid grid-2">
+  <a href="{% url 'grants:list' slug=organisation.slug %}" class="card-flat hub-card">
+    <h3>Funding</h3>
+    <p class="text-muted mb-0">Grants and funding sources.</p>
+  </a>
+  <a href="{% url 'expenses:list' slug=organisation.slug %}" class="card-flat hub-card">
+    <h3>Budgets</h3>
+    <p class="text-muted mb-0">Plan the money for each project.</p>
+  </a>
+  <a href="{% url 'expenses:list' slug=organisation.slug %}" class="card-flat hub-card">
+    <h3>Expenditure</h3>
+    <p class="text-muted mb-0">What was spent, submitted and approved.</p>
+  </a>
+  <a href="{% url 'reporting:list' slug=organisation.slug %}" class="card-flat hub-card">
+    <h3>Financial Reports</h3>
+    <p class="text-muted mb-0">Budget vs actual across your programmes.</p>
+  </a>
+</div>
+{% endblock %}

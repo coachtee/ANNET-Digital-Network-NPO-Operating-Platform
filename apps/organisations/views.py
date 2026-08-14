@@ -233,6 +233,28 @@ def health_check(request, slug):
 
 
 @login_required
+def manage_hub(request, slug):
+    """Landing page for the sidebar's single "Manage" entry -- the
+    sidebar shows the major jobs, this workspace shows the destinations,
+    rather than every database table getting its own permanent menu
+    item."""
+    organisation = get_organisation_or_404_for_user(request.user, slug)
+    return render(request, "organisations/manage_hub.html", {"organisation": organisation})
+
+
+@login_required
+def funds_finance_hub(request, slug):
+    organisation = get_organisation_or_404_for_user(request.user, slug)
+    return render(request, "organisations/funds_finance_hub.html", {"organisation": organisation})
+
+
+@login_required
+def evidence_hub(request, slug):
+    organisation = get_organisation_or_404_for_user(request.user, slug)
+    return render(request, "organisations/evidence_hub.html", {"organisation": organisation})
+
+
+@login_required
 @require_POST
 def switch(request):
     slug = request.POST.get("organisation_slug")

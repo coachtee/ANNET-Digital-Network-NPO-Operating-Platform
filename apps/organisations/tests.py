@@ -233,3 +233,74 @@ class WorkspaceDashboardTests(TestCase):
         ]:
             self.assertContains(resp, url)
             self.assertEqual(self.client.get(url).status_code, 200)
+
+
+class SidebarHubTests(TestCase):
+    """The sidebar shows the major jobs (Manage / Funds & Finance /
+    Evidence); each opens a landing workspace with real, working
+    destinations rather than every module getting its own permanent
+    sidebar entry."""
+
+    def setUp(self):
+        self.organisation = Organisation.objects.create(
+            legal_name="Hub Org", organisation_type="npo", onboarding_step=Organisation.ONBOARDING_COMPLETE,
+        )
+        self.user = User.objects.create_user(email="orgadmin@example.com", password="Sup3rSecurePass!23")
+        OrganisationMembership.objects.create(organisation=self.organisation, user=self.user, role=ORG_ROLE_ADMIN)
+        self.client.force_login(self.user)
+
+    def test_manage_hub_links_to_real_working_pages(self):
+        resp = self.client.get(reverse("organisations:manage_hub", kwargs={"slug": self.organisation.slug}))
+        self.assertEqual(resp.status_code, 200)
+        for url_name in ["beneficiaries:list", "programmes:list", "projects:list", "attendance:list"]:
+            from django.urls import reverse as _reverse
+
+            url = _reverse(url_name, kwargs={"slug": self.organisation.slug})
+            self.assertContains(resp, url)
+            self.assertEqual(self.client.get(url).status_code, 200)
+
+    def test_funds_finance_hub_links_to_real_working_pages(self):
+        resp = self.client.get(reverse("organisations:funds_finance_hub", kwargs={"slug": self.organisation.slug}))
+        self.assertEqual(resp.status_code, 200)
+        for url_name in ["grants:list", "expenses:list", "reporting:list"]:
+            from django.urls import reverse as _reverse
+
+            url = _reverse(url_name, kwargs={"slug": self.organisation.slug})
+            self.assertContains(resp, url)
+            self.assertEqual(self.client.get(url).status_code, 200)
+
+    def test_evidence_hub_links_to_real_working_pages(self):
+        resp = self.client.get(reverse("organisations:evidence_hub", kwargs={"slug": self.organisation.slug}))
+        self.assertEqual(resp.status_code, 200)
+        url = reverse("documents:list", kwargs={"slug": self.organisation.slug})
+        self.assertContains(resp, url)
+        self.assertEqual(self.client.get(url).status_code, 200)
+
+    def test_sidebar_shows_the_slim_locked_navigation(self):
+        resp = self.client.get(reverse("organisations:workspace_home"))
+        self.assertContains(resp, reverse("organisations:manage_hub", kwargs={"slug": self.organisation.slug}))
+        self.assertContains(resp, reverse("organisations:funds_finance_hub", kwargs={"slug": self.organisation.slug}))
+        self.assertContains(resp, reverse("organisations:evidence_hub", kwargs={"slug": self.organisation.slug}))
+        # Grants and Finance Lite no longer get their own permanent sidebar
+        # entry -- they live inside the Funds & Finance hub instead.
+        self.assertNotContains(resp, ">Grants<")
+        self.assertNotContains(resp, ">Finance Lite<")
+
+    def test_documents_list_can_be_filtered_by_category(self):
+        from django.core.files.uploadedfile import SimpleUploadedFile
+
+        from apps.documents.models import Document
+
+        Document.objects.create(
+            organisation=self.organisation, title="Invoice", category=Document.CATEGORY_FINANCE,
+            file=SimpleUploadedFile("invoice.pdf", b"%PDF-1.4 fake", content_type="application/pdf"),
+            uploaded_by=self.user,
+        )
+        Document.objects.create(
+            organisation=self.organisation, title="Board minutes", category=Document.CATEGORY_GOVERNANCE,
+            file=SimpleUploadedFile("minutes.pdf", b"%PDF-1.4 fake", content_type="application/pdf"),
+            uploaded_by=self.user,
+        )
+        resp = self.client.get(reverse("documents:list", kwargs={"slug": self.organisation.slug}), {"category": "finance"})
+        titles = [d.title for d in resp.context["documents"]]
+        self.assertEqual(titles, ["Invoice"])

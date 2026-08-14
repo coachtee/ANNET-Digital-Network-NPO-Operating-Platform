@@ -1,0 +1,27 @@
+{% extends "workspace_base.html" %}
+{% block title %}Manage{% endblock %}
+{% block content %}
+<div class="breadcrumbs">Manage</div>
+<div class="page-header">
+  <div><h1>Manage</h1><p>What would you like to manage?</p></div>
+</div>
+
+<div class="grid grid-2">
+  <a href="{% url 'beneficiaries:list' slug=organisation.slug %}" class="card-flat hub-card">
+    <h3>People</h3>
+    <p class="text-muted mb-0">Beneficiaries and the people your organisation supports.</p>
+  </a>
+  <a href="{% url 'programmes:list' slug=organisation.slug %}" class="card-flat hub-card">
+    <h3>Programmes</h3>
+    <p class="text-muted mb-0">Plan and deliver your organisation's programmes.</p>
+  </a>
+  <a href="{% url 'projects:list' slug=organisation.slug %}" class="card-flat hub-card">
+    <h3>Projects</h3>
+    <p class="text-muted mb-0">Deliver funded work under a programme.</p>
+  </a>
+  <a href="{% url 'attendance:list' slug=organisation.slug %}" class="card-flat hub-card">
+    <h3>Attendance</h3>
+    <p class="text-muted mb-0">Record delivery and headcount.</p>
+  </a>
+</div>
+{% endblock %}

@@ -341,6 +341,13 @@ tr:last-child td { border-bottom: none; }
   .modal { max-width: 100%; max-height: 92vh; border-radius: var(--radius-md) var(--radius-md) 0 0; }
 }
 
+/* Clickable landing-page cards (Manage / Funds & Finance / Evidence hubs)
+   -- the sidebar shows the major jobs, these workspaces show the
+   destinations. */
+.hub-card { display: block; text-decoration: none; color: inherit; transition: border-color .1s, box-shadow .1s; }
+.hub-card:hover { text-decoration: none; border-color: var(--color-primary); box-shadow: var(--shadow-sm); }
+.hub-card h3 { color: var(--color-primary); }
+
 /* Programme Readiness checklist -- a gate, not a percentage. */
 .readiness-list { list-style: none; margin: 12px 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
 .readiness-list li { font-size: .88rem; }

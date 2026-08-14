@@ -28,29 +28,25 @@
         </div>
         <div class="sidebar-group">
           <div class="sidebar-section-label"><span>Manage</span></div>
-          <a href="{% url 'beneficiaries:list' slug=active_organisation.slug %}" class="sidebar-link" data-label="People">{% icon "users" %}<span class="sidebar-link-label">People</span></a>
-          <a href="{% url 'programmes:list' slug=active_organisation.slug %}" class="sidebar-link" data-label="Programmes">{% icon "layers" %}<span class="sidebar-link-label">Programmes</span></a>
-          <a href="{% url 'projects:list' slug=active_organisation.slug %}" class="sidebar-link" data-label="Projects">{% icon "briefcase" %}<span class="sidebar-link-label">Projects</span></a>
-          <a href="{% url 'grants:list' slug=active_organisation.slug %}" class="sidebar-link" data-label="Grants">{% icon "coins" %}<span class="sidebar-link-label">Grants</span></a>
-          <a href="{% url 'attendance:list' slug=active_organisation.slug %}" class="sidebar-link" data-label="Attendance">{% icon "calendar" %}<span class="sidebar-link-label">Attendance</span></a>
-          <a href="{% url 'expenses:list' slug=active_organisation.slug %}" class="sidebar-link" data-label="Finance Lite">{% icon "wallet" %}<span class="sidebar-link-label">Finance Lite</span></a>
+          <a href="{% url 'organisations:manage_hub' slug=active_organisation.slug %}" class="sidebar-link" data-label="Manage">{% icon "briefcase" %}<span class="sidebar-link-label">Manage</span></a>
         </div>
         <div class="sidebar-group">
-          <div class="sidebar-section-label"><span>Governance &amp; Compliance</span></div>
-          <a href="{% url 'compliance:passport' slug=active_organisation.slug %}" class="sidebar-link" data-label="Compliance Passport">{% icon "shield-check" %}<span class="sidebar-link-label">Compliance Passport</span></a>
-          <a href="{% url 'compliance:calendar' slug=active_organisation.slug %}" class="sidebar-link" data-label="Compliance Calendar">{% icon "calendar" %}<span class="sidebar-link-label">Compliance Calendar</span></a>
-          <a href="{% url 'organisations:health_check' slug=active_organisation.slug %}" class="sidebar-link" data-label="Health Check">{% icon "gauge" %}<span class="sidebar-link-label">Health Check</span></a>
+          <div class="sidebar-section-label"><span>Funds &amp; Finance</span></div>
+          <a href="{% url 'organisations:funds_finance_hub' slug=active_organisation.slug %}" class="sidebar-link" data-label="Funds &amp; Finance">{% icon "wallet" %}<span class="sidebar-link-label">Funds &amp; Finance</span></a>
+        </div>
+        <div class="sidebar-group">
+          <div class="sidebar-section-label"><span>Governance</span></div>
+          <a href="{% url 'compliance:passport' slug=active_organisation.slug %}" class="sidebar-link" data-label="Compliance">{% icon "shield-check" %}<span class="sidebar-link-label">Compliance</span></a>
           <a href="{% url 'governance:list' slug=active_organisation.slug %}" class="sidebar-link" data-label="Governance">{% icon "shield" %}<span class="sidebar-link-label">Governance</span></a>
           <a href="{% url 'policies:list' slug=active_organisation.slug %}" class="sidebar-link" data-label="Policies">{% icon "file-text" %}<span class="sidebar-link-label">Policies</span></a>
         </div>
         <div class="sidebar-group">
           <div class="sidebar-section-label"><span>Evidence</span></div>
-          <a href="{% url 'documents:list' slug=active_organisation.slug %}" class="sidebar-link" data-label="Documents">{% icon "book-open" %}<span class="sidebar-link-label">Documents</span></a>
+          <a href="{% url 'organisations:evidence_hub' slug=active_organisation.slug %}" class="sidebar-link" data-label="Evidence">{% icon "book-open" %}<span class="sidebar-link-label">Evidence</span></a>
         </div>
         <div class="sidebar-group">
           <div class="sidebar-section-label"><span>Impact</span></div>
           <a href="{% url 'monitoring_evaluation:dashboard' slug=active_organisation.slug %}" class="sidebar-link" data-label="M&amp;E">{% icon "bar-chart" %}<span class="sidebar-link-label">M&amp;E</span></a>
-          <a href="{% url 'impact:dashboard' slug=active_organisation.slug %}" class="sidebar-link" data-label="Impact Dashboard">{% icon "trending-up" %}<span class="sidebar-link-label">Impact Dashboard</span></a>
           <a href="{% url 'reporting:list' slug=active_organisation.slug %}" class="sidebar-link" data-label="Reports">{% icon "bar-chart" %}<span class="sidebar-link-label">Reports</span></a>
         </div>
         <div class="sidebar-group">

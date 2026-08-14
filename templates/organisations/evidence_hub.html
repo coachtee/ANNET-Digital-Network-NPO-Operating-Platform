@@ -1,0 +1,27 @@
+{% extends "workspace_base.html" %}
+{% block title %}Evidence{% endblock %}
+{% block content %}
+<div class="breadcrumbs">Evidence</div>
+<div class="page-header">
+  <div><h1>Evidence</h1><p>What the organisation collects to prove its work happened.</p></div>
+</div>
+
+<div class="grid grid-2">
+  <a href="{% url 'documents:list' slug=organisation.slug %}" class="card-flat hub-card">
+    <h3>Documents</h3>
+    <p class="text-muted mb-0">The full evidence vault.</p>
+  </a>
+  <a href="{% url 'programmes:list' slug=organisation.slug %}" class="card-flat hub-card">
+    <h3>Activity Evidence</h3>
+    <p class="text-muted mb-0">Registers, photos and reports, uploaded from each Programme or Project workspace.</p>
+  </a>
+  <a href="{% url 'documents:list' slug=organisation.slug %}?category=finance" class="card-flat hub-card">
+    <h3>Financial Evidence</h3>
+    <p class="text-muted mb-0">Invoices and receipts.</p>
+  </a>
+  <a href="{% url 'documents:list' slug=organisation.slug %}?category=programmes" class="card-flat hub-card">
+    <h3>Programme Evidence</h3>
+    <p class="text-muted mb-0">Evidence uploaded against a programme or project.</p>
+  </a>
+</div>
+{% endblock %}
