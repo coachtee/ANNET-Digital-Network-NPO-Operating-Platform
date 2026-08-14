@@ -36,28 +36,49 @@ def compute_programme_readiness(programme):
     under it -- a checklist, not a percentage. Funding is deliberately
     excluded: it's tracked separately and shouldn't block an otherwise
     well-planned Programme (see PROGRAMME_WORKSPACE_ARCHITECTURE_PROPOSAL.md
-    and the UAT follow-up that added this gate)."""
-    checks = [
+    and the UAT follow-up that added this gate).
+
+    Grouped into four sections for display, but only Foundation + Programme
+    Logic (``checks``) are ever required -- Logic & Learning and Delivery
+    are shown to guide planning without making the system bureaucratic.
+    """
+    foundation = [
         ("Programme defined", bool(programme.name)),
         ("Need identified", bool(programme.need_and_background)),
         ("Purpose defined", bool(programme.theory_of_change_summary)),
         ("Beneficiaries defined", bool(programme.target_beneficiary_groups)),
         ("Geography defined", bool(programme.locations) or bool(programme.province)),
+    ]
+    logic = [
         ("Outcome defined", programme.outcomes.exists()),
         ("Output defined", programme.outputs.filter(outcome__isnull=False).exists()),
         ("Indicator defined", programme.indicators.filter(output__isnull=False).exists()),
         ("Target defined", programme.indicators.exclude(target_value__isnull=True).exists()),
     ]
+    checks = foundation + logic
     missing = [label for label, met in checks if not met]
 
+    # Informational only -- never blocks Project creation. Helps a team see
+    # they've planned the "why", not just the "what", without forcing it.
+    logic_and_learning = [
+        ("Theory of Change considered", bool(programme.toc_what and programme.toc_change and programme.toc_why)),
+        ("Key assumptions identified", programme.assumptions.exists()),
+        ("Learning question identified", programme.learning_questions.exists()),
+    ]
+
     # Recommended, not required -- shown alongside the gate but never
-    # part of is_ready, so an unassigned team never blocks Project
-    # creation the way a missing Outcome/Output/Indicator/Target does.
+    # part of is_ready, so an unassigned team or a not-yet-created project
+    # never blocks Project creation the way a missing Outcome/Output/
+    # Indicator/Target does.
     has_manager = programme.team_memberships.filter(role="programme_manager", status="active").exists()
-    recommended = [("Programme Manager assigned", has_manager)]
+    recommended = [
+        ("Programme Manager assigned", has_manager),
+        ("At least one project created", programme.projects.exists()),
+    ]
 
     return {
-        "checks": checks, "missing": missing, "is_ready": not missing,
+        "foundation": foundation, "logic": logic, "checks": checks, "missing": missing, "is_ready": not missing,
+        "logic_and_learning": logic_and_learning,
         "recommended": recommended, "recommended_missing": [label for label, met in recommended if not met],
     }
 

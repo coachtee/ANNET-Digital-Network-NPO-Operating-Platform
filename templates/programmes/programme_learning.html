@@ -1,0 +1,98 @@
+{% extends "workspace_base.html" %}
+{% block title %}{{ programme.name }}: Learning{% endblock %}
+{% block content %}
+{% include "programmes/_workspace_header.html" %}
+
+<div class="grid grid-2">
+  <div class="card-flat">
+    <div class="flex justify-between items-center" style="margin-bottom:8px;">
+      <h3 class="mb-0">Learning Questions</h3>
+      {% if can_manage %}<button type="button" class="btn btn-outline btn-sm" data-modal-open="question-modal">+ Add</button>{% endif %}
+    </div>
+    <p class="text-muted" style="margin-top:-4px;">What do you need to learn while the programme is running?</p>
+    {% if learning_questions %}
+    <table>
+      <thead><tr><th>Question</th><th>Status</th><th></th></tr></thead>
+      <tbody>
+        {% for q in learning_questions %}
+        <tr>
+          <td>{{ q.question }}{% if q.answer_note %}<div class="text-muted" style="font-size:.85rem;">{{ q.answer_note }}</div>{% endif %}</td>
+          <td><span class="badge {% if q.status == 'answered' %}badge-success{% elif q.status == 'learning' %}badge-warning{% else %}badge-neutral{% endif %}">{{ q.get_status_display }}</span></td>
+          <td>
+            {% if can_manage %}
+            <a href="{% url 'programmes:learning_question_edit' slug=organisation.slug programme_id=programme.id question_id=q.id %}" class="btn btn-ghost btn-sm">Edit</a>
+            <a href="{% url 'programmes:learning_question_delete' slug=organisation.slug programme_id=programme.id question_id=q.id %}" class="btn btn-ghost btn-sm">Delete</a>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}<p class="text-muted">None yet.</p>{% endif %}
+  </div>
+
+  <div class="card-flat">
+    <div class="flex justify-between items-center" style="margin-bottom:8px;">
+      <h3 class="mb-0">Programme Context</h3>
+      {% if can_manage %}<button type="button" class="btn btn-outline btn-sm" data-modal-open="context-modal">+ Add</button>{% endif %}
+    </div>
+    <p class="text-muted" style="margin-top:-4px;">Changes in the environment that may affect delivery.</p>
+    {% if context_notes %}
+    <table>
+      <thead><tr><th>Change</th><th>Date</th><th></th></tr></thead>
+      <tbody>
+        {% for note in context_notes %}
+        <tr>
+          <td>{{ note.get_category_display }}<div class="text-muted" style="font-size:.85rem;">{{ note.description }}</div></td>
+          <td>{{ note.date|default:"—" }}</td>
+          <td>
+            {% if can_manage %}
+            <a href="{% url 'programmes:context_note_edit' slug=organisation.slug programme_id=programme.id note_id=note.id %}" class="btn btn-ghost btn-sm">Edit</a>
+            <a href="{% url 'programmes:context_note_delete' slug=organisation.slug programme_id=programme.id note_id=note.id %}" class="btn btn-ghost btn-sm">Delete</a>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}<p class="text-muted">None yet.</p>{% endif %}
+  </div>
+</div>
+
+<div class="section-block" style="margin-top:16px;">
+  <div class="page-header" style="margin-bottom:12px;">
+    <div><h3 class="mb-0">Learning Log</h3><p class="text-muted mb-0">OBSERVE &rarr; LEARN &rarr; ADAPT. What happened, what you learned, what you'll do differently.</p></div>
+    {% if can_manage %}<button type="button" class="btn btn-primary btn-sm" data-modal-open="log-modal">+ Record Learning</button>{% endif %}
+  </div>
+  <div class="card-flat" style="padding:0;">
+    {% if learning_log_entries %}
+    <table>
+      <thead><tr><th>Date</th><th>Type</th><th>What happened</th><th>What we learned</th><th>Action</th><th></th></tr></thead>
+      <tbody>
+        {% for entry in learning_log_entries %}
+        <tr>
+          <td>{{ entry.date }}</td>
+          <td><span class="badge badge-neutral">{{ entry.get_entry_type_display }}</span></td>
+          <td>{{ entry.what_happened|truncatewords:20 }}</td>
+          <td>{{ entry.what_we_learned|truncatewords:20|default:"—" }}</td>
+          <td>{{ entry.action_we_will_take|truncatewords:15|default:"—" }}</td>
+          <td>
+            {% if can_manage %}
+            <a href="{% url 'programmes:learning_log_edit' slug=organisation.slug programme_id=programme.id entry_id=entry.id %}" class="btn btn-ghost btn-sm">Edit</a>
+            <a href="{% url 'programmes:learning_log_delete' slug=organisation.slug programme_id=programme.id entry_id=entry.id %}" class="btn btn-ghost btn-sm">Delete</a>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}<div class="empty-state"><h3>No learning recorded yet.</h3><p>Record a moment when something worked, didn't work, or surprised the team.</p></div>{% endif %}
+  </div>
+</div>
+
+{% if can_manage %}
+{% include "partials/_modal.html" with modal_id="question-modal" title="Add Learning Question" form=question_form submit_name="add_learning_question" submit_label="Add question" %}
+{% include "partials/_modal.html" with modal_id="context-modal" title="Add Context Note" form=context_form submit_name="add_context_note" submit_label="Add note" %}
+{% include "partials/_modal.html" with modal_id="log-modal" title="Record Learning" form=log_form submit_name="add_learning_log" submit_label="Record" %}
+{% endif %}
+{% endblock %}

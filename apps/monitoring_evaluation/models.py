@@ -88,6 +88,14 @@ class IndicatorPeriodValue(TimeStampedModel):
     means_of_verification = models.CharField(max_length=255, blank=True)
     notes = models.TextField(blank=True)
 
+    # A target miss is not automatically programme failure -- these let
+    # the team explain a result, whatever it is, rather than just
+    # reporting a bare number. All optional; nothing here is required to
+    # record an actual value.
+    contributing_factors = models.TextField(blank=True, help_text="What contributed to this result?")
+    learning_note = models.TextField(blank=True, help_text="What did we learn?")
+    action_needed = models.TextField(blank=True, help_text="Do we need to change anything?")
+
     class Meta:
         ordering = ["-period_end"]
 

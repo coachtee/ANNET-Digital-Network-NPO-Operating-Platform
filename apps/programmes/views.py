@@ -3,6 +3,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import PermissionDenied
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 from django.utils import timezone
 
 from apps.audit.services import log_action
@@ -14,6 +15,10 @@ from apps.monitoring_evaluation.forms import IndicatorForm, OutcomeForm, OutputF
 from apps.organisations.services import get_organisation_or_404_for_user
 from apps.programmes.forms import (
     ActivityForm,
+    AssumptionForm,
+    ContextNoteForm,
+    LearningLogEntryForm,
+    LearningQuestionForm,
     ProgrammeMembershipForm,
     ProgrammePlanForm,
     ProgrammeWizardDetailsForm,
@@ -21,8 +26,17 @@ from apps.programmes.forms import (
     ProgrammeWizardPeopleResourcesForm,
     ProgrammeWizardWhyForm,
     ProgrammeWizardWhoWhereForm,
+    TheoryOfChangeForm,
 )
-from apps.programmes.models import Activity, Programme, ProgrammeMembership
+from apps.programmes.models import (
+    Activity,
+    Assumption,
+    ContextNote,
+    LearningLogEntry,
+    LearningQuestion,
+    Programme,
+    ProgrammeMembership,
+)
 from apps.programmes.services import (
     compute_programme_attention,
     compute_programme_progress,
@@ -280,7 +294,7 @@ def programme_plan(request, slug, programme_id):
     organisation = get_organisation_or_404_for_user(request.user, slug)
     programme = get_object_or_404(Programme, id=programme_id, organisation=organisation)
     can_manage = has_org_capability(request.user, organisation, "programmes.manage")
-    editing = request.GET.get("edit") == "1" or request.method == "POST"
+    editing = (request.GET.get("edit") == "1" or request.method == "POST") and "save_toc" not in request.POST and "add_assumption" not in request.POST
 
     form = None
     if editing and can_manage:
@@ -290,10 +304,229 @@ def programme_plan(request, slug, programme_id):
             messages.success(request, "Programme plan updated.")
             return redirect("programmes:plan", slug=slug, programme_id=programme.id)
 
+    toc_form = TheoryOfChangeForm(instance=programme)
+    assumption_form = AssumptionForm()
+    if can_manage and request.method == "POST":
+        if "save_toc" in request.POST:
+            toc_form = TheoryOfChangeForm(request.POST, instance=programme)
+            if toc_form.is_valid():
+                toc_form.save()
+                messages.success(request, "Theory of Change saved.")
+                return redirect("programmes:plan", slug=slug, programme_id=programme.id)
+        elif "add_assumption" in request.POST:
+            assumption_form = AssumptionForm(request.POST)
+            if assumption_form.is_valid():
+                assumption = assumption_form.save(commit=False)
+                assumption.programme = programme
+                assumption.save()
+                messages.success(request, "Assumption added.")
+                return redirect("programmes:plan", slug=slug, programme_id=programme.id)
+
     return render(request, "programmes/programme_plan.html", {
         "organisation": organisation, "programme": programme, "can_manage": can_manage,
         "active_tab": "plan", "form": form, "editing": editing and can_manage,
         "outcomes": programme.outcomes.all(),
+        "toc_form": toc_form, "assumption_form": assumption_form,
+        "assumptions": programme.assumptions.all(),
+    })
+
+
+@login_required
+def assumption_edit(request, slug, programme_id, assumption_id):
+    organisation = get_organisation_or_404_for_user(request.user, slug)
+    programme = get_object_or_404(Programme, id=programme_id, organisation=organisation)
+    assumption = get_object_or_404(Assumption, id=assumption_id, programme=programme)
+    _require_manage(request, organisation)
+
+    form = AssumptionForm(request.POST if request.method == "POST" else None, instance=assumption)
+    if request.method == "POST" and form.is_valid():
+        form.save()
+        messages.success(request, "Assumption updated.")
+        return redirect("programmes:plan", slug=slug, programme_id=programme.id)
+    return render(request, "programmes/simple_record_form.html", {
+        "organisation": organisation, "programme": programme, "active_tab": "plan",
+        "form": form, "title": "Edit assumption",
+        "cancel_url": reverse("programmes:plan", kwargs={"slug": slug, "programme_id": programme.id}),
+    })
+
+
+@login_required
+def assumption_delete(request, slug, programme_id, assumption_id):
+    organisation = get_organisation_or_404_for_user(request.user, slug)
+    programme = get_object_or_404(Programme, id=programme_id, organisation=organisation)
+    assumption = get_object_or_404(Assumption, id=assumption_id, programme=programme)
+    _require_manage(request, organisation)
+
+    if request.method == "POST":
+        assumption.delete()
+        messages.success(request, "Assumption deleted.")
+        return redirect("programmes:plan", slug=slug, programme_id=programme.id)
+    return render(request, "programmes/simple_record_confirm_delete.html", {
+        "organisation": organisation, "programme": programme, "active_tab": "plan",
+        "title": "assumption", "message": assumption.statement,
+        "cancel_url": reverse("programmes:plan", kwargs={"slug": slug, "programme_id": programme.id}),
+    })
+
+
+@login_required
+def programme_learning(request, slug, programme_id):
+    """A small, practical reflection space: what the team wants to learn
+    (Learning Questions), what actually happened and was learned
+    (Learning Log -- OBSERVE -> LEARN -> ADAPT), and changes in the
+    operating environment (Context). Deliberately not a questionnaire
+    builder or a risk-management module."""
+    organisation = get_organisation_or_404_for_user(request.user, slug)
+    programme = get_object_or_404(Programme, id=programme_id, organisation=organisation)
+    can_manage = has_org_capability(request.user, organisation, "programmes.manage")
+
+    question_form = LearningQuestionForm(auto_id="id_question_%s")
+    log_form = LearningLogEntryForm(programme=programme, auto_id="id_log_%s")
+    context_form = ContextNoteForm(auto_id="id_context_%s")
+
+    if can_manage and request.method == "POST":
+        if "add_learning_question" in request.POST:
+            question_form = LearningQuestionForm(request.POST, auto_id="id_question_%s")
+            if question_form.is_valid():
+                question = question_form.save(commit=False)
+                question.programme = programme
+                question.save()
+                messages.success(request, "Learning question added.")
+                return redirect("programmes:learning", slug=slug, programme_id=programme.id)
+        elif "add_learning_log" in request.POST:
+            log_form = LearningLogEntryForm(request.POST, programme=programme, auto_id="id_log_%s")
+            if log_form.is_valid():
+                entry = log_form.save(commit=False)
+                entry.programme = programme
+                entry.recorded_by = request.user
+                entry.save()
+                messages.success(request, "Learning recorded.")
+                return redirect("programmes:learning", slug=slug, programme_id=programme.id)
+        elif "add_context_note" in request.POST:
+            context_form = ContextNoteForm(request.POST, auto_id="id_context_%s")
+            if context_form.is_valid():
+                note = context_form.save(commit=False)
+                note.programme = programme
+                note.save()
+                messages.success(request, "Context noted.")
+                return redirect("programmes:learning", slug=slug, programme_id=programme.id)
+
+    return render(request, "programmes/programme_learning.html", {
+        "organisation": organisation, "programme": programme, "can_manage": can_manage, "active_tab": "learning",
+        "question_form": question_form, "log_form": log_form, "context_form": context_form,
+        "learning_questions": programme.learning_questions.all(),
+        "learning_log_entries": programme.learning_log_entries.select_related("project", "activity", "evidence").all(),
+        "context_notes": programme.context_notes.all(),
+    })
+
+
+@login_required
+def learning_question_edit(request, slug, programme_id, question_id):
+    organisation = get_organisation_or_404_for_user(request.user, slug)
+    programme = get_object_or_404(Programme, id=programme_id, organisation=organisation)
+    question = get_object_or_404(LearningQuestion, id=question_id, programme=programme)
+    _require_manage(request, organisation)
+
+    form = LearningQuestionForm(request.POST if request.method == "POST" else None, instance=question)
+    if request.method == "POST" and form.is_valid():
+        form.save()
+        messages.success(request, "Learning question updated.")
+        return redirect("programmes:learning", slug=slug, programme_id=programme.id)
+    return render(request, "programmes/simple_record_form.html", {
+        "organisation": organisation, "programme": programme, "active_tab": "learning",
+        "form": form, "title": "Edit learning question",
+        "cancel_url": reverse("programmes:learning", kwargs={"slug": slug, "programme_id": programme.id}),
+    })
+
+
+@login_required
+def learning_question_delete(request, slug, programme_id, question_id):
+    organisation = get_organisation_or_404_for_user(request.user, slug)
+    programme = get_object_or_404(Programme, id=programme_id, organisation=organisation)
+    question = get_object_or_404(LearningQuestion, id=question_id, programme=programme)
+    _require_manage(request, organisation)
+
+    if request.method == "POST":
+        question.delete()
+        messages.success(request, "Learning question deleted.")
+        return redirect("programmes:learning", slug=slug, programme_id=programme.id)
+    return render(request, "programmes/simple_record_confirm_delete.html", {
+        "organisation": organisation, "programme": programme, "active_tab": "learning",
+        "title": "learning question", "message": question.question,
+        "cancel_url": reverse("programmes:learning", kwargs={"slug": slug, "programme_id": programme.id}),
+    })
+
+
+@login_required
+def learning_log_edit(request, slug, programme_id, entry_id):
+    organisation = get_organisation_or_404_for_user(request.user, slug)
+    programme = get_object_or_404(Programme, id=programme_id, organisation=organisation)
+    entry = get_object_or_404(LearningLogEntry, id=entry_id, programme=programme)
+    _require_manage(request, organisation)
+
+    form = LearningLogEntryForm(request.POST if request.method == "POST" else None, instance=entry, programme=programme)
+    if request.method == "POST" and form.is_valid():
+        form.save()
+        messages.success(request, "Learning entry updated.")
+        return redirect("programmes:learning", slug=slug, programme_id=programme.id)
+    return render(request, "programmes/simple_record_form.html", {
+        "organisation": organisation, "programme": programme, "active_tab": "learning",
+        "form": form, "title": "Edit learning entry",
+        "cancel_url": reverse("programmes:learning", kwargs={"slug": slug, "programme_id": programme.id}),
+    })
+
+
+@login_required
+def learning_log_delete(request, slug, programme_id, entry_id):
+    organisation = get_organisation_or_404_for_user(request.user, slug)
+    programme = get_object_or_404(Programme, id=programme_id, organisation=organisation)
+    entry = get_object_or_404(LearningLogEntry, id=entry_id, programme=programme)
+    _require_manage(request, organisation)
+
+    if request.method == "POST":
+        entry.delete()
+        messages.success(request, "Learning entry deleted.")
+        return redirect("programmes:learning", slug=slug, programme_id=programme.id)
+    return render(request, "programmes/simple_record_confirm_delete.html", {
+        "organisation": organisation, "programme": programme, "active_tab": "learning",
+        "title": "learning log entry", "message": entry.what_happened,
+        "cancel_url": reverse("programmes:learning", kwargs={"slug": slug, "programme_id": programme.id}),
+    })
+
+
+@login_required
+def context_note_edit(request, slug, programme_id, note_id):
+    organisation = get_organisation_or_404_for_user(request.user, slug)
+    programme = get_object_or_404(Programme, id=programme_id, organisation=organisation)
+    note = get_object_or_404(ContextNote, id=note_id, programme=programme)
+    _require_manage(request, organisation)
+
+    form = ContextNoteForm(request.POST if request.method == "POST" else None, instance=note)
+    if request.method == "POST" and form.is_valid():
+        form.save()
+        messages.success(request, "Context note updated.")
+        return redirect("programmes:learning", slug=slug, programme_id=programme.id)
+    return render(request, "programmes/simple_record_form.html", {
+        "organisation": organisation, "programme": programme, "active_tab": "learning",
+        "form": form, "title": "Edit context note",
+        "cancel_url": reverse("programmes:learning", kwargs={"slug": slug, "programme_id": programme.id}),
+    })
+
+
+@login_required
+def context_note_delete(request, slug, programme_id, note_id):
+    organisation = get_organisation_or_404_for_user(request.user, slug)
+    programme = get_object_or_404(Programme, id=programme_id, organisation=organisation)
+    note = get_object_or_404(ContextNote, id=note_id, programme=programme)
+    _require_manage(request, organisation)
+
+    if request.method == "POST":
+        note.delete()
+        messages.success(request, "Context note deleted.")
+        return redirect("programmes:learning", slug=slug, programme_id=programme.id)
+    return render(request, "programmes/simple_record_confirm_delete.html", {
+        "organisation": organisation, "programme": programme, "active_tab": "learning",
+        "title": "context note", "message": note.description,
+        "cancel_url": reverse("programmes:learning", kwargs={"slug": slug, "programme_id": programme.id}),
     })
 
 

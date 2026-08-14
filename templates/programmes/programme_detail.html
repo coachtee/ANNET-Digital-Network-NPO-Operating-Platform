@@ -26,12 +26,28 @@
       <span class="badge badge-warning">Programme not ready</span>
       <p class="field-hint" style="margin-top:8px;">Complete the items below before creating a Project under this programme.</p>
     {% endif %}
+    <p class="readiness-group-label">Foundation</p>
     <ul class="readiness-list">
-      {% for label, met in readiness.checks %}
+      {% for label, met in readiness.foundation %}
       <li class="{% if met %}readiness-met{% else %}readiness-missing{% endif %}">{% if met %}✓{% else %}○{% endif %} {{ label }}</li>
       {% endfor %}
+    </ul>
+    <p class="readiness-group-label">Programme Logic</p>
+    <ul class="readiness-list">
+      {% for label, met in readiness.logic %}
+      <li class="{% if met %}readiness-met{% else %}readiness-missing{% endif %}">{% if met %}✓{% else %}○{% endif %} {{ label }}</li>
+      {% endfor %}
+    </ul>
+    <p class="readiness-group-label">Logic &amp; Learning <span class="text-muted">(optional)</span></p>
+    <ul class="readiness-list">
+      {% for label, met in readiness.logic_and_learning %}
+      <li class="{% if met %}readiness-met{% else %}readiness-missing{% endif %}">{% if met %}✓{% else %}○{% endif %} {{ label }}</li>
+      {% endfor %}
+    </ul>
+    <p class="readiness-group-label">Delivery <span class="text-muted">(recommended)</span></p>
+    <ul class="readiness-list">
       {% for label, met in readiness.recommended %}
-      <li class="{% if met %}readiness-met{% else %}readiness-missing{% endif %}">{% if met %}✓{% else %}⚠{% endif %} {{ label }} <span class="text-muted">(recommended)</span></li>
+      <li class="{% if met %}readiness-met{% else %}readiness-missing{% endif %}">{% if met %}✓{% else %}○{% endif %} {{ label }}</li>
       {% endfor %}
     </ul>
     {% if not readiness.is_ready %}

@@ -1,0 +1,17 @@
+{% extends "workspace_base.html" %}
+{% block title %}Delete {{ title }}{% endblock %}
+{% block content %}
+{% include "programmes/_workspace_header.html" %}
+
+<div class="card" style="max-width:520px;">
+  <h3>Delete this {{ title }}?</h3>
+  <p class="text-muted">{{ message|truncatewords:30 }}</p>
+  <form method="post">
+    {% csrf_token %}
+    <div class="flex gap-8">
+      <button type="submit" class="btn btn-danger">Delete</button>
+      <a href="{{ cancel_url }}" class="btn btn-outline">Cancel</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

@@ -37,9 +37,20 @@ class IndicatorForm(forms.ModelForm):
 class IndicatorPeriodValueForm(forms.ModelForm):
     class Meta:
         model = IndicatorPeriodValue
-        fields = ["period_start", "period_end", "actual_value", "means_of_verification", "notes"]
+        fields = [
+            "period_start", "period_end", "actual_value", "means_of_verification", "notes",
+            "contributing_factors", "learning_note", "action_needed",
+        ]
+        labels = {
+            "contributing_factors": "What contributed to this result?",
+            "learning_note": "What did we learn?",
+            "action_needed": "Do we need to change anything?",
+        }
         widgets = {
             "period_start": forms.DateInput(attrs={"type": "date"}),
             "period_end": forms.DateInput(attrs={"type": "date"}),
             "notes": forms.Textarea(attrs={"rows": 2}),
+            "contributing_factors": forms.Textarea(attrs={"rows": 2}),
+            "learning_note": forms.Textarea(attrs={"rows": 2}),
+            "action_needed": forms.Textarea(attrs={"rows": 2}),
         }

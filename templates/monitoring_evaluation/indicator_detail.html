@@ -18,6 +18,9 @@
   <div class="card-flat">
     <h3>Record actual value</h3>
     {% if indicator.auto_from_attendance %}<p class="field-hint">This indicator is linked to attendance. The actual value will be computed automatically from attendance records in the period you select.</p>{% endif %}
+    {% if indicator.achievement_percent is not None and indicator.achievement_percent < 100 %}
+    <p class="field-hint">This result is below target. That's not automatically a problem -- use the fields below to explain what contributed and what the team learned.</p>
+    {% endif %}
     <form method="post" novalidate>
       {% csrf_token %}
       {% include "partials/_form_fields.html" %}
@@ -26,4 +29,17 @@
   </div>
   {% endif %}
 </div>
+
+{% for pv in period_values %}
+{% if pv.contributing_factors or pv.learning_note or pv.action_needed %}
+<div class="section-block" style="margin-top:16px;">
+  <h3>Learning from {{ pv.period_start }} – {{ pv.period_end }}</h3>
+  <div class="card-flat">
+    {% if pv.contributing_factors %}<p><strong>What contributed to this result?</strong><br>{{ pv.contributing_factors }}</p>{% endif %}
+    {% if pv.learning_note %}<p><strong>What did we learn?</strong><br>{{ pv.learning_note }}</p>{% endif %}
+    {% if pv.action_needed %}<p class="mb-0"><strong>Do we need to change anything?</strong><br>{{ pv.action_needed }}</p>{% endif %}
+  </div>
+</div>
+{% endif %}
+{% endfor %}
 {% endblock %}

@@ -1,7 +1,15 @@
 from django import forms
 
 from apps.organisations.models import PROVINCE_CHOICES
-from apps.programmes.models import Activity, Programme, ProgrammeMembership
+from apps.programmes.models import (
+    Activity,
+    Assumption,
+    ContextNote,
+    LearningLogEntry,
+    LearningQuestion,
+    Programme,
+    ProgrammeMembership,
+)
 
 
 def _to_list(value):
@@ -157,6 +165,96 @@ class ProgrammePlanForm(forms.ModelForm):
         if commit:
             programme.save()
         return programme
+
+
+class TheoryOfChangeForm(forms.ModelForm):
+    """"If we do X, we expect Y to happen because Z" -- deliberately just
+    three plain-language fields, no diagram editor."""
+
+    class Meta:
+        model = Programme
+        fields = ["toc_what", "toc_change", "toc_why"]
+        labels = {
+            "toc_what": "What are we doing?",
+            "toc_change": "What change do we expect?",
+            "toc_why": "Why do we believe this will contribute to that change?",
+        }
+        widgets = {
+            "toc_what": forms.Textarea(attrs={"rows": 2}),
+            "toc_change": forms.Textarea(attrs={"rows": 2}),
+            "toc_why": forms.Textarea(attrs={"rows": 2}),
+        }
+
+
+class AssumptionForm(forms.ModelForm):
+    class Meta:
+        model = Assumption
+        fields = ["statement", "importance", "status", "note"]
+        labels = {"statement": "What needs to be true for this approach to work?"}
+        widgets = {
+            "statement": forms.Textarea(attrs={"rows": 2}),
+            "note": forms.Textarea(attrs={"rows": 2}),
+        }
+
+
+class LearningQuestionForm(forms.ModelForm):
+    class Meta:
+        model = LearningQuestion
+        fields = ["question", "why_it_matters", "status", "answer_note"]
+        labels = {
+            "question": "What do you need to learn while the programme is running?",
+            "why_it_matters": "Why does this matter?",
+            "answer_note": "What have you learned so far?",
+        }
+        widgets = {
+            "question": forms.Textarea(attrs={"rows": 2}),
+            "why_it_matters": forms.Textarea(attrs={"rows": 2}),
+            "answer_note": forms.Textarea(attrs={"rows": 2}),
+        }
+
+
+class LearningLogEntryForm(forms.ModelForm):
+    """"+ Record Learning" -- the OBSERVE -> LEARN -> ADAPT loop. Evidence
+    is picked from documents already uploaded to this programme, never a
+    fresh upload field of its own."""
+
+    class Meta:
+        model = LearningLogEntry
+        fields = [
+            "date", "project", "activity", "entry_type",
+            "what_happened", "what_changed", "what_we_learned", "action_we_will_take", "evidence",
+        ]
+        labels = {
+            "what_happened": "What happened?",
+            "what_changed": "What changed?",
+            "entry_type": "Type",
+            "what_we_learned": "What did we learn?",
+            "action_we_will_take": "What action will we take?",
+        }
+        widgets = {
+            "date": forms.DateInput(attrs={"type": "date"}),
+            "what_happened": forms.Textarea(attrs={"rows": 2}),
+            "what_changed": forms.Textarea(attrs={"rows": 2}),
+            "what_we_learned": forms.Textarea(attrs={"rows": 2}),
+            "action_we_will_take": forms.Textarea(attrs={"rows": 2}),
+        }
+
+    def __init__(self, *args, programme=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        if programme is not None:
+            self.fields["project"].queryset = programme.projects.all()
+            self.fields["activity"].queryset = programme.activities.all()
+            self.fields["evidence"].queryset = programme.evidence_documents()
+
+
+class ContextNoteForm(forms.ModelForm):
+    class Meta:
+        model = ContextNote
+        fields = ["category", "description", "date"]
+        widgets = {
+            "description": forms.Textarea(attrs={"rows": 2}),
+            "date": forms.DateInput(attrs={"type": "date"}),
+        }
 
 
 class ProgrammeForm(forms.ModelForm):

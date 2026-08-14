@@ -1,9 +1,11 @@
+from django.contrib.contenttypes.models import ContentType
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase
 from django.urls import reverse
 
 from apps.accounts.models import User
 from apps.core.permissions import ORG_ROLE_ADMIN
+from apps.documents.models import Document
 from apps.expenses.models import Budget, BudgetLine
 from apps.monitoring_evaluation.models import Indicator, IndicatorPeriodValue, Outcome, Output
 from apps.organisations.models import Organisation, OrganisationMembership
@@ -785,3 +787,194 @@ class DOPADemonstrationScenarioTests(TestCase):
         summary = project_finance_summary(project1)
         self.assertEqual(summary["actual"], 4000)
         self.assertEqual(summary["remaining"], 16000)
+
+        # 12. Theory of Change, an Assumption and a Learning Question --
+        # the Programme Logic & Learning layer, informational only.
+        self.client.force_login(self.admin)
+        self.client.post(reverse("programmes:plan", kwargs={"slug": slug, "programme_id": programme.id}), {
+            "save_toc": "1",
+            "toc_what": "Young people receive practical digital skills training.",
+            "toc_change": "Their digital skills and workplace readiness improve.",
+            "toc_why": "They receive relevant training, practise the skills and receive support applying them.",
+        })
+        programme.refresh_from_db()
+        self.assertEqual(programme.toc_change, "Their digital skills and workplace readiness improve.")
+
+        self.client.post(reverse("programmes:plan", kwargs={"slug": slug, "programme_id": programme.id}), {
+            "add_assumption": "1",
+            "statement": "Participants have sufficient access to devices to practise the skills.",
+            "importance": "high", "status": "active", "note": "",
+        })
+        self.assertTrue(programme.assumptions.filter(importance="high").exists())
+
+        self.client.post(reverse("programmes:learning", kwargs={"slug": slug, "programme_id": programme.id}), {
+            "add_learning_question": "1",
+            "question": "What type of digital skills training most improves workplace readiness?",
+            "why_it_matters": "", "status": "open", "answer_note": "",
+        })
+        self.assertTrue(programme.learning_questions.exists())
+
+        readiness = compute_programme_readiness(programme)
+        self.assertTrue(readiness["is_ready"])  # Logic & Learning never blocks the gate
+        learning_labels = dict(readiness["logic_and_learning"])
+        self.assertTrue(learning_labels["Theory of Change considered"])
+        self.assertTrue(learning_labels["Key assumptions identified"])
+        self.assertTrue(learning_labels["Learning question identified"])
+        self.assertIn("At least one project created", dict(readiness["recommended"]))
+
+        # 13. Record the actual against the Target=100 indicator: 63
+        # completed. A miss is not treated as failure -- the form lets the
+        # team explain it.
+        indicator = programme.indicators.get()
+        self.client.post(reverse("monitoring_evaluation:indicator_detail", kwargs={"slug": slug, "indicator_id": indicator.id}), {
+            "period_start": "2026-01-01", "period_end": "2026-03-31", "actual_value": "63",
+            "contributing_factors": "Saturday sessions had lower attendance than expected.",
+            "learning_note": "Saturday sessions clash with part-time work for many participants.",
+            "action_needed": "Move future sessions to weekday afternoons and add attendance reminders.",
+        })
+        period_value = indicator.period_values.get()
+        self.assertEqual(period_value.actual_value, 63)
+        self.assertEqual(indicator.achievement_percent, 63.0)
+        self.assertIn("weekday afternoons", period_value.action_needed)
+
+        # 14. Record the learning moment in the Learning Log, tied to the
+        # project and activity it relates to, with evidence reused from
+        # the Programme's own Evidence library (never a fresh upload).
+        content_type = ContentType.objects.get_for_model(Programme)
+        evidence_doc = Document.objects.create(
+            organisation=self.organisation, title="Attendance register", category=Document.CATEGORY_PROGRAMMES,
+            file=SimpleUploadedFile("register.pdf", b"%PDF-1.4 fake", content_type="application/pdf"),
+            uploaded_by=self.admin, content_type=content_type, object_id=str(programme.id),
+        )
+        activity = project1.activities.get(name__contains="Computer")
+        self.client.post(reverse("programmes:learning", kwargs={"slug": slug, "programme_id": programme.id}), {
+            "add_learning_log": "1", "date": "2026-03-31", "project": str(project1.id), "activity": str(activity.id),
+            "entry_type": "challenge",
+            "what_happened": "Only 63 of the expected 100 participants completed the programme.",
+            "what_changed": "", "what_we_learned": "Saturday sessions had lower attendance because many participants were working.",
+            "action_we_will_take": "Move the next training session to weekday afternoons.",
+            "evidence": str(evidence_doc.id),
+        })
+        entry = programme.learning_log_entries.get()
+        self.assertEqual(entry.project_id, project1.id)
+        self.assertEqual(entry.evidence_id, evidence_doc.id)
+        self.assertEqual(entry.recorded_by_id, self.admin.id)
+
+        # 15. Money -> Activity -> Output -> Result -> Evidence stays
+        # traceable through existing links -- Finance Light, not a new
+        # accounting system.
+        activity.budget_line = facilitator_line
+        activity.outputs.add(output)
+        activity.save()
+        self.assertEqual(activity.budget_line.category, "Facilitator")
+        self.assertEqual(activity.budget_line.expenses.get().status, Expense.STATUS_APPROVED)
+        self.assertIn(output, activity.outputs.all())
+        self.assertEqual(output.indicators.get(), indicator)
+        self.assertEqual(entry.evidence.title, "Attendance register")
+
+
+class ProgrammeLearningLayerCRUDTests(TestCase):
+    """Edit/delete for Assumptions, Learning Questions, Learning Log
+    entries and Context Notes -- no silent deletion, and a non-manager
+    can't add or remove any of them."""
+
+    def setUp(self):
+        self.organisation = Organisation.objects.create(legal_name="Org A", organisation_type="npo")
+        self.manager = User.objects.create_user(email="admin@example.com", password=PASSWORD)
+        OrganisationMembership.objects.create(organisation=self.organisation, user=self.manager, role=ORG_ROLE_ADMIN)
+        self.outsider = User.objects.create_user(email="outsider@example.com", password=PASSWORD)
+        self.programme = Programme.objects.create(organisation=self.organisation, name="Youth Digital Skills")
+        self.client.force_login(self.manager)
+
+    def test_assumption_edit_and_delete(self):
+        from apps.programmes.models import Assumption
+
+        assumption = Assumption.objects.create(
+            programme=self.programme, statement="Participants have access to devices.",
+            importance=Assumption.IMPORTANCE_HIGH, status=Assumption.STATUS_ACTIVE,
+        )
+        edit_url = reverse("programmes:assumption_edit", kwargs={
+            "slug": self.organisation.slug, "programme_id": self.programme.id, "assumption_id": assumption.id,
+        })
+        self.client.post(edit_url, {
+            "statement": assumption.statement, "importance": "medium", "status": "being_tested", "note": "Checking now.",
+        })
+        assumption.refresh_from_db()
+        self.assertEqual(assumption.status, Assumption.STATUS_BEING_TESTED)
+
+        delete_url = reverse("programmes:assumption_delete", kwargs={
+            "slug": self.organisation.slug, "programme_id": self.programme.id, "assumption_id": assumption.id,
+        })
+        get_resp = self.client.get(delete_url)
+        self.assertEqual(get_resp.status_code, 200)  # confirmation page, not an immediate delete
+        self.assertTrue(Assumption.objects.filter(id=assumption.id).exists())
+        self.client.post(delete_url)
+        self.assertFalse(Assumption.objects.filter(id=assumption.id).exists())
+
+    def test_learning_question_edit_and_delete(self):
+        from apps.programmes.models import LearningQuestion
+
+        question = LearningQuestion.objects.create(programme=self.programme, question="What works best?")
+        edit_url = reverse("programmes:learning_question_edit", kwargs={
+            "slug": self.organisation.slug, "programme_id": self.programme.id, "question_id": question.id,
+        })
+        self.client.post(edit_url, {
+            "question": question.question, "why_it_matters": "", "status": "answered", "answer_note": "Weekday afternoons work best.",
+        })
+        question.refresh_from_db()
+        self.assertEqual(question.status, LearningQuestion.STATUS_ANSWERED)
+        self.assertEqual(question.answer_note, "Weekday afternoons work best.")
+
+        delete_url = reverse("programmes:learning_question_delete", kwargs={
+            "slug": self.organisation.slug, "programme_id": self.programme.id, "question_id": question.id,
+        })
+        self.client.post(delete_url)
+        self.assertFalse(LearningQuestion.objects.filter(id=question.id).exists())
+
+    def test_context_note_add_edit_delete(self):
+        from apps.programmes.models import ContextNote
+
+        self.client.post(reverse("programmes:learning", kwargs={"slug": self.organisation.slug, "programme_id": self.programme.id}), {
+            "add_context_note": "1", "category": "venue", "description": "Usual venue booked out for the next term.", "date": "2026-06-01",
+        })
+        note = ContextNote.objects.get(programme=self.programme)
+        self.assertEqual(note.category, "venue")
+
+        edit_url = reverse("programmes:context_note_edit", kwargs={
+            "slug": self.organisation.slug, "programme_id": self.programme.id, "note_id": note.id,
+        })
+        self.client.post(edit_url, {"category": "venue", "description": "Backup venue confirmed.", "date": "2026-06-05"})
+        note.refresh_from_db()
+        self.assertEqual(note.description, "Backup venue confirmed.")
+
+        delete_url = reverse("programmes:context_note_delete", kwargs={
+            "slug": self.organisation.slug, "programme_id": self.programme.id, "note_id": note.id,
+        })
+        self.client.post(delete_url)
+        self.assertFalse(ContextNote.objects.filter(id=note.id).exists())
+
+    def test_outsider_cannot_add_or_edit_assumptions(self):
+        from apps.programmes.models import Assumption
+
+        self.client.force_login(self.outsider)
+        resp = self.client.post(reverse("programmes:plan", kwargs={"slug": self.organisation.slug, "programme_id": self.programme.id}), {
+            "add_assumption": "1", "statement": "Should not be allowed.", "importance": "low", "status": "active", "note": "",
+        })
+        self.assertEqual(resp.status_code, 404)  # get_organisation_or_404_for_user denies access
+        self.assertFalse(Assumption.objects.filter(programme=self.programme).exists())
+
+    def test_readiness_recommends_a_project_before_any_exist(self):
+        readiness = compute_programme_readiness(self.programme)
+        self.assertIn("At least one project created", readiness["recommended_missing"])
+        self.assertFalse(readiness["is_ready"])  # foundation/logic still incomplete on a bare programme
+
+    def test_theory_of_change_all_three_fields_required_to_count_as_considered(self):
+        self.programme.toc_what = "Something"
+        self.programme.toc_change = "Something else"
+        self.programme.save()
+        readiness = compute_programme_readiness(self.programme)
+        self.assertFalse(dict(readiness["logic_and_learning"])["Theory of Change considered"])
+        self.programme.toc_why = "Because reasons"
+        self.programme.save()
+        readiness = compute_programme_readiness(self.programme)
+        self.assertTrue(dict(readiness["logic_and_learning"])["Theory of Change considered"])

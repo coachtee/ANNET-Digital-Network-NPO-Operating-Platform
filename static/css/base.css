@@ -349,7 +349,9 @@ tr:last-child td { border-bottom: none; }
 .hub-card h3 { color: var(--color-primary); }
 
 /* Programme Readiness checklist -- a gate, not a percentage. */
-.readiness-list { list-style: none; margin: 12px 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.readiness-list { list-style: none; margin: 4px 0 12px; padding: 0; display: flex; flex-direction: column; gap: 6px; }
 .readiness-list li { font-size: .88rem; }
 .readiness-met { color: var(--color-success); }
 .readiness-missing { color: var(--color-text-muted); }
+.readiness-group-label { font-size: .78rem; font-weight: 600; text-transform: uppercase; letter-spacing: .03em; color: var(--color-text-muted); margin: 16px 0 0; }
+.readiness-group-label:first-of-type { margin-top: 4px; }

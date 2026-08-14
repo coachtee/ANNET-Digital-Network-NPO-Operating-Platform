@@ -54,5 +54,55 @@
     {% if outcomes %}<ul class="mb-0">{% for o in outcomes %}<li>{{ o.title }}</li>{% endfor %}</ul>{% else %}<p class="mb-0 text-muted">None yet.</p>{% endif %}
   </div>
 </div>
+
+<div class="section-block" style="margin-top:16px;">
+  <div class="page-header" style="margin-bottom:12px;">
+    <div><h3 class="mb-0">Theory of Change</h3><p class="text-muted mb-0">If we do this, we expect this to happen, because...</p></div>
+    {% if can_manage %}<button type="button" class="btn btn-outline btn-sm" data-modal-open="toc-modal">{% if programme.toc_what %}Edit{% else %}+ Define{% endif %}</button>{% endif %}
+  </div>
+  {% if programme.toc_what or programme.toc_change or programme.toc_why %}
+  <div class="card-flat">
+    <p><strong>IF:</strong> {{ programme.toc_what|default:"—" }}</p>
+    <p><strong>THEN:</strong> {{ programme.toc_change|default:"—" }}</p>
+    <p class="mb-0"><strong>BECAUSE:</strong> {{ programme.toc_why|default:"—" }}</p>
+  </div>
+  {% else %}
+  <div class="empty-state"><h3>Not yet defined.</h3><p>Describe what change you're trying to create and why you believe your approach will work.</p></div>
+  {% endif %}
+</div>
+
+<div class="section-block" style="margin-top:16px;">
+  <div class="page-header" style="margin-bottom:12px;">
+    <div><h3 class="mb-0">Assumptions</h3><p class="text-muted mb-0">What needs to be true for this approach to work?</p></div>
+    {% if can_manage %}<button type="button" class="btn btn-outline btn-sm" data-modal-open="assumption-modal">+ Add Assumption</button>{% endif %}
+  </div>
+  <div class="card-flat" style="padding:0;">
+    {% if assumptions %}
+    <table>
+      <thead><tr><th>Statement</th><th>Importance</th><th>Status</th><th></th></tr></thead>
+      <tbody>
+        {% for a in assumptions %}
+        <tr>
+          <td>{{ a.statement }}</td>
+          <td><span class="badge {% if a.importance == 'high' %}badge-danger{% elif a.importance == 'medium' %}badge-warning{% else %}badge-neutral{% endif %}">{{ a.get_importance_display }}</span></td>
+          <td><span class="badge {% if a.status == 'active' %}badge-success{% elif a.status == 'being_tested' %}badge-warning{% else %}badge-neutral{% endif %}">{{ a.get_status_display }}</span></td>
+          <td>
+            {% if can_manage %}
+            <a href="{% url 'programmes:assumption_edit' slug=organisation.slug programme_id=programme.id assumption_id=a.id %}" class="btn btn-ghost btn-sm">Edit</a>
+            <a href="{% url 'programmes:assumption_delete' slug=organisation.slug programme_id=programme.id assumption_id=a.id %}" class="btn btn-ghost btn-sm">Delete</a>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}<div class="empty-state"><h3>No assumptions recorded yet.</h3></div>{% endif %}
+  </div>
+</div>
+
+{% if can_manage %}
+{% include "partials/_modal.html" with modal_id="toc-modal" title="Theory of Change" form=toc_form submit_name="save_toc" submit_label="Save" %}
+{% include "partials/_modal.html" with modal_id="assumption-modal" title="Add Assumption" form=assumption_form submit_name="add_assumption" submit_label="Add assumption" %}
+{% endif %}
 {% endif %}
 {% endblock %}
