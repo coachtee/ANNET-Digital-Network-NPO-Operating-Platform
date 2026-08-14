@@ -3,6 +3,17 @@
 # Safe to run every time — every step here is idempotent.
 set -euo pipefail
 
+# Fail fast rather than silently booting onto an ephemeral database.
+#
+# Without this guard, an unset DATABASE_URL falls back to SQLite at
+# /app/db.sqlite3 — inside the container image layer, mounted by nothing and
+# excluded by .dockerignore — so every restart started from an empty database
+# and destroyed every registered user, organisation and programme. That was
+# reported in UAT as "I can't log back in with the same credentials"; the real
+# cause was that the account no longer existed. See apps/core/checks.py.
+echo "[entrypoint] verifying database configuration..."
+python manage.py check --deploy --fail-level ERROR
+
 echo "[entrypoint] waiting for database..."
 python <<'PYEOF'
 import os
@@ -16,6 +27,7 @@ import psycopg2
 # (see config/settings.py) — wait using whichever one is actually configured.
 database_url = os.environ.get("DATABASE_URL")
 if not database_url and os.environ.get("DB_ENGINE") != "postgresql":
+    print("[entrypoint] no PostgreSQL configured; using SQLite (development only).")
     sys.exit(0)
 
 deadline = time.time() + 60

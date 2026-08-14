@@ -149,10 +149,17 @@ elif config("DB_ENGINE", default="sqlite") == "postgresql":
         }
     }
 else:
+    # SQLite is for local development and the test suite only. The path is
+    # configurable because BASE_DIR inside a container is the *image*
+    # directory (/app), which is wiped on every restart/redeploy -- pointing
+    # SQLITE_PATH at a mounted volume is what makes a SQLite deployment
+    # survive a restart. Production must not rely on this at all: see the
+    # ephemeral-database check in apps/core/checks.py, which refuses to let
+    # a DEBUG=False deployment run on a non-persistent SQLite file.
     DATABASES = {
         "default": {
             "ENGINE": "django.db.backends.sqlite3",
-            "NAME": BASE_DIR / "db.sqlite3",
+            "NAME": config("SQLITE_PATH", default=str(BASE_DIR / "db.sqlite3")),
         }
     }
 

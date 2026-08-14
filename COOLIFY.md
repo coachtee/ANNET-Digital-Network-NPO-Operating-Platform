@@ -92,6 +92,30 @@ Point `DATABASE_URL` at the Coolify PostgreSQL resource's connection string.
 then runs `python manage.py migrate --noinput` automatically — no manual
 migration step is needed after deploy.
 
+### `DATABASE_URL` is mandatory — the container will not start without it
+
+If no PostgreSQL is configured, Django falls back to SQLite at
+`BASE_DIR/db.sqlite3` — that is `/app/db.sqlite3`, **inside the container
+image layer**. Nothing mounts a volume there and `.dockerignore` keeps it out
+of the image, so the file is created empty on every boot and destroyed on
+every restart or redeploy. Every registered user, organisation, programme and
+uploaded record goes with it. In UAT this surfaced as "I created an account,
+logged out, and now I can't log back in" — authentication was fine; the user
+row no longer existed.
+
+The entrypoint now runs `python manage.py check --deploy --fail-level ERROR`
+before starting gunicorn, so this configuration **fails the deploy loudly
+instead of silently losing data** (`core.E002`, see `apps/core/checks.py`).
+
+If you deliberately want to run on SQLite (single-user demo, not recommended
+for real data), set `SQLITE_PATH` to a path on a mounted persistent volume —
+`docker-compose.yml` provides `db_volume` mounted at `/app/data` for exactly
+this:
+
+```
+SQLITE_PATH=/app/data/db.sqlite3
+```
+
 ## 4. Redis configuration
 
 Point `REDIS_URL` at the Coolify Redis resource's connection string. Redis is

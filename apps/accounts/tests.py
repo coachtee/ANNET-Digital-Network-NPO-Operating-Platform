@@ -132,3 +132,221 @@ class StaffLoginEntryPointTests(TestCase):
             reverse("accounts:staff_login"), {"username": user.email, "password": PASSWORD}, follow=True,
         )
         self.assertRedirects(response, reverse("networks:dashboard"))
+
+
+class AccountPersistenceTests(TestCase):
+    """P0 UAT blocker regression: an account created once must remain
+    usable across logout, re-login and application restart.
+
+    The original failure was NOT an authentication bug -- it was that the
+    deployed container fell back to SQLite at /app/db.sqlite3, inside the
+    ephemeral image layer, so every restart destroyed the user row and
+    login then legitimately failed. These tests pin the authentication
+    half of the contract; ``DeploymentPersistenceCheckTests`` pins the
+    configuration half that actually caused the data loss.
+    """
+
+    def _register(self, email="thabiso@dopa.example.com", password="DopaDemo!2026"):
+        return self.client.post(reverse("accounts:register"), {
+            "email": email, "first_name": "Thabiso", "last_name": "Naleli",
+            "password1": password, "password2": password,
+        })
+
+    def test_a_register_logout_then_log_in_again_with_the_same_credentials(self):
+        self._register()
+        self.assertTrue(User.objects.filter(email="thabiso@dopa.example.com").exists())
+
+        self.client.post(reverse("accounts:logout"))
+        self.assertNotIn("_auth_user_id", self.client.session)
+
+        logged_in = self.client.login(username="thabiso@dopa.example.com", password="DopaDemo!2026")
+        self.assertTrue(logged_in, "The same credentials must work again after logging out.")
+
+    def test_a2_login_works_through_the_real_login_form(self):
+        self._register()
+        self.client.post(reverse("accounts:logout"))
+        resp = self.client.post(reverse("accounts:login"), {
+            "username": "thabiso@dopa.example.com", "password": "DopaDemo!2026",
+        })
+        self.assertEqual(resp.status_code, 302)
+        self.assertIn("_auth_user_id", self.client.session)
+
+    def test_a3_unverified_email_does_not_block_logging_back_in(self):
+        # Registration sends a verification link but must not lock the
+        # account out of the platform if the email is never clicked.
+        self._register()
+        user = User.objects.get(email="thabiso@dopa.example.com")
+        self.assertFalse(user.email_verified)
+        self.client.post(reverse("accounts:logout"))
+        self.assertTrue(self.client.login(username=user.email, password="DopaDemo!2026"))
+
+    def test_b_organisation_and_programme_survive_logout_and_login(self):
+        from apps.programmes.models import Programme
+
+        self._register()
+        user = User.objects.get(email="thabiso@dopa.example.com")
+        organisation = Organisation.objects.create(legal_name="DOPA", organisation_type="npo")
+        OrganisationMembership.objects.create(organisation=organisation, user=user, role=ORG_ROLE_ADMIN)
+        programme = Programme.objects.create(organisation=organisation, name="DOPA Youth Digital Skills")
+
+        self.client.post(reverse("accounts:logout"))
+        self.assertTrue(self.client.login(username=user.email, password="DopaDemo!2026"))
+
+        resp = self.client.get(reverse("programmes:list", kwargs={"slug": organisation.slug}))
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, "DOPA Youth Digital Skills")
+        self.assertEqual(Programme.objects.get(id=programme.id).organisation, organisation)
+
+    def test_c_data_survives_a_simulated_application_restart(self):
+        # A restart drops in-process state (sessions, caches, connections)
+        # but must never drop committed rows.
+        from django.db import connection
+
+        from apps.programmes.models import Programme
+
+        self._register()
+        user = User.objects.get(email="thabiso@dopa.example.com")
+        organisation = Organisation.objects.create(legal_name="DOPA", organisation_type="npo")
+        OrganisationMembership.objects.create(organisation=organisation, user=user, role=ORG_ROLE_ADMIN)
+        Programme.objects.create(organisation=organisation, name="DOPA Youth Digital Skills")
+
+        # Simulate the process going away and coming back.
+        self.client.post(reverse("accounts:logout"))
+        connection.close()
+        self.client = self.client_class()
+
+        self.assertTrue(self.client.login(username=user.email, password="DopaDemo!2026"))
+        self.assertTrue(Organisation.objects.filter(slug=organisation.slug).exists())
+        self.assertTrue(Programme.objects.filter(name="DOPA Youth Digital Skills").exists())
+
+    def test_d_wrong_password_is_rejected(self):
+        self._register()
+        self.client.post(reverse("accounts:logout"))
+        self.assertFalse(self.client.login(username="thabiso@dopa.example.com", password="WrongPassword!1"))
+        resp = self.client.post(reverse("accounts:login"), {
+            "username": "thabiso@dopa.example.com", "password": "WrongPassword!1",
+        })
+        self.assertEqual(resp.status_code, 200)  # re-renders the form, no session
+        self.assertNotIn("_auth_user_id", self.client.session)
+
+    def test_e_one_organisations_data_never_appears_in_another_account(self):
+        from apps.programmes.models import Programme
+
+        self._register()
+        dopa_user = User.objects.get(email="thabiso@dopa.example.com")
+        dopa = Organisation.objects.create(legal_name="DOPA", organisation_type="npo")
+        OrganisationMembership.objects.create(organisation=dopa, user=dopa_user, role=ORG_ROLE_ADMIN)
+        Programme.objects.create(organisation=dopa, name="DOPA Confidential Programme")
+
+        other_user = User.objects.create_user(email="other@example.com", password=PASSWORD)
+        other_org = Organisation.objects.create(legal_name="Other NPO", organisation_type="npo")
+        OrganisationMembership.objects.create(organisation=other_org, user=other_user, role=ORG_ROLE_ADMIN)
+
+        self.client.post(reverse("accounts:logout"))
+        self.client.login(username="other@example.com", password=PASSWORD)
+
+        # Their own workspace never shows DOPA's programme...
+        resp = self.client.get(reverse("programmes:list", kwargs={"slug": other_org.slug}))
+        self.assertNotContains(resp, "DOPA Confidential Programme")
+        # ...and DOPA's workspace is not reachable at all.
+        resp = self.client.get(reverse("programmes:list", kwargs={"slug": dopa.slug}))
+        self.assertEqual(resp.status_code, 404)
+
+
+class DeploymentPersistenceCheckTests(TestCase):
+    """The configuration guard that would have caught the real incident:
+    a DEBUG=False deployment must refuse to run on a database that does
+    not survive a restart."""
+
+    def _run_check(self, **overrides):
+        from apps.core.checks import check_database_is_persistent
+
+        with self.settings(**overrides):
+            return check_database_is_persistent(None)
+
+    def test_ephemeral_sqlite_in_production_is_an_error(self):
+        from django.conf import settings
+
+        errors = self._run_check(
+            DEBUG=False,
+            DATABASES={"default": {
+                "ENGINE": "django.db.backends.sqlite3",
+                "NAME": str(settings.BASE_DIR / "db.sqlite3"),
+            }},
+        )
+        self.assertEqual([e.id for e in errors], ["core.E002"])
+
+    def test_in_memory_sqlite_in_production_is_an_error(self):
+        errors = self._run_check(
+            DEBUG=False,
+            DATABASES={"default": {"ENGINE": "django.db.backends.sqlite3", "NAME": ":memory:"}},
+        )
+        self.assertEqual([e.id for e in errors], ["core.E001"])
+
+    def test_sqlite_on_a_mounted_volume_is_accepted(self):
+        errors = self._run_check(
+            DEBUG=False,
+            DATABASES={"default": {
+                "ENGINE": "django.db.backends.sqlite3", "NAME": "/mnt/persistent/db.sqlite3",
+            }},
+        )
+        self.assertEqual(errors, [])
+
+    def test_postgresql_is_accepted(self):
+        errors = self._run_check(
+            DEBUG=False,
+            DATABASES={"default": {"ENGINE": "django.db.backends.postgresql", "NAME": "bohlale_impact"}},
+        )
+        self.assertEqual(errors, [])
+
+    def test_local_development_on_sqlite_is_not_flagged(self):
+        from django.conf import settings
+
+        errors = self._run_check(
+            DEBUG=True,
+            DATABASES={"default": {
+                "ENGINE": "django.db.backends.sqlite3",
+                "NAME": str(settings.BASE_DIR / "db.sqlite3"),
+            }},
+        )
+        self.assertEqual(errors, [])
+
+
+class SignOutControlTests(TestCase):
+    """The "Sign out" control in the app chrome must actually sign the
+    user out.
+
+    Regression: it was a plain ``<a href>`` (a GET). Django 5's
+    LogoutView accepts POST only, so clicking it returned 405 and left
+    the user signed in -- which is what "I logged out and came back"
+    really did during UAT.
+    """
+
+    def setUp(self):
+        self.user = User.objects.create_user(email="member@example.com", password=PASSWORD)
+        self.organisation = Organisation.objects.create(legal_name="DOPA", organisation_type="npo")
+        OrganisationMembership.objects.create(
+            organisation=self.organisation, user=self.user, role=ORG_ROLE_ADMIN,
+        )
+        self.client.force_login(self.user)
+
+    def test_get_logout_is_not_how_the_ui_signs_out(self):
+        self.assertEqual(self.client.get(reverse("accounts:logout")).status_code, 405)
+
+    def test_post_logout_signs_the_user_out(self):
+        resp = self.client.post(reverse("accounts:logout"))
+        self.assertEqual(resp.status_code, 302)
+        self.assertNotIn("_auth_user_id", self.client.session)
+
+    def test_workspace_chrome_renders_sign_out_as_a_post_form(self):
+        resp = self.client.get(reverse("programmes:list", kwargs={"slug": self.organisation.slug}))
+        html = resp.content.decode()
+        logout_url = reverse("accounts:logout")
+        self.assertIn(f'<form method="post" action="{logout_url}"', html)
+        self.assertNotIn(f'<a href="{logout_url}"', html)
+
+    def test_signing_out_then_back_in_works_end_to_end(self):
+        self.client.post(reverse("accounts:logout"))
+        self.assertTrue(self.client.login(username="member@example.com", password=PASSWORD))
+        resp = self.client.get(reverse("programmes:list", kwargs={"slug": self.organisation.slug}))
+        self.assertEqual(resp.status_code, 200)

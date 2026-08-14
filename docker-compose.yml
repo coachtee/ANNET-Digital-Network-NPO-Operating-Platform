@@ -29,6 +29,12 @@ services:
       - static_volume:/app/staticfiles
       - media_volume:/app/media
       - private_media_volume:/app/private_media
+      # Only used when running on SQLite instead of PostgreSQL. /app itself is
+      # the image directory and is destroyed on every restart/redeploy, so a
+      # SQLite database written there loses every user and organisation. Point
+      # SQLITE_PATH=/app/data/db.sqlite3 at this volume if you deliberately run
+      # on SQLite; production should set DATABASE_URL and use PostgreSQL.
+      - db_volume:/app/data
     ports:
       - "8000:8000"
     healthcheck:
@@ -42,3 +48,4 @@ volumes:
   static_volume:
   media_volume:
   private_media_volume:
+  db_volume:
