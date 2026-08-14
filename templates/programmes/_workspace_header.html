@@ -2,7 +2,7 @@
 <div class="page-header">
   <div>
     <h1>{{ programme.name }}</h1>
-    <p>{{ programme.programme_area|default:"Programme" }} · <span class="badge badge-neutral">{{ programme.get_status_display }}</span></p>
+    <p>{{ programme.get_programme_area_display|default:"Programme" }} · <span class="badge badge-neutral">{{ programme.get_status_display }}</span></p>
   </div>
 </div>
 

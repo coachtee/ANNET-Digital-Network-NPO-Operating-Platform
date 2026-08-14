@@ -8,7 +8,7 @@
 <div class="grid grid-2">
   <div class="card-flat">
     <h3>Plan</h3>
-    <p><strong>Area:</strong> {{ programme.programme_area|default:"—" }}</p>
+    <p><strong>Area:</strong> {{ programme.get_programme_area_display|default:"—" }}</p>
     <p><strong>Period:</strong> {{ programme.start_date|default:"—" }} to {{ programme.end_date|default:"—" }}</p>
     <p><strong>Beneficiaries:</strong> {{ programme.target_beneficiary_groups|join:", "|default:"—" }}</p>
     <p><strong>Geography:</strong> {{ programme.locations|join:", "|default:"—" }}</p>
