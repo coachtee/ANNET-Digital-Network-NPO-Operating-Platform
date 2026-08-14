@@ -1,0 +1,17 @@
+{% extends "workspace_base.html" %}
+{% block title %}Delete Activity{% endblock %}
+{% block content %}
+<div class="breadcrumbs"><a href="{% url 'programmes:list' slug=organisation.slug %}">Programmes</a> / <a href="{% url 'programmes:detail' slug=organisation.slug programme_id=programme.id %}">{{ programme.name }}</a> / <a href="{% url 'programmes:activities' slug=organisation.slug programme_id=programme.id %}">Activities</a> / Delete</div>
+<div class="page-header"><div><h1>Delete Activity</h1></div></div>
+
+<div class="card" style="max-width:520px;">
+  <p>Are you sure you want to delete <strong>{{ activity.name }}</strong>? This also removes any tasks linked to it. Attendance and evidence already recorded elsewhere are not affected, but will lose their link to this activity.</p>
+  <form method="post">
+    {% csrf_token %}
+    <div class="flex gap-8">
+      <button type="submit" class="btn btn-danger">Delete Activity</button>
+      <a href="{% url 'programmes:activities' slug=organisation.slug programme_id=programme.id %}" class="btn btn-outline">Cancel</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

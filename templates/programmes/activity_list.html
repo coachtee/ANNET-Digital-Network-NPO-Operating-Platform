@@ -11,7 +11,7 @@
 {% if activities %}
 <div class="card-flat" style="padding:0;">
 <table>
-  <thead><tr><th>Activity</th><th>Project</th><th>Date</th><th>Location</th><th>Responsible</th><th>Status</th></tr></thead>
+  <thead><tr><th>Activity</th><th>Project</th><th>Date</th><th>Location</th><th>Responsible</th><th>Status</th><th></th></tr></thead>
   <tbody>
     {% for a in activities %}
     <tr>
@@ -21,6 +21,7 @@
       <td>{{ a.location|default:"—" }}</td>
       <td>{{ a.responsible_person|default:"—" }}</td>
       <td><span class="badge badge-neutral">{{ a.get_status_display }}</span></td>
+      <td>{% if can_manage %}<a href="{% url 'programmes:edit_activity' slug=organisation.slug programme_id=programme.id activity_id=a.id %}">Edit</a>{% endif %}</td>
     </tr>
     {% endfor %}
   </tbody>

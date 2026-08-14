@@ -13,7 +13,7 @@
 {% elif activities %}
 <div class="card-flat" style="padding:0;">
 <table>
-  <thead><tr><th>Activity</th><th>Date</th><th>Location</th><th>Expected</th><th>Attended</th><th>Responsible</th><th>Related Output</th><th>Status</th></tr></thead>
+  <thead><tr><th>Activity</th><th>Date</th><th>Location</th><th>Expected</th><th>Attended</th><th>Responsible</th><th>Related Output</th><th>Status</th><th></th></tr></thead>
   <tbody>
     {% for a in activities %}
     <tr>
@@ -25,6 +25,7 @@
       <td>{{ a.responsible_person|default:"—" }}</td>
       <td>{% for o in a.outputs.all %}{{ o.title }}{% if not forloop.last %}, {% endif %}{% empty %}—{% endfor %}</td>
       <td><span class="badge badge-neutral">{{ a.get_status_display }}</span></td>
+      <td>{% if can_manage %}<a href="{% url 'programmes:edit_activity' slug=organisation.slug programme_id=project.programme.id activity_id=a.id %}">Edit</a>{% endif %}</td>
     </tr>
     {% endfor %}
   </tbody>

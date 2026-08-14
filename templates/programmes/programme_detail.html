@@ -16,6 +16,27 @@
   {% endif %}
 </div>
 
+<div class="section-block">
+  <h3>Programme Readiness</h3>
+  <div class="card-flat">
+    {% if readiness.is_ready %}
+      <span class="badge badge-success">Programme ready</span>
+      <p class="field-hint" style="margin-top:8px;">This programme has the minimum plan a Project needs: need, purpose, beneficiaries, geography, and at least one Outcome, Output, Indicator and Target.</p>
+    {% else %}
+      <span class="badge badge-warning">Programme not ready</span>
+      <p class="field-hint" style="margin-top:8px;">Complete the items below before creating a Project under this programme.</p>
+    {% endif %}
+    <ul class="readiness-list">
+      {% for label, met in readiness.checks %}
+      <li class="{% if met %}readiness-met{% else %}readiness-missing{% endif %}">{% if met %}✓{% else %}○{% endif %} {{ label }}</li>
+      {% endfor %}
+    </ul>
+    {% if not readiness.is_ready %}
+    <a href="{% url 'programmes:plan' slug=organisation.slug programme_id=programme.id %}" class="btn btn-primary btn-sm">Complete Programme Plan</a>
+    {% endif %}
+  </div>
+</div>
+
 <div class="grid grid-2">
   <div class="section-block">
     <h3>Outcomes &amp; Indicators</h3>

@@ -26,6 +26,30 @@ class ProjectForm(forms.ModelForm):
                 organisation_memberships__organisation=organisation, organisation_memberships__is_active=True
             ).distinct()
 
+    def clean_programme(self):
+        """A Programme must reach minimum readiness (need, purpose,
+        beneficiaries, geography, and at least one Outcome/Output/
+        Indicator/Target) before a Project can be *created* under it --
+        funding is tracked separately and doesn't gate this. Enforced
+        here, at the form, so every creation entry point (Projects list,
+        the standalone create page, and the wizard's own "add project"
+        step) gets the same rule for free. Only checked when the
+        programme assignment is actually new/changing -- editing an
+        existing project that already belongs to that programme must
+        never be blocked by this."""
+        programme = self.cleaned_data.get("programme")
+        previous_programme_id = self.instance.programme_id if self.instance.pk else None
+        if programme is not None and programme.id != previous_programme_id:
+            from apps.programmes.services import compute_programme_readiness
+
+            readiness = compute_programme_readiness(programme)
+            if not readiness["is_ready"]:
+                raise forms.ValidationError(
+                    "This programme isn't ready for projects yet. Missing: "
+                    + ", ".join(readiness["missing"]) + ". Complete the Programme Plan first."
+                )
+        return programme
+
 
 class ProjectTaskForm(forms.ModelForm):
     """Internal delivery work -- optionally tied to the one Activity it

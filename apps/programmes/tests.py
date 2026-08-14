@@ -4,10 +4,16 @@ from django.urls import reverse
 from apps.accounts.models import User
 from apps.core.permissions import ORG_ROLE_ADMIN
 from apps.expenses.models import Budget, BudgetLine
-from apps.monitoring_evaluation.models import Indicator, IndicatorPeriodValue, Outcome
+from apps.monitoring_evaluation.models import Indicator, IndicatorPeriodValue, Outcome, Output
 from apps.organisations.models import Organisation, OrganisationMembership
 from apps.programmes.models import Activity, Programme
-from apps.programmes.services import compute_programme_attention, compute_programme_progress, programme_budget_summary
+from apps.programmes.services import (
+    compute_programme_attention,
+    compute_programme_progress,
+    compute_programme_readiness,
+    programme_budget_summary,
+)
+from apps.projects.forms import ProjectForm
 from apps.projects.models import Project
 
 PASSWORD = "TestPass!2026"
@@ -58,6 +64,16 @@ class ProgrammeWizardGoldenPathTests(TestCase):
 
         self.client.post(wizard_url(Programme.WIZARD_SUCCESS), {"add_outcome": "1", "title": "Improved digital literacy", "description": ""})
         self.assertEqual(programme.outcomes.count(), 1)
+        outcome = programme.outcomes.first()
+        self.client.post(wizard_url(Programme.WIZARD_SUCCESS), {
+            "add_output": "1", "title": "Digital skills training delivered", "description": "", "outcome": str(outcome.id),
+        })
+        output = programme.outputs.first()
+        self.client.post(wizard_url(Programme.WIZARD_SUCCESS), {
+            "add_indicator": "1", "name": "Young people completing training", "indicator_type": "count",
+            "outcome": str(outcome.id), "output": str(output.id), "target_value": "100",
+        })
+        self.assertTrue(programme.indicators.filter(target_value=100).exists())
         self.client.post(wizard_url(Programme.WIZARD_SUCCESS), {"continue": "1"})
         programme.refresh_from_db()
         self.assertEqual(programme.wizard_step, Programme.WIZARD_PROJECTS_AND_ACTIVITIES)
@@ -85,12 +101,47 @@ class ProgrammeWizardGoldenPathTests(TestCase):
         self.assertEqual(programme.wizard_step, Programme.WIZARD_COMPLETE)
         self.assertRedirects(resp, reverse("programmes:detail", kwargs={"slug": self.organisation.slug, "programme_id": programme.id}))
 
-    def test_wizard_resumes_a_programme_genuinely_mid_wizard(self):
+    def test_new_programme_never_auto_resumes_a_different_abandoned_wizard(self):
+        # Regression test for the exact bug reported in UAT: clicking "New
+        # Programme" must never silently drag the user into a *different*,
+        # unrelated Programme's abandoned wizard session.
+        abandoned = Programme.objects.create(
+            organisation=self.organisation, name="Abandoned Draft", wizard_step=Programme.WIZARD_WHY,
+            description="Should never leak into a new session", need_and_background="Old need",
+        )
+        resp = self.client.get(reverse("programmes:create", kwargs={"slug": self.organisation.slug}))
+        self.assertEqual(resp.status_code, 200)
+        self.assertIsInstance(resp.context["form"], type(resp.context["form"]))
+        self.assertNotContains(resp, "Abandoned Draft")
+
+        resp = self.client.post(reverse("programmes:create", kwargs={"slug": self.organisation.slug}), {
+            "name": "Brand New Programme", "status": Programme.STATUS_PLANNED,
+        })
+        new_programme = Programme.objects.exclude(id=abandoned.id).get(organisation=self.organisation)
+        self.assertEqual(new_programme.name, "Brand New Programme")
+        # Nothing from the abandoned draft leaked across.
+        self.assertEqual(new_programme.description, "")
+        self.assertEqual(new_programme.need_and_background, "")
+        self.assertRedirects(resp, reverse("programmes:wizard_step", kwargs={
+            "slug": self.organisation.slug, "programme_id": new_programme.id, "step": Programme.WIZARD_WHY,
+        }))
+        abandoned.refresh_from_db()
+        self.assertEqual(abandoned.wizard_step, Programme.WIZARD_WHY)  # untouched
+
+    def test_clicking_new_programme_repeatedly_creates_independent_programmes(self):
+        url = reverse("programmes:create", kwargs={"slug": self.organisation.slug})
+        self.client.post(url, {"name": "Programme One", "status": Programme.STATUS_PLANNED})
+        self.client.post(url, {"name": "Programme Two", "status": Programme.STATUS_PLANNED})
+        names = set(Programme.objects.filter(organisation=self.organisation).values_list("name", flat=True))
+        self.assertEqual(names, {"Programme One", "Programme Two"})
+
+    def test_programme_list_routes_a_mid_wizard_programme_back_into_its_own_wizard(self):
         programme = Programme.objects.create(
             organisation=self.organisation, name="Mid Wizard", wizard_step=Programme.WIZARD_WHY,
         )
-        resp = self.client.get(reverse("programmes:create", kwargs={"slug": self.organisation.slug}))
-        self.assertRedirects(resp, reverse("programmes:wizard_step", kwargs={
+        resp = self.client.get(reverse("programmes:list", kwargs={"slug": self.organisation.slug}))
+        self.assertTrue(resp.context["rows"][0]["is_mid_wizard"])
+        self.assertContains(resp, reverse("programmes:wizard_step", kwargs={
             "slug": self.organisation.slug, "programme_id": programme.id, "step": Programme.WIZARD_WHY,
         }))
 
@@ -322,3 +373,155 @@ class ModalPatternTests(TestCase):
         resp = self.client.get(url)
         self.assertContains(resp, 'data-modal-open="evidence-modal"')
         self.assertNotContains(resp, 'data-open-on-load="true"')
+
+
+class ActivityCRUDTests(TestCase):
+    """Create/Read already covered elsewhere -- this covers Update/Delete,
+    which UAT flagged as missing."""
+
+    def setUp(self):
+        self.organisation = Organisation.objects.create(legal_name="Org A", organisation_type="npo")
+        self.user = User.objects.create_user(email="admin@example.com", password=PASSWORD)
+        OrganisationMembership.objects.create(organisation=self.organisation, user=self.user, role=ORG_ROLE_ADMIN)
+        self.client.force_login(self.user)
+        self.programme = Programme.objects.create(organisation=self.organisation, name="Programme")
+        self.activity = Activity.objects.create(programme=self.programme, name="Workshop", status="planned")
+
+    def test_edit_activity_updates_real_fields(self):
+        url = reverse("programmes:edit_activity", kwargs={
+            "slug": self.organisation.slug, "programme_id": self.programme.id, "activity_id": self.activity.id,
+        })
+        resp = self.client.post(url, {"name": "Renamed Workshop", "status": "delivered", "location": "Hall B"})
+        self.assertRedirects(resp, reverse("programmes:activities", kwargs={"slug": self.organisation.slug, "programme_id": self.programme.id}))
+        self.activity.refresh_from_db()
+        self.assertEqual(self.activity.name, "Renamed Workshop")
+        self.assertEqual(self.activity.status, "delivered")
+        self.assertEqual(self.activity.location, "Hall B")
+
+    def test_delete_activity_requires_post_and_confirmation_page_on_get(self):
+        url = reverse("programmes:delete_activity", kwargs={
+            "slug": self.organisation.slug, "programme_id": self.programme.id, "activity_id": self.activity.id,
+        })
+        resp = self.client.get(url)
+        self.assertEqual(resp.status_code, 200)
+        self.assertTrue(Activity.objects.filter(id=self.activity.id).exists())  # not deleted by GET
+
+        resp = self.client.post(url)
+        self.assertRedirects(resp, reverse("programmes:activities", kwargs={"slug": self.organisation.slug, "programme_id": self.programme.id}))
+        self.assertFalse(Activity.objects.filter(id=self.activity.id).exists())
+
+    def test_deleting_an_activity_with_a_project_redirects_to_the_project(self):
+        project = Project.objects.create(organisation=self.organisation, programme=self.programme, name="Bootcamp")
+        activity = Activity.objects.create(programme=self.programme, project=project, name="Session")
+        url = reverse("programmes:delete_activity", kwargs={
+            "slug": self.organisation.slug, "programme_id": self.programme.id, "activity_id": activity.id,
+        })
+        resp = self.client.post(url)
+        self.assertRedirects(resp, reverse("projects:activities", kwargs={"slug": self.organisation.slug, "project_id": project.id}))
+
+    def test_non_manager_cannot_edit_or_delete_activity(self):
+        other = User.objects.create_user(email="member@example.com", password=PASSWORD)
+        OrganisationMembership.objects.create(organisation=self.organisation, user=other, role="fundraiser")
+        self.client.force_login(other)
+        edit_url = reverse("programmes:edit_activity", kwargs={
+            "slug": self.organisation.slug, "programme_id": self.programme.id, "activity_id": self.activity.id,
+        })
+        delete_url = reverse("programmes:delete_activity", kwargs={
+            "slug": self.organisation.slug, "programme_id": self.programme.id, "activity_id": self.activity.id,
+        })
+        self.assertEqual(self.client.get(edit_url).status_code, 403)
+        self.assertEqual(self.client.post(delete_url).status_code, 403)
+        self.assertTrue(Activity.objects.filter(id=self.activity.id).exists())
+
+
+class ProgrammeReadinessTests(TestCase):
+    """A Programme must reach minimum planning readiness before a Project
+    can be created under it -- a checklist gate, not a percentage, and
+    funding is deliberately excluded from it."""
+
+    def setUp(self):
+        self.organisation = Organisation.objects.create(legal_name="Org A", organisation_type="npo")
+        self.user = User.objects.create_user(email="admin@example.com", password=PASSWORD)
+        OrganisationMembership.objects.create(organisation=self.organisation, user=self.user, role=ORG_ROLE_ADMIN)
+        self.client.force_login(self.user)
+        self.programme = Programme.objects.create(organisation=self.organisation, name="Bare Programme")
+
+    def _make_ready(self):
+        self.programme.need_and_background = "A real need."
+        self.programme.theory_of_change_summary = "A real purpose."
+        self.programme.target_beneficiary_groups = ["Youth"]
+        self.programme.locations = ["Katlehong"]
+        self.programme.save()
+        outcome = Outcome.objects.create(programme=self.programme, title="Outcome")
+        output = Output.objects.create(programme=self.programme, outcome=outcome, title="Output")
+        Indicator.objects.create(programme=self.programme, outcome=outcome, output=output, name="Indicator", target_value=100)
+
+    def test_bare_programme_is_not_ready(self):
+        readiness = compute_programme_readiness(self.programme)
+        self.assertFalse(readiness["is_ready"])
+        self.assertIn("Outcome defined", readiness["missing"])
+        self.assertIn("Target defined", readiness["missing"])
+
+    def test_fully_planned_programme_is_ready(self):
+        self._make_ready()
+        readiness = compute_programme_readiness(self.programme)
+        self.assertTrue(readiness["is_ready"])
+        self.assertEqual(readiness["missing"], [])
+
+    def test_funding_is_not_part_of_the_readiness_gate(self):
+        # Section 4: "Funding can be tracked separately and should not
+        # make an otherwise valid Programme impossible to plan."
+        self._make_ready()
+        readiness = compute_programme_readiness(self.programme)
+        labels = [label for label, _met in readiness["checks"]]
+        self.assertNotIn("Funding identified", labels)
+        self.assertTrue(readiness["is_ready"])  # ready with zero grants linked
+
+    def test_project_creation_is_blocked_for_an_unready_programme(self):
+        form = ProjectForm(
+            {"name": "Bootcamp", "programme": str(self.programme.id), "status": Project.STATUS_PLANNING, "budget": "0"},
+            organisation=self.organisation,
+        )
+        self.assertFalse(form.is_valid())
+        self.assertIn("programme", form.errors)
+
+    def test_project_creation_is_allowed_once_ready(self):
+        self._make_ready()
+        form = ProjectForm(
+            {"name": "Bootcamp", "programme": str(self.programme.id), "status": Project.STATUS_PLANNING, "budget": "0"},
+            organisation=self.organisation,
+        )
+        self.assertTrue(form.is_valid())
+
+    def test_editing_an_already_linked_project_is_never_blocked_by_readiness(self):
+        self._make_ready()
+        project = Project.objects.create(organisation=self.organisation, programme=self.programme, name="Bootcamp")
+        readiness = compute_programme_readiness(self.programme)
+        self.assertTrue(readiness["is_ready"])
+        # Programme regresses (e.g. an indicator gets removed) -- editing
+        # the already-linked project must still work.
+        self.programme.indicators.all().delete()
+        form = ProjectForm(
+            {"name": "Bootcamp Renamed", "programme": str(self.programme.id), "status": Project.STATUS_ACTIVE, "budget": "0"},
+            instance=project, organisation=self.organisation,
+        )
+        self.assertTrue(form.is_valid())
+
+    def test_wizard_project_step_hides_the_add_project_form_until_ready(self):
+        url = reverse("programmes:wizard_step", kwargs={
+            "slug": self.organisation.slug, "programme_id": self.programme.id, "step": Programme.WIZARD_PROJECTS_AND_ACTIVITIES,
+        })
+        resp = self.client.get(url)
+        self.assertIsNone(resp.context["project_form"])
+        self.assertContains(resp, "before creating a Project")
+
+        self._make_ready()
+        resp = self.client.get(url)
+        self.assertIsNotNone(resp.context["project_form"])
+
+    def test_programme_overview_shows_readiness_checklist(self):
+        resp = self.client.get(reverse("programmes:detail", kwargs={"slug": self.organisation.slug, "programme_id": self.programme.id}))
+        self.assertContains(resp, "Programme not ready")
+        self._make_ready()
+        resp = self.client.get(reverse("programmes:detail", kwargs={"slug": self.organisation.slug, "programme_id": self.programme.id}))
+        self.assertContains(resp, "Programme ready")

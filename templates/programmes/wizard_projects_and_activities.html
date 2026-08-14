@@ -3,13 +3,17 @@
 {% block content %}
 {% include "programmes/_wizard_shell.html" %}
 <h1 style="font-size:1.5rem;">What will you deliver?</h1>
-<p class="text-muted">Projects group the work; activities are what actually happens. This step is optional — you can add these later from the Programme Workspace.</p>
+<p class="text-muted">Projects group the work; activities are what actually happens. This step is optional, you can add these later from the Programme Workspace.</p>
 
 <div class="grid grid-2">
   <div class="card-flat">
     <h3>Projects</h3>
     {% if projects %}<ul class="wizard-inline-list">{% for p in projects %}<li>{{ p.name }} <span class="badge badge-neutral">{{ p.get_status_display }}</span></li>{% endfor %}</ul>{% endif %}
+    {% if readiness.is_ready %}
     <form method="post">{% csrf_token %}{% include "partials/_form_fields.html" with form=project_form %}<button type="submit" name="add_project" class="btn btn-outline btn-sm">Add project</button></form>
+    {% else %}
+    <p class="field-hint">Add at least one Outcome, Output, Indicator and Target above (What Success Looks Like) before creating a Project. Missing: {{ readiness.missing|join:", " }}.</p>
+    {% endif %}
   </div>
   <div class="card-flat">
     <h3>Activities</h3>

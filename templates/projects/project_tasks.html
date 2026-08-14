@@ -11,7 +11,7 @@
 <div class="card-flat" style="padding:0;">
   {% if tasks %}
   <table>
-    <thead><tr><th>Task</th><th>Activity</th><th>Assignee</th><th>Due</th><th>Status</th></tr></thead>
+    <thead><tr><th>Task</th><th>Activity</th><th>Assignee</th><th>Due</th><th>Status</th><th></th></tr></thead>
     <tbody>
       {% for t in tasks %}
       <tr>
@@ -20,6 +20,7 @@
         <td>{{ t.assignee|default:"Unassigned" }}</td>
         <td>{{ t.due_date|default:"—" }}</td>
         <td><span class="badge badge-neutral">{{ t.get_status_display }}</span></td>
+        <td>{% if can_manage %}<a href="{% url 'projects:task_edit' slug=organisation.slug project_id=project.id task_id=t.id %}">Edit</a>{% endif %}</td>
       </tr>
       {% endfor %}
     </tbody>

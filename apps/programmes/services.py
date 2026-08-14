@@ -31,6 +31,27 @@ def compute_programme_progress(programme):
     return round(sum(values) / len(values), 1)
 
 
+def compute_programme_readiness(programme):
+    """Minimum planning a Programme needs before Projects can be created
+    under it -- a checklist, not a percentage. Funding is deliberately
+    excluded: it's tracked separately and shouldn't block an otherwise
+    well-planned Programme (see PROGRAMME_WORKSPACE_ARCHITECTURE_PROPOSAL.md
+    and the UAT follow-up that added this gate)."""
+    checks = [
+        ("Programme defined", bool(programme.name)),
+        ("Need identified", bool(programme.need_and_background)),
+        ("Purpose defined", bool(programme.theory_of_change_summary)),
+        ("Beneficiaries defined", bool(programme.target_beneficiary_groups)),
+        ("Geography defined", bool(programme.locations)),
+        ("Outcome defined", programme.outcomes.exists()),
+        ("Output defined", programme.outputs.filter(outcome__isnull=False).exists()),
+        ("Indicator defined", programme.indicators.filter(output__isnull=False).exists()),
+        ("Target defined", programme.indicators.exclude(target_value__isnull=True).exists()),
+    ]
+    missing = [label for label, met in checks if not met]
+    return {"checks": checks, "missing": missing, "is_ready": not missing}
+
+
 def compute_programme_attention(programme, organisation):
     """Actionable gaps, in priority order, capped at 6 -- combines setup
     completeness (no outcome/indicator/project/activity/funding yet) with

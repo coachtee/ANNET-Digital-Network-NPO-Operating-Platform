@@ -96,6 +96,46 @@ class ProjectWorkspaceOverviewTests(TestCase):
         self.assertEqual(summary["remaining"], 800)
         self.assertEqual(summary["variance"], 650)
 
+    def test_finance_walks_through_the_dopa_bootcamp_scenario(self):
+        # R20,000 budget; a R4,000 facilitator expense submitted, then
+        # approved -- must never be double-counted across Committed/Actual.
+        Budget.objects.create(project=self.project, total_amount=20000)
+        expense = Expense.objects.create(
+            organisation=self.organisation, project=self.project, submitted_by=self.user,
+            amount=4000, description="Facilitator", status=Expense.STATUS_SUBMITTED,
+            receipt=SimpleUploadedFile("receipt.pdf", b"%PDF-1.4 fake", content_type="application/pdf"),
+        )
+        summary = project_finance_summary(self.project)
+        self.assertEqual(summary["planned"], 20000)
+        self.assertEqual(summary["committed"], 4000)
+        self.assertEqual(summary["actual"], 0)
+        self.assertEqual(summary["remaining"], 20000)
+
+        reviewer = User.objects.create_user(email="reviewer@example.com", password=PASSWORD)
+        OrganisationMembership.objects.create(organisation=self.organisation, user=reviewer, role=ORG_ROLE_ADMIN)
+        expense.status = Expense.STATUS_APPROVED
+        expense.reviewed_by = reviewer
+        expense.full_clean()
+        expense.save()
+
+        summary = project_finance_summary(self.project)
+        self.assertEqual(summary["planned"], 20000)
+        self.assertEqual(summary["committed"], 0)  # no longer "submitted"
+        self.assertEqual(summary["actual"], 4000)
+        self.assertEqual(summary["remaining"], 16000)
+
+    def test_completing_a_project_does_not_change_its_finance(self):
+        Budget.objects.create(project=self.project, total_amount=20000)
+        Expense.objects.create(
+            organisation=self.organisation, project=self.project, submitted_by=self.user,
+            amount=4000, description="Facilitator", status=Expense.STATUS_APPROVED,
+        )
+        self.project.status = Project.STATUS_COMPLETE
+        self.project.save()
+        summary = project_finance_summary(self.project)
+        self.assertEqual(summary["actual"], 4000)
+        self.assertEqual(summary["remaining"], 16000)  # not zeroed by completion
+
     def test_finance_summary_with_no_budget_yet(self):
         summary = project_finance_summary(self.project)
         self.assertFalse(summary["has_budget"])
@@ -348,3 +388,59 @@ class ModalPatternTests(TestCase):
         resp = self.client.get(url)
         self.assertContains(resp, 'data-modal-open="evidence-modal"')
         self.assertNotContains(resp, 'data-open-on-load="true"')
+
+
+class TaskCRUDTests(TestCase):
+    def setUp(self):
+        self.organisation = Organisation.objects.create(legal_name="Org A", organisation_type="npo")
+        self.user = User.objects.create_user(email="admin@example.com", password=PASSWORD)
+        OrganisationMembership.objects.create(organisation=self.organisation, user=self.user, role=ORG_ROLE_ADMIN)
+        self.client.force_login(self.user)
+        self.project = Project.objects.create(organisation=self.organisation, name="Bootcamp")
+        self.task = ProjectTask.objects.create(project=self.project, title="Book venue", status="todo")
+
+    def test_edit_task_updates_real_fields(self):
+        url = reverse("projects:task_edit", kwargs={"slug": self.organisation.slug, "project_id": self.project.id, "task_id": self.task.id})
+        resp = self.client.post(url, {"title": "Book bigger venue", "status": "in_progress"})
+        self.assertRedirects(resp, reverse("projects:tasks", kwargs={"slug": self.organisation.slug, "project_id": self.project.id}))
+        self.task.refresh_from_db()
+        self.assertEqual(self.task.title, "Book bigger venue")
+        self.assertEqual(self.task.status, "in_progress")
+
+    def test_delete_task_requires_post(self):
+        url = reverse("projects:task_delete", kwargs={"slug": self.organisation.slug, "project_id": self.project.id, "task_id": self.task.id})
+        resp = self.client.get(url)
+        self.assertEqual(resp.status_code, 200)
+        self.assertTrue(ProjectTask.objects.filter(id=self.task.id).exists())
+
+        resp = self.client.post(url)
+        self.assertRedirects(resp, reverse("projects:tasks", kwargs={"slug": self.organisation.slug, "project_id": self.project.id}))
+        self.assertFalse(ProjectTask.objects.filter(id=self.task.id).exists())
+
+
+class ProjectDeleteTests(TestCase):
+    def setUp(self):
+        self.organisation = Organisation.objects.create(legal_name="Org A", organisation_type="npo")
+        self.user = User.objects.create_user(email="admin@example.com", password=PASSWORD)
+        OrganisationMembership.objects.create(organisation=self.organisation, user=self.user, role=ORG_ROLE_ADMIN)
+        self.client.force_login(self.user)
+        self.programme = Programme.objects.create(organisation=self.organisation, name="Programme")
+        self.project = Project.objects.create(organisation=self.organisation, programme=self.programme, name="Bootcamp")
+
+    def test_delete_project_requires_post_and_redirects_to_programme(self):
+        url = reverse("projects:delete", kwargs={"slug": self.organisation.slug, "project_id": self.project.id})
+        resp = self.client.get(url)
+        self.assertEqual(resp.status_code, 200)
+        self.assertTrue(Project.objects.filter(id=self.project.id).exists())
+
+        resp = self.client.post(url)
+        self.assertRedirects(resp, reverse("programmes:detail", kwargs={"slug": self.organisation.slug, "programme_id": self.programme.id}))
+        self.assertFalse(Project.objects.filter(id=self.project.id).exists())
+
+    def test_non_manager_cannot_delete_project(self):
+        other = User.objects.create_user(email="member@example.com", password=PASSWORD)
+        OrganisationMembership.objects.create(organisation=self.organisation, user=other, role="fundraiser")
+        self.client.force_login(other)
+        url = reverse("projects:delete", kwargs={"slug": self.organisation.slug, "project_id": self.project.id})
+        self.assertEqual(self.client.post(url).status_code, 403)
+        self.assertTrue(Project.objects.filter(id=self.project.id).exists())

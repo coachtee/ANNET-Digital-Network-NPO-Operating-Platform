@@ -15,7 +15,7 @@ from apps.impact.services import beneficiaries_for_project
 from apps.organisations.services import get_organisation_or_404_for_user
 from apps.programmes.forms import ActivityForm
 from apps.projects.forms import ProjectForm, ProjectTaskForm
-from apps.projects.models import Project
+from apps.projects.models import Project, ProjectTask
 from apps.projects.services import (
     compute_project_attention,
     compute_project_progress,
@@ -94,6 +94,26 @@ def project_edit(request, slug, project_id):
     context = {"organisation": organisation, "project": project, "form": form, "active_tab": "overview"}
     context.update(project_workspace_summary(project, organisation))
     return render(request, "projects/project_edit.html", context)
+
+
+@login_required
+def project_delete(request, slug, project_id):
+    organisation = get_organisation_or_404_for_user(request.user, slug)
+    project = get_object_or_404(Project, id=project_id, organisation=organisation)
+    if not has_org_capability(request.user, organisation, "projects.manage"):
+        raise PermissionDenied
+
+    if request.method == "POST":
+        programme_id = project.programme_id
+        log_action("project.deleted", organisation=organisation, obj=project, actor=request.user)
+        project.delete()
+        messages.success(request, "Project deleted.")
+        if programme_id:
+            return redirect("programmes:detail", slug=slug, programme_id=programme_id)
+        return redirect("projects:list", slug=slug)
+    context = {"organisation": organisation, "project": project, "active_tab": "overview"}
+    context.update(project_workspace_summary(project, organisation))
+    return render(request, "projects/project_confirm_delete.html", context)
 
 
 @login_required
@@ -207,6 +227,46 @@ def project_tasks(request, slug, project_id):
     }
     context.update(project_workspace_summary(project, organisation))
     return render(request, "projects/project_tasks.html", context)
+
+
+@login_required
+def project_task_edit(request, slug, project_id, task_id):
+    organisation = get_organisation_or_404_for_user(request.user, slug)
+    project = get_object_or_404(Project, id=project_id, organisation=organisation)
+    task = get_object_or_404(ProjectTask, id=task_id, project=project)
+    if not has_org_capability(request.user, organisation, "projects.manage"):
+        raise PermissionDenied
+
+    form = ProjectTaskForm(
+        request.POST if request.method == "POST" else None, instance=task,
+        organisation=organisation, project=project,
+    )
+    if request.method == "POST" and form.is_valid():
+        form.save()
+        messages.success(request, "Task updated.")
+        return redirect("projects:tasks", slug=slug, project_id=project.id)
+    context = {
+        "organisation": organisation, "project": project, "task": task, "form": form, "active_tab": "tasks",
+    }
+    context.update(project_workspace_summary(project, organisation))
+    return render(request, "projects/project_task_form.html", context)
+
+
+@login_required
+def project_task_delete(request, slug, project_id, task_id):
+    organisation = get_organisation_or_404_for_user(request.user, slug)
+    project = get_object_or_404(Project, id=project_id, organisation=organisation)
+    task = get_object_or_404(ProjectTask, id=task_id, project=project)
+    if not has_org_capability(request.user, organisation, "projects.manage"):
+        raise PermissionDenied
+
+    if request.method == "POST":
+        task.delete()
+        messages.success(request, "Task deleted.")
+        return redirect("projects:tasks", slug=slug, project_id=project.id)
+    context = {"organisation": organisation, "project": project, "task": task, "active_tab": "tasks"}
+    context.update(project_workspace_summary(project, organisation))
+    return render(request, "projects/project_task_confirm_delete.html", context)
 
 
 @login_required

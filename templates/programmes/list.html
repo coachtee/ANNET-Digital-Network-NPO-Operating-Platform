@@ -13,10 +13,17 @@
   <tbody>
     {% for row in rows %}
     <tr>
-      <td><a href="{% url 'programmes:detail' slug=organisation.slug programme_id=row.programme.id %}">{{ row.programme.name }}</a></td>
+      <td>
+        {% if row.is_mid_wizard %}
+        <a href="{% url 'programmes:wizard_step' slug=organisation.slug programme_id=row.programme.id step=row.programme.wizard_step %}">{{ row.programme.name|default:"Untitled programme" }}</a>
+        <span class="badge badge-warning">Draft</span>
+        {% else %}
+        <a href="{% url 'programmes:detail' slug=organisation.slug programme_id=row.programme.id %}">{{ row.programme.name }}</a>
+        {% endif %}
+      </td>
       <td><span class="badge badge-neutral">{{ row.programme.get_status_display }}</span></td>
       <td>{% if row.programme.start_date %}{{ row.programme.start_date|date:"Y" }}{% if row.programme.end_date %}–{{ row.programme.end_date|date:"Y" }}{% endif %}{% else %}—{% endif %}</td>
-      <td>{% if row.progress is not None %}{{ row.progress }}%{% else %}<span class="text-muted">No data yet</span>{% endif %}</td>
+      <td>{% if row.is_mid_wizard %}<span class="text-muted">Planning in progress</span>{% elif row.progress is not None %}{{ row.progress }}%{% else %}<span class="text-muted">No data yet</span>{% endif %}</td>
     </tr>
     {% endfor %}
   </tbody>

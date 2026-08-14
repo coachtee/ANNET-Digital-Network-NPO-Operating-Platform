@@ -22,7 +22,12 @@ from apps.programmes.forms import (
     ProgrammeWizardWhoWhereForm,
 )
 from apps.programmes.models import Activity, Programme
-from apps.programmes.services import compute_programme_attention, compute_programme_progress, programme_budget_summary
+from apps.programmes.services import (
+    compute_programme_attention,
+    compute_programme_progress,
+    compute_programme_readiness,
+    programme_budget_summary,
+)
 from apps.projects.forms import ProjectForm
 
 WIZARD_ORDER = [step for step, _ in Programme.WIZARD_STEP_CHOICES]
@@ -40,11 +45,24 @@ def _require_manage(request, organisation):
         raise PermissionDenied
 
 
+def _is_mid_wizard(programme):
+    """WIZARD_PROGRAMME is the field's default -- a programme genuinely
+    mid-wizard is never sitting at that value (create_programme always
+    advances to WIZARD_WHY in the same save that creates the row), so
+    excluding it here is what keeps pre-existing programmes (backfilled
+    with the default when this field was added) from being mistaken for
+    an abandoned wizard."""
+    return programme.wizard_step not in (Programme.WIZARD_PROGRAMME, Programme.WIZARD_COMPLETE)
+
+
 @login_required
 def programme_list(request, slug):
     organisation = get_organisation_or_404_for_user(request.user, slug)
     programmes = organisation.programmes.all()
-    rows = [{"programme": p, "progress": compute_programme_progress(p)} for p in programmes]
+    rows = [
+        {"programme": p, "progress": compute_programme_progress(p), "is_mid_wizard": _is_mid_wizard(p)}
+        for p in programmes
+    ]
     return render(request, "programmes/list.html", {
         "organisation": organisation, "rows": rows,
         "can_manage": has_org_capability(request.user, organisation, "programmes.manage"),
@@ -56,21 +74,16 @@ def create_programme(request, slug):
     """Step 1 of the guided wizard: creates the Programme immediately (so
     every later step edits a real instance, mirroring
     apps.organisations' onboarding_step mechanism) and sends the user
-    straight into step 2. If the org already has a programme mid-wizard,
-    resume it instead of starting a second one."""
+    straight into step 2.
+
+    Every click of "New Programme" starts a genuinely new Programme --
+    it must never silently resume a different, unrelated abandoned
+    wizard the org happens to have lying around. Resuming an incomplete
+    Programme is only possible by explicitly opening that specific
+    Programme from the Programme list (see programme_list/is_mid_wizard),
+    which routes straight back into wizard_step at its saved step."""
     organisation = get_organisation_or_404_for_user(request.user, slug)
     _require_manage(request, organisation)
-    # WIZARD_PROGRAMME is the field's default -- a programme genuinely
-    # mid-wizard is never sitting at that value (create_programme always
-    # advances to WIZARD_WHY in the same save that creates the row), so
-    # excluding it here is what keeps pre-existing programmes (backfilled
-    # with the default when this field was added) from being mistaken for
-    # an abandoned wizard and dragged back into it.
-    existing = organisation.programmes.exclude(
-        wizard_step__in=[Programme.WIZARD_PROGRAMME, Programme.WIZARD_COMPLETE]
-    ).first()
-    if existing:
-        return redirect("programmes:wizard_step", slug=slug, programme_id=existing.id, step=existing.wizard_step)
 
     form = ProgrammeWizardDetailsForm(request.POST if request.method == "POST" else None)
     if request.method == "POST" and form.is_valid():
@@ -156,13 +169,14 @@ def wizard_step(request, slug, programme_id, step):
         return render(request, "programmes/wizard_success.html", context)
 
     if step == Programme.WIZARD_PROJECTS_AND_ACTIVITIES:
-        project_form = ProjectForm(organisation=organisation, initial={"programme": programme.id})
+        readiness = compute_programme_readiness(programme)
+        project_form = ProjectForm(organisation=organisation, initial={"programme": programme.id}) if readiness["is_ready"] else None
         activity_form = ActivityForm(programme=programme, organisation=organisation)
         if request.method == "POST":
             if "continue" in request.POST:
                 _advance_wizard(programme, step)
                 return redirect("programmes:wizard_step", slug=slug, programme_id=programme.id, step=Programme.WIZARD_PEOPLE_AND_RESOURCES)
-            if "add_project" in request.POST:
+            if "add_project" in request.POST and readiness["is_ready"]:
                 project_form = ProjectForm(request.POST, organisation=organisation)
                 if project_form.is_valid():
                     project = project_form.save(commit=False)
@@ -179,7 +193,7 @@ def wizard_step(request, slug, programme_id, step):
                     activity_form.save_m2m()
                     activity_form = ActivityForm(programme=programme, organisation=organisation)
         context.update({
-            "project_form": project_form, "activity_form": activity_form,
+            "project_form": project_form, "activity_form": activity_form, "readiness": readiness,
             "projects": programme.projects.all(), "activities": programme.activities.all(),
         })
         return render(request, "programmes/wizard_projects_and_activities.html", context)
@@ -246,6 +260,7 @@ def programme_detail(request, slug, programme_id):
             status="planned", scheduled_date__gte=today
         ).order_by("scheduled_date")[:5],
         "attention": compute_programme_attention(programme, organisation),
+        "readiness": compute_programme_readiness(programme),
     }
     return render(request, "programmes/programme_detail.html", context)
 
@@ -321,6 +336,55 @@ def create_activity(request, slug, programme_id):
         return redirect("programmes:activities", slug=slug, programme_id=programme.id)
     return render(request, "programmes/activity_form.html", {
         "organisation": organisation, "programme": programme, "project": project, "form": form, "active_tab": "activities",
+    })
+
+
+def _activity_redirect(activity, slug):
+    """Return the caller to whichever workspace the activity is naturally
+    part of: its Project's Activities tab if it has one, otherwise its
+    Programme's."""
+    if activity.project_id:
+        return redirect("projects:activities", slug=slug, project_id=activity.project_id)
+    return redirect("programmes:activities", slug=slug, programme_id=activity.programme_id)
+
+
+@login_required
+def edit_activity(request, slug, programme_id, activity_id):
+    organisation = get_organisation_or_404_for_user(request.user, slug)
+    programme = get_object_or_404(Programme, id=programme_id, organisation=organisation)
+    activity = get_object_or_404(Activity, id=activity_id, programme=programme)
+    _require_manage(request, organisation)
+
+    form = ActivityForm(
+        request.POST if request.method == "POST" else None, instance=activity,
+        programme=programme, project=activity.project, organisation=organisation,
+    )
+    if request.method == "POST" and form.is_valid():
+        form.save()
+        log_action("activity.updated", organisation=organisation, obj=activity, actor=request.user)
+        messages.success(request, "Activity updated.")
+        return _activity_redirect(activity, slug)
+    return render(request, "programmes/activity_form.html", {
+        "organisation": organisation, "programme": programme, "project": activity.project,
+        "form": form, "active_tab": "activities", "activity": activity,
+    })
+
+
+@login_required
+def delete_activity(request, slug, programme_id, activity_id):
+    organisation = get_organisation_or_404_for_user(request.user, slug)
+    programme = get_object_or_404(Programme, id=programme_id, organisation=organisation)
+    activity = get_object_or_404(Activity, id=activity_id, programme=programme)
+    _require_manage(request, organisation)
+
+    if request.method == "POST":
+        redirect_response = _activity_redirect(activity, slug)
+        log_action("activity.deleted", organisation=organisation, obj=activity, actor=request.user)
+        activity.delete()
+        messages.success(request, "Activity deleted.")
+        return redirect_response
+    return render(request, "programmes/activity_confirm_delete.html", {
+        "organisation": organisation, "programme": programme, "activity": activity, "active_tab": "activities",
     })
 
 

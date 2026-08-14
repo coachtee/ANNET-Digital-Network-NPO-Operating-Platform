@@ -1,0 +1,17 @@
+{% extends "workspace_base.html" %}
+{% block title %}{{ project.name }}: Delete Task{% endblock %}
+{% block content %}
+{% include "projects/_project_workspace_header.html" %}
+
+<div class="card" style="max-width:480px;">
+  <h3>Delete Task</h3>
+  <p>Are you sure you want to delete <strong>{{ task.title }}</strong>?</p>
+  <form method="post">
+    {% csrf_token %}
+    <div class="flex gap-8">
+      <button type="submit" class="btn btn-danger">Delete Task</button>
+      <a href="{% url 'projects:tasks' slug=organisation.slug project_id=project.id %}" class="btn btn-outline">Cancel</a>
+    </div>
+  </form>
+</div>
+{% endblock %}
