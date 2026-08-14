@@ -5,7 +5,7 @@
 
 <div class="page-header" style="margin-bottom:12px;">
   <div><p class="mb-0 text-muted">Activities represent actual service delivery under this project.</p></div>
-  {% if can_manage %}<a href="{% url 'projects:create_activity' slug=organisation.slug project_id=project.id %}" class="btn btn-primary">New Activity</a>{% endif %}
+  {% if can_manage and project.programme %}<button type="button" class="btn btn-primary" data-modal-open="activity-modal">+ New Activity</button>{% endif %}
 </div>
 
 {% if not project.programme %}
@@ -32,5 +32,9 @@
 </div>
 {% else %}
 <div class="empty-state"><h3>No activities yet.</h3><p>Activities are what this project actually delivers: a workshop, a home visit, a training session.</p></div>
+{% endif %}
+
+{% if can_manage and project.programme %}
+{% include "partials/_modal.html" with modal_id="activity-modal" title="New Activity" form=form submit_label="Add Activity" %}
 {% endif %}
 {% endblock %}

@@ -6,21 +6,33 @@
 
 <div class="grid grid-3">
   <div class="card-flat">
-    <h3>Outcomes</h3>
+    <div class="flex justify-between items-center" style="margin-bottom:8px;">
+      <h3 class="mb-0">Outcomes</h3>
+      {% if can_manage %}<button type="button" class="btn btn-outline btn-sm" data-modal-open="outcome-modal">+ Add</button>{% endif %}
+    </div>
     {% if outcomes %}<ul>{% for o in outcomes %}<li>{{ o.title }}</li>{% endfor %}</ul>{% else %}<p class="text-muted">None yet.</p>{% endif %}
-    {% if can_manage %}<form method="post">{% csrf_token %}{% include "partials/_form_fields.html" with form=outcome_form %}<button type="submit" name="add_outcome" class="btn btn-outline btn-sm">Add outcome</button></form>{% endif %}
   </div>
   <div class="card-flat">
-    <h3>Outputs</h3>
+    <div class="flex justify-between items-center" style="margin-bottom:8px;">
+      <h3 class="mb-0">Outputs</h3>
+      {% if can_manage %}<button type="button" class="btn btn-outline btn-sm" data-modal-open="output-modal">+ Add</button>{% endif %}
+    </div>
     {% if outputs %}<ul>{% for o in outputs %}<li>{{ o.title }}</li>{% endfor %}</ul>{% else %}<p class="text-muted">None yet.</p>{% endif %}
-    {% if can_manage %}<form method="post">{% csrf_token %}{% include "partials/_form_fields.html" with form=output_form %}<button type="submit" name="add_output" class="btn btn-outline btn-sm">Add output</button></form>{% endif %}
   </div>
   <div class="card-flat">
-    <h3>Indicators</h3>
+    <div class="flex justify-between items-center" style="margin-bottom:8px;">
+      <h3 class="mb-0">Indicators</h3>
+      {% if can_manage %}<button type="button" class="btn btn-outline btn-sm" data-modal-open="indicator-modal">+ Add</button>{% endif %}
+    </div>
     {% if indicators %}
       <ul>{% for i in indicators %}<li><a href="{% url 'monitoring_evaluation:indicator_detail' slug=organisation.slug indicator_id=i.id %}">{{ i.name }}</a></li>{% endfor %}</ul>
     {% else %}<p class="text-muted">None yet.</p>{% endif %}
-    {% if can_manage %}<form method="post">{% csrf_token %}{% include "partials/_form_fields.html" with form=indicator_form %}<button type="submit" name="add_indicator" class="btn btn-outline btn-sm">Add indicator</button></form>{% endif %}
   </div>
 </div>
+
+{% if can_manage %}
+{% include "partials/_modal.html" with modal_id="outcome-modal" title="Add Outcome" form=outcome_form submit_name="add_outcome" submit_label="Add outcome" %}
+{% include "partials/_modal.html" with modal_id="output-modal" title="Add Output" form=output_form submit_name="add_output" submit_label="Add output" %}
+{% include "partials/_modal.html" with modal_id="indicator-modal" title="Add Indicator" form=indicator_form submit_name="add_indicator" submit_label="Add indicator" %}
+{% endif %}
 {% endblock %}

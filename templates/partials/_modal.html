@@ -1,0 +1,29 @@
+{% comment %}
+Reusable modal/drawer. Tables show data; this stays hidden until a
+trigger button opens it (data-modal-open="{{ modal_id }}" on a button
+elsewhere on the page). Forced open server-side when the form it wraps
+has validation errors, so entered data and errors stay visible without
+any JS/AJAX round-trip.
+
+Usage:
+  {% include "partials/_modal.html" with modal_id="activity-modal" title="New Activity" form=form submit_label="Add Activity" %}
+Optional: is_multipart=True (file uploads), submit_name="add_outcome" (named-submit-button dispatch, mirrors existing add_outcome/add_output/... POST branches).
+{% endcomment %}
+<div class="modal-backdrop" id="{{ modal_id }}" {% if form.errors %}data-open-on-load="true"{% endif %}>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="{{ modal_id }}-title">
+    <div class="modal-header">
+      <h3 id="{{ modal_id }}-title">{{ title }}</h3>
+      <button type="button" class="modal-close" data-modal-close aria-label="Close">&times;</button>
+    </div>
+    <div class="modal-body">
+      <form method="post"{% if is_multipart %} enctype="multipart/form-data"{% endif %} novalidate>
+        {% csrf_token %}
+        {% include "partials/_form_fields.html" with form=form %}
+        <div class="modal-actions">
+          <button type="button" class="btn btn-ghost" data-modal-close>Cancel</button>
+          <button type="submit"{% if submit_name %} name="{{ submit_name }}"{% endif %} class="btn btn-primary">{{ submit_label|default:"Save" }}</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

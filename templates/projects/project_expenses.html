@@ -3,42 +3,35 @@
 {% block content %}
 {% include "projects/_project_workspace_header.html" %}
 
-<div class="grid grid-2" style="align-items:start;">
-  <div class="section-block">
-    <h3>Expenses</h3>
-    <div class="card-flat" style="padding:0;">
-      {% if expenses %}
-      <table>
-        <thead><tr><th>Description</th><th>Budget Line</th><th>Amount</th><th>Status</th><th></th></tr></thead>
-        <tbody>
-        {% for e in expenses %}
-          <tr>
-            <td>{{ e.description }}</td>
-            <td>{{ e.budget_line|default:"—" }}</td>
-            <td>R{{ e.amount }}</td>
-            <td><span class="badge {% if e.status == 'approved' %}badge-success{% elif e.status == 'rejected' %}badge-danger{% else %}badge-warning{% endif %}">{{ e.get_status_display }}</span></td>
-            <td>{% if can_approve and e.status == "submitted" %}<a href="{% url 'expenses:review_expense' slug=organisation.slug expense_id=e.id %}">Review</a>{% endif %}</td>
-          </tr>
-        {% endfor %}
-        </tbody>
-      </table>
-      {% else %}<p class="text-muted" style="padding:16px;">No expenses submitted yet.</p>{% endif %}
-    </div>
-  </div>
-
+<div class="page-header" style="margin-bottom:12px;">
+  <div></div>
   {% if can_submit %}
-  <div class="section-block">
-    <h3>Submit Expense</h3>
-    <div class="card">
-      {% if form.fields.budget_line.queryset.exists %}
-      <form method="post" enctype="multipart/form-data" novalidate>
-        {% csrf_token %}
-        {% include "partials/_form_fields.html" %}
-        <button type="submit" class="btn btn-primary btn-sm" style="margin-top:8px;">Submit expense</button>
-      </form>
-      {% else %}<p class="text-muted mb-0">Set up this project's budget before submitting expenses. <a href="{% url 'projects:budget' slug=organisation.slug project_id=project.id %}">Open Budget</a></p>{% endif %}
-    </div>
-  </div>
+    {% if form.fields.budget_line.queryset.exists %}
+    <button type="button" class="btn btn-primary" data-modal-open="expense-modal">+ Submit expense</button>
+    {% else %}<p class="mb-0 text-muted">Set up this project's budget before submitting expenses. <a href="{% url 'projects:budget' slug=organisation.slug project_id=project.id %}">Open Budget</a></p>{% endif %}
   {% endif %}
 </div>
+
+<div class="card-flat" style="padding:0;">
+  {% if expenses %}
+  <table>
+    <thead><tr><th>Description</th><th>Budget Line</th><th>Amount</th><th>Status</th><th></th></tr></thead>
+    <tbody>
+    {% for e in expenses %}
+      <tr>
+        <td>{{ e.description }}</td>
+        <td>{{ e.budget_line|default:"—" }}</td>
+        <td>R{{ e.amount }}</td>
+        <td><span class="badge {% if e.status == 'approved' %}badge-success{% elif e.status == 'rejected' %}badge-danger{% else %}badge-warning{% endif %}">{{ e.get_status_display }}</span></td>
+        <td>{% if can_approve and e.status == "submitted" %}<a href="{% url 'expenses:review_expense' slug=organisation.slug expense_id=e.id %}">Review</a>{% endif %}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% else %}<div class="empty-state"><h3>No expenses submitted yet.</h3><p>Expenses submitted against this project's budget lines will appear here.</p></div>{% endif %}
+</div>
+
+{% if can_submit and form.fields.budget_line.queryset.exists %}
+{% include "partials/_modal.html" with modal_id="expense-modal" title="Submit Expense" form=form is_multipart=True submit_label="Submit expense" %}
+{% endif %}
 {% endblock %}

@@ -3,6 +3,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import PermissionDenied
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 from django.utils import timezone
 
 from apps.audit.services import log_action
@@ -23,6 +24,16 @@ from apps.projects.services import (
 )
 
 
+def _save_project_form(form, organisation, request):
+    """Shared by project_list's modal and the standalone create_project
+    page so the save behaviour never drifts between the two entry points."""
+    project = form.save(commit=False)
+    project.organisation = organisation
+    project.save()
+    log_action("project.created", organisation=organisation, obj=project, actor=request.user)
+    return project
+
+
 @login_required
 def project_list(request, slug):
     organisation = get_organisation_or_404_for_user(request.user, slug)
@@ -30,10 +41,23 @@ def project_list(request, slug):
     programme_id = request.GET.get("programme")
     if programme_id:
         projects = projects.filter(programme_id=programme_id)
+    can_manage = has_org_capability(request.user, organisation, "projects.manage")
+
+    form = None
+    if can_manage:
+        initial = {"programme": programme_id} if programme_id else {}
+        form = ProjectForm(request.POST if request.method == "POST" else None, organisation=organisation, initial=initial)
+        if request.method == "POST" and form.is_valid():
+            _save_project_form(form, organisation, request)
+            messages.success(request, "Project created.")
+            redirect_url = reverse("projects:list", kwargs={"slug": slug})
+            if programme_id:
+                redirect_url += f"?programme={programme_id}"
+            return redirect(redirect_url)
+
     return render(request, "projects/list.html", {
-        "organisation": organisation, "projects": projects,
-        "can_manage": has_org_capability(request.user, organisation, "projects.manage"),
-        "programme_id": programme_id,
+        "organisation": organisation, "projects": projects, "can_manage": can_manage,
+        "programme_id": programme_id, "form": form,
     })
 
 
@@ -48,10 +72,7 @@ def create_project(request, slug):
         initial["programme"] = programme_id
     form = ProjectForm(request.POST if request.method == "POST" else None, organisation=organisation, initial=initial)
     if request.method == "POST" and form.is_valid():
-        project = form.save(commit=False)
-        project.organisation = organisation
-        project.save()
-        log_action("project.created", organisation=organisation, obj=project, actor=request.user)
+        project = _save_project_form(form, organisation, request)
         messages.success(request, "Project created.")
         if project.programme_id:
             return redirect("programmes:detail", slug=slug, programme_id=project.programme_id)
@@ -101,14 +122,39 @@ def project_detail(request, slug, project_id):
     return render(request, "projects/project_detail.html", context)
 
 
+def _save_activity_form(form, programme, project, organisation, request):
+    """Shared by project_activities' modal and the standalone
+    project_create_activity page so the save behaviour never drifts
+    between the two entry points."""
+    activity = form.save(commit=False)
+    activity.programme = programme
+    activity.project = project
+    activity.save()
+    form.save_m2m()
+    log_action("activity.created", organisation=organisation, obj=activity, actor=request.user)
+    return activity
+
+
 @login_required
 def project_activities(request, slug, project_id):
     organisation = get_organisation_or_404_for_user(request.user, slug)
     project = get_object_or_404(Project, id=project_id, organisation=organisation)
     can_manage = has_org_capability(request.user, organisation, "projects.manage")
+
+    form = None
+    if can_manage and project.programme_id:
+        form = ActivityForm(
+            request.POST if request.method == "POST" else None,
+            programme=project.programme, project=project, organisation=organisation,
+        )
+        if request.method == "POST" and form.is_valid():
+            _save_activity_form(form, project.programme, project, organisation, request)
+            messages.success(request, "Activity added.")
+            return redirect("projects:activities", slug=slug, project_id=project.id)
+
     context = {
         "organisation": organisation, "project": project, "can_manage": can_manage,
-        "active_tab": "activities",
+        "active_tab": "activities", "form": form,
         "activities": project.activities.select_related("responsible_person").prefetch_related("outputs").all(),
     }
     context.update(project_workspace_summary(project, organisation))
@@ -132,12 +178,7 @@ def project_create_activity(request, slug, project_id):
         programme=programme, project=project, organisation=organisation,
     )
     if request.method == "POST" and form.is_valid():
-        activity = form.save(commit=False)
-        activity.programme = programme
-        activity.project = project
-        activity.save()
-        form.save_m2m()
-        log_action("activity.created", organisation=organisation, obj=activity, actor=request.user)
+        _save_activity_form(form, programme, project, organisation, request)
         messages.success(request, "Activity added.")
         return redirect("projects:activities", slug=slug, project_id=project.id)
     return render(request, "projects/project_activity_form.html", {

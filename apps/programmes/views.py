@@ -272,13 +272,33 @@ def programme_plan(request, slug, programme_id):
     })
 
 
+def _save_activity_form(form, programme, organisation, request):
+    """Shared by activity_list's modal and the standalone create_activity
+    page so the save behaviour never drifts between the two entry points."""
+    activity = form.save(commit=False)
+    activity.programme = programme
+    activity.save()
+    form.save_m2m()
+    log_action("activity.created", organisation=organisation, obj=activity, actor=request.user)
+    return activity
+
+
 @login_required
 def activity_list(request, slug, programme_id):
     organisation = get_organisation_or_404_for_user(request.user, slug)
     programme = get_object_or_404(Programme, id=programme_id, organisation=organisation)
     can_manage = has_org_capability(request.user, organisation, "programmes.manage")
+
+    form = None
+    if can_manage:
+        form = ActivityForm(request.POST if request.method == "POST" else None, programme=programme, organisation=organisation)
+        if request.method == "POST" and form.is_valid():
+            _save_activity_form(form, programme, organisation, request)
+            messages.success(request, "Activity added.")
+            return redirect("programmes:activities", slug=slug, programme_id=programme.id)
+
     return render(request, "programmes/activity_list.html", {
-        "organisation": organisation, "programme": programme, "can_manage": can_manage,
+        "organisation": organisation, "programme": programme, "can_manage": can_manage, "form": form,
         "active_tab": "activities", "activities": programme.activities.select_related("project", "responsible_person").all(),
     })
 
@@ -296,11 +316,7 @@ def create_activity(request, slug, programme_id):
 
     form = ActivityForm(request.POST if request.method == "POST" else None, programme=programme, project=project, organisation=organisation)
     if request.method == "POST" and form.is_valid():
-        activity = form.save(commit=False)
-        activity.programme = programme
-        activity.save()
-        form.save_m2m()
-        log_action("activity.created", organisation=organisation, obj=activity, actor=request.user)
+        _save_activity_form(form, programme, organisation, request)
         messages.success(request, "Activity added.")
         return redirect("programmes:activities", slug=slug, programme_id=programme.id)
     return render(request, "programmes/activity_form.html", {

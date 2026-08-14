@@ -286,3 +286,39 @@ class ProjectProgrammeFilterTests(TestCase):
         projects = list(resp.context["projects"])
         self.assertIn(self.project_in, projects)
         self.assertNotIn(self.project_out, projects)
+
+
+class ModalPatternTests(TestCase):
+    """Tables show data; create forms stay inside a closed modal until the
+    trigger button is clicked, and re-open themselves only on a failed
+    validation -- mirrors apps.projects.tests.ModalPatternTests."""
+
+    def setUp(self):
+        self.organisation = Organisation.objects.create(legal_name="Org A", organisation_type="npo")
+        self.user = User.objects.create_user(email="admin@example.com", password=PASSWORD)
+        OrganisationMembership.objects.create(organisation=self.organisation, user=self.user, role=ORG_ROLE_ADMIN)
+        self.client.force_login(self.user)
+        self.programme = Programme.objects.create(organisation=self.organisation, name="Youth Digital Literacy")
+
+    def test_activities_tab_modal_closed_by_default_and_opens_on_error(self):
+        url = reverse("programmes:activities", kwargs={"slug": self.organisation.slug, "programme_id": self.programme.id})
+        resp = self.client.get(url)
+        self.assertContains(resp, 'data-modal-open="activity-modal"')
+        self.assertNotContains(resp, 'data-open-on-load="true"')
+
+        resp = self.client.post(url, {"name": "", "status": "planned", "location": "A specific venue"})
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, 'data-open-on-load="true"')
+        self.assertContains(resp, "A specific venue")
+
+    def test_activity_created_via_the_tab_modal_is_saved_and_shown(self):
+        url = reverse("programmes:activities", kwargs={"slug": self.organisation.slug, "programme_id": self.programme.id})
+        resp = self.client.post(url, {"name": "Coding Club", "status": "planned"})
+        self.assertRedirects(resp, url)
+        self.assertTrue(Activity.objects.filter(programme=self.programme, name="Coding Club").exists())
+
+    def test_evidence_tab_modal_closed_by_default(self):
+        url = reverse("programmes:evidence", kwargs={"slug": self.organisation.slug, "programme_id": self.programme.id})
+        resp = self.client.get(url)
+        self.assertContains(resp, 'data-modal-open="evidence-modal"')
+        self.assertNotContains(resp, 'data-open-on-load="true"')

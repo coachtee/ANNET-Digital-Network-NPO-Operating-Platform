@@ -11,41 +11,30 @@
   <div class="summary-bar-item"><div class="summary-bar-label">Variance</div><div class="summary-bar-value">R{{ finance.variance|floatformat:2 }}</div></div>
 </div>
 
-<div class="section-block">
-  <h3>Budget Lines</h3>
-  <div class="card-flat" style="padding:0;">
-    {% if budget %}
-      <table>
-        <thead><tr><th>Category</th><th>Allocated</th><th>Recorded</th></tr></thead>
-        <tbody>
-          {% for line in lines %}<tr><td>{{ line.category }}</td><td>R{{ line.allocated_amount }}</td><td>R{{ line.recorded_expenditure }}</td></tr>{% endfor %}
-        </tbody>
-      </table>
-    {% else %}<p class="text-muted" style="padding:16px;">No budget set up yet.</p>{% endif %}
-  </div>
+<div class="page-header" style="margin-bottom:12px;">
+  <div><h3 class="mb-0">Budget Lines</h3></div>
+  {% if can_approve %}
+    {% if budget %}<button type="button" class="btn btn-primary" data-modal-open="budget-line-modal">+ Add budget line</button>
+    {% else %}<button type="button" class="btn btn-primary" data-modal-open="budget-modal">+ Set up budget</button>{% endif %}
+  {% endif %}
+</div>
+
+<div class="card-flat" style="padding:0;">
+  {% if budget %}
+    <table>
+      <thead><tr><th>Category</th><th>Allocated</th><th>Recorded</th></tr></thead>
+      <tbody>
+        {% for line in lines %}<tr><td>{{ line.category }}</td><td>R{{ line.allocated_amount }}</td><td>R{{ line.recorded_expenditure }}</td></tr>{% endfor %}
+      </tbody>
+    </table>
+  {% else %}<div class="empty-state"><h3>No budget set up yet.</h3><p>Set a total budget for this project before adding budget lines or submitting expenses.</p></div>{% endif %}
 </div>
 
 {% if can_approve %}
-<div class="section-block">
   {% if budget %}
-    <h3>Add Budget Line</h3>
-    <div class="card" style="max-width:480px;">
-      <form method="post" novalidate>
-        {% csrf_token %}
-        {% include "partials/_form_fields.html" with form=line_form %}
-        <button type="submit" name="add_line" class="btn btn-outline btn-sm">Add budget line</button>
-      </form>
-    </div>
+  {% include "partials/_modal.html" with modal_id="budget-line-modal" title="Add Budget Line" form=line_form submit_name="add_line" submit_label="Add budget line" %}
   {% else %}
-    <h3>Set Up Budget</h3>
-    <div class="card" style="max-width:480px;">
-      <form method="post" novalidate>
-        {% csrf_token %}
-        {% include "partials/_form_fields.html" with form=budget_form %}
-        <button type="submit" name="create_budget" class="btn btn-primary btn-sm">Create budget</button>
-      </form>
-    </div>
+  {% include "partials/_modal.html" with modal_id="budget-modal" title="Set Up Budget" form=budget_form submit_name="create_budget" submit_label="Create budget" %}
   {% endif %}
-</div>
 {% endif %}
 {% endblock %}

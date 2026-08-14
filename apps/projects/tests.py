@@ -285,3 +285,66 @@ class ProjectEvidenceTests(TestCase):
         self.assertRedirects(resp, url)
         resp = self.client.get(url)
         self.assertContains(resp, "Attendance register")
+
+
+class ModalPatternTests(TestCase):
+    """Tables show data; create forms stay inside a closed modal until the
+    trigger button is clicked, and re-open themselves (with entered data
+    and errors intact) only when the server actually has something to
+    show the user -- a failed validation."""
+
+    def setUp(self):
+        self.organisation = Organisation.objects.create(legal_name="Org A", organisation_type="npo")
+        self.user = User.objects.create_user(email="admin@example.com", password=PASSWORD)
+        OrganisationMembership.objects.create(organisation=self.organisation, user=self.user, role=ORG_ROLE_ADMIN)
+        self.client.force_login(self.user)
+        self.programme = Programme.objects.create(organisation=self.organisation, name="Programme")
+        self.project = Project.objects.create(organisation=self.organisation, programme=self.programme, name="Bootcamp")
+
+    def test_project_list_modal_is_closed_by_default_and_opens_on_invalid_submit(self):
+        url = reverse("projects:list", kwargs={"slug": self.organisation.slug})
+        resp = self.client.get(url)
+        self.assertContains(resp, 'data-modal-open="project-modal"')
+        self.assertNotContains(resp, 'data-open-on-load="true"')
+
+        resp = self.client.post(url, {"name": ""})  # name is required -- invalid
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, 'data-open-on-load="true"')
+
+    def test_activities_tab_modal_closed_by_default_opens_on_error_and_preserves_entered_name(self):
+        url = reverse("projects:activities", kwargs={"slug": self.organisation.slug, "project_id": self.project.id})
+        resp = self.client.get(url)
+        self.assertContains(resp, 'data-modal-open="activity-modal"')
+        self.assertNotContains(resp, 'data-open-on-load="true"')
+
+        resp = self.client.post(url, {"name": "", "status": "planned", "location": "A specific venue"})
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, 'data-open-on-load="true"')
+        self.assertContains(resp, "A specific venue")  # entered data preserved in the reopened modal
+
+    def test_tasks_tab_modal_closed_by_default_and_opens_on_error(self):
+        url = reverse("projects:tasks", kwargs={"slug": self.organisation.slug, "project_id": self.project.id})
+        resp = self.client.get(url)
+        self.assertContains(resp, 'data-modal-open="task-modal"')
+        self.assertNotContains(resp, 'data-open-on-load="true"')
+
+        resp = self.client.post(url, {"title": "", "status": "todo"})  # title is required
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, 'data-open-on-load="true"')
+
+    def test_budget_tab_shows_setup_trigger_then_add_line_trigger(self):
+        url = reverse("projects:budget", kwargs={"slug": self.organisation.slug, "project_id": self.project.id})
+        resp = self.client.get(url)
+        self.assertContains(resp, 'data-modal-open="budget-modal"')
+        self.assertNotContains(resp, 'data-modal-open="budget-line-modal"')
+
+        Budget.objects.create(project=self.project, total_amount=1000)
+        resp = self.client.get(url)
+        self.assertContains(resp, 'data-modal-open="budget-line-modal"')
+        self.assertNotContains(resp, 'data-modal-open="budget-modal"')
+
+    def test_evidence_tab_modal_closed_by_default(self):
+        url = reverse("projects:evidence", kwargs={"slug": self.organisation.slug, "project_id": self.project.id})
+        resp = self.client.get(url)
+        self.assertContains(resp, 'data-modal-open="evidence-modal"')
+        self.assertNotContains(resp, 'data-open-on-load="true"')

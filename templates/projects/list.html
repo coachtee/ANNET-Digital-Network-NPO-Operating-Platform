@@ -3,7 +3,7 @@
 {% block content %}
 <div class="page-header">
   <div><h1>Projects</h1><p>{{ organisation.display_name }}</p></div>
-  {% if can_manage %}<a href="{% url 'projects:create' slug=organisation.slug %}" class="btn btn-primary">New project</a>{% endif %}
+  {% if can_manage %}<button type="button" class="btn btn-primary" data-modal-open="project-modal">+ New project</button>{% endif %}
 </div>
 {% if projects %}
 <table>
@@ -21,5 +21,9 @@
 </table>
 {% else %}
 <div class="empty-state"><h3>No projects yet.</h3><p>Create a project to plan funded delivery, tasks and budget.</p></div>
+{% endif %}
+
+{% if can_manage %}
+{% include "partials/_modal.html" with modal_id="project-modal" title="New Project" form=form submit_label="Create" %}
 {% endif %}
 {% endblock %}
