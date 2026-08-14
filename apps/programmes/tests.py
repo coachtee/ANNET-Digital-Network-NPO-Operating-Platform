@@ -32,7 +32,7 @@ class ProgrammeWizardGoldenPathTests(TestCase):
 
     def test_full_wizard_creates_a_complete_programme(self):
         resp = self.client.post(reverse("programmes:create", kwargs={"slug": self.organisation.slug}), {
-            "name": "Youth Digital Literacy Initiative", "programme_area": "Education & Skills Development",
+            "name": "Youth Digital Literacy Initiative", "programme_area": "education_skills",
             "status": Programme.STATUS_PLANNED, "start_date": "2026-04-01", "end_date": "2027-03-31",
         })
         programme = Programme.objects.get(organisation=self.organisation)
@@ -432,6 +432,49 @@ class ActivityCRUDTests(TestCase):
         self.assertEqual(self.client.get(edit_url).status_code, 403)
         self.assertEqual(self.client.post(delete_url).status_code, 403)
         self.assertTrue(Activity.objects.filter(id=self.activity.id).exists())
+
+
+class ProgrammeGeographyAndSectorTests(TestCase):
+    """Province is a controlled SA province list (reused from
+    Organisation); Locations stays free-text for finer geography
+    (district/municipality/locality/venue) -- neither level is forced.
+    Programme area/sector is a controlled, extensible list."""
+
+    def setUp(self):
+        self.organisation = Organisation.objects.create(legal_name="Org A", organisation_type="npo")
+        self.user = User.objects.create_user(email="admin@example.com", password=PASSWORD)
+        OrganisationMembership.objects.create(organisation=self.organisation, user=self.user, role=ORG_ROLE_ADMIN)
+        self.client.force_login(self.user)
+        self.programme = Programme.objects.create(organisation=self.organisation, name="Programme")
+
+    def test_province_alone_satisfies_geography_readiness(self):
+        self.programme.province = "GP"
+        self.programme.save()
+        self.assertTrue(
+            dict(compute_programme_readiness(self.programme)["checks"])["Geography defined"]
+        )
+
+    def test_locations_alone_still_satisfies_geography_readiness(self):
+        self.programme.locations = ["Khayelitsha"]
+        self.programme.save()
+        self.assertTrue(
+            dict(compute_programme_readiness(self.programme)["checks"])["Geography defined"]
+        )
+
+    def test_plan_tab_can_set_province_and_sector(self):
+        url = reverse("programmes:plan", kwargs={"slug": self.organisation.slug, "programme_id": self.programme.id})
+        resp = self.client.post(url, {
+            "programme_area": "youth_development", "province": "GP",
+            "need_and_background": "", "theory_of_change_summary": "",
+            "target_beneficiary_groups": "", "locations": "",
+        })
+        self.assertRedirects(resp, url)
+        self.programme.refresh_from_db()
+        self.assertEqual(self.programme.province, "GP")
+        self.assertEqual(self.programme.programme_area, "youth_development")
+        resp = self.client.get(url)
+        self.assertContains(resp, "Gauteng")
+        self.assertContains(resp, "Youth Development")
 
 
 class ProgrammeReadinessTests(TestCase):

@@ -42,7 +42,7 @@ def compute_programme_readiness(programme):
         ("Need identified", bool(programme.need_and_background)),
         ("Purpose defined", bool(programme.theory_of_change_summary)),
         ("Beneficiaries defined", bool(programme.target_beneficiary_groups)),
-        ("Geography defined", bool(programme.locations)),
+        ("Geography defined", bool(programme.locations) or bool(programme.province)),
         ("Outcome defined", programme.outcomes.exists()),
         ("Output defined", programme.outputs.filter(outcome__isnull=False).exists()),
         ("Indicator defined", programme.indicators.filter(output__isnull=False).exists()),

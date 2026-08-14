@@ -1,5 +1,6 @@
 from django import forms
 
+from apps.organisations.models import PROVINCE_CHOICES
 from apps.programmes.models import Activity, Programme, ProgrammeMembership
 
 
@@ -75,15 +76,19 @@ class ProgrammeWizardWhoWhereForm(forms.Form):
         required=False, widget=forms.Textarea(attrs={"rows": 2}),
         label="Who will benefit?", help_text="Comma-separated, e.g. Youth aged 18-35, Unemployed graduates",
     )
+    province = forms.ChoiceField(
+        required=False, choices=[("", "---------")] + PROVINCE_CHOICES, label="Primary province",
+    )
     locations = forms.CharField(
         required=False, widget=forms.Textarea(attrs={"rows": 2}),
-        label="Where will this take place?", help_text="Comma-separated, e.g. Khayelitsha, Ekurhuleni",
+        label="Where, more specifically?", help_text="District/municipality/locality/venue, comma-separated, e.g. Khayelitsha, Ekurhuleni",
     )
 
     def save(self, programme):
         programme.target_beneficiary_groups = _to_list(self.cleaned_data["target_beneficiary_groups"])
+        programme.province = self.cleaned_data["province"]
         programme.locations = _to_list(self.cleaned_data["locations"])
-        programme.save(update_fields=["target_beneficiary_groups", "locations"])
+        programme.save(update_fields=["target_beneficiary_groups", "province", "locations"])
 
 
 class ProgrammeWizardPeopleResourcesForm(forms.ModelForm):
@@ -128,8 +133,8 @@ class ProgrammePlanForm(forms.ModelForm):
     class Meta:
         model = Programme
         fields = [
-            "need_and_background", "theory_of_change_summary", "start_date", "end_date",
-            "staffing_plan",
+            "need_and_background", "theory_of_change_summary", "programme_area", "province",
+            "start_date", "end_date", "staffing_plan",
         ]
         widgets = {
             "need_and_background": forms.Textarea(attrs={"rows": 4}),

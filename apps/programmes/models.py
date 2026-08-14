@@ -4,6 +4,25 @@ from django.conf import settings
 from django.db import models
 
 from apps.core.models import TimeStampedModel
+from apps.organisations.models import PROVINCE_CHOICES
+
+# Extensible, not exhaustive -- "Other" always available so a real
+# programme is never blocked by a missing category. A plain Python list
+# (not a lookup table) deliberately: easy to extend later without
+# inventing a full taxonomy-admin CRUD system for this session.
+PROGRAMME_AREA_CHOICES = [
+    ("education_skills", "Education & Skills Development"),
+    ("youth_development", "Youth Development"),
+    ("children_families", "Children & Families"),
+    ("health", "Health"),
+    ("disability", "Disability"),
+    ("older_persons", "Older Persons"),
+    ("community_development", "Community Development"),
+    ("social_crime_prevention", "Social Crime Prevention"),
+    ("gender_based_violence", "Gender-Based Violence"),
+    ("food_security", "Food Security"),
+    ("other", "Other"),
+]
 
 # Shared by ProgrammeMembership and projects.ProjectMembership -- what a
 # person *does* within a Programme/Project. Deliberately distinct from
@@ -66,7 +85,11 @@ class Programme(TimeStampedModel):
     organisation = models.ForeignKey("organisations.Organisation", on_delete=models.CASCADE, related_name="programmes")
     name = models.CharField(max_length=255)
     description = models.TextField(blank=True)
-    programme_area = models.CharField(max_length=150, blank=True)
+    programme_area = models.CharField(max_length=150, choices=PROGRAMME_AREA_CHOICES, blank=True)
+    province = models.CharField(
+        max_length=3, choices=PROVINCE_CHOICES, blank=True,
+        help_text="Primary province. Finer geography (district, municipality, locality, venue) goes in Locations below.",
+    )
     locations = models.JSONField(default=list, blank=True)
     services = models.JSONField(default=list, blank=True)
     target_beneficiary_groups = models.JSONField(default=list, blank=True)
