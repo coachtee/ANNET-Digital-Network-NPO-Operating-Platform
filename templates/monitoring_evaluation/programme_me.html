@@ -31,8 +31,8 @@
 </div>
 
 {% if can_manage %}
-{% include "partials/_modal.html" with modal_id="outcome-modal" title="Add Outcome" form=outcome_form submit_name="add_outcome" submit_label="Add outcome" %}
-{% include "partials/_modal.html" with modal_id="output-modal" title="Add Output" form=output_form submit_name="add_output" submit_label="Add output" %}
+{% include "partials/_modal.html" with modal_id="outcome-modal" title="Add Outcome" form=outcome_form submit_name="add_outcome" submit_label="Add outcome" columns=1 %}
+{% include "partials/_modal.html" with modal_id="output-modal" title="Add Output" form=output_form submit_name="add_output" submit_label="Add output" columns=1 %}
 {% include "partials/_modal.html" with modal_id="indicator-modal" title="Add Indicator" form=indicator_form submit_name="add_indicator" submit_label="Add indicator" %}
 {% endif %}
 {% endblock %}

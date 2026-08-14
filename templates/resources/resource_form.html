@@ -2,7 +2,7 @@
 {% block title %}{% if resource %}Edit Resource{% else %}New Resource{% endif %}{% endblock %}
 {% block content %}
 <div class="page-header"><div><h1>{% if resource %}Edit Resource{% else %}New Resource{% endif %}</h1></div></div>
-<div class="card" style="max-width:600px;">
+<div class="card form-card">
   <form method="post" enctype="multipart/form-data" novalidate>
     {% csrf_token %}
     {% if resource and resource.file %}

@@ -2,7 +2,7 @@
 {% block title %}Add Beneficiary{% endblock %}
 {% block content %}
 <div class="page-header"><div><h1>Add Beneficiary</h1><p>{{ organisation.display_name }}: only capture fields your programme actually needs.</p></div></div>
-<div class="card" style="max-width:560px;">
+<div class="card form-card">
   <form method="post" novalidate>
     {% csrf_token %}
     {% include "partials/_form_fields.html" %}

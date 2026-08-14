@@ -2,7 +2,7 @@
 {% block title %}{% if opportunity %}Edit Opportunity{% else %}New Opportunity{% endif %}{% endblock %}
 {% block content %}
 <div class="page-header"><div><h1>{% if opportunity %}Edit Opportunity{% else %}New Opportunity{% endif %}</h1><p>{{ network.name }}</p></div></div>
-<div class="card" style="max-width:600px;">
+<div class="card form-card">
   <form method="post" novalidate>
     {% csrf_token %}
     {% include "partials/_form_fields.html" %}

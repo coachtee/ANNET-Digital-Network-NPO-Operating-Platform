@@ -32,9 +32,9 @@
 
 {% if can_approve %}
   {% if budget %}
-  {% include "partials/_modal.html" with modal_id="budget-line-modal" title="Add Budget Line" form=line_form submit_name="add_line" submit_label="Add budget line" %}
+  {% include "partials/_modal.html" with modal_id="budget-line-modal" title="Add Budget Line" form=line_form submit_name="add_line" submit_label="Add budget line" columns=1 %}
   {% else %}
-  {% include "partials/_modal.html" with modal_id="budget-modal" title="Set Up Budget" form=budget_form submit_name="create_budget" submit_label="Create budget" %}
+  {% include "partials/_modal.html" with modal_id="budget-modal" title="Set Up Budget" form=budget_form submit_name="create_budget" submit_label="Create budget" columns=1 %}
   {% endif %}
 {% endif %}
 {% endblock %}

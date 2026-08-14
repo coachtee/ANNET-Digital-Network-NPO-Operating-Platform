@@ -4,11 +4,11 @@
 {% include "programmes/_workspace_header.html" %}
 
 {% if editing %}
-<div class="card" style="max-width:640px;">
+<div class="card form-card">
   <h3>Edit programme plan</h3>
   <form method="post" novalidate>
     {% csrf_token %}
-    {% include "partials/_form_fields.html" %}
+    {% include "partials/_form_fields.html" with wide_fields="need_and_background,theory_of_change_summary,staffing_plan,grants" %}
     <button type="submit" class="btn btn-primary">Save</button>
     <a href="{% url 'programmes:plan' slug=organisation.slug programme_id=programme.id %}" class="btn btn-ghost">Cancel</a>
   </form>
@@ -101,8 +101,8 @@
 </div>
 
 {% if can_manage %}
-{% include "partials/_modal.html" with modal_id="toc-modal" title="Theory of Change" form=toc_form submit_name="save_toc" submit_label="Save" %}
-{% include "partials/_modal.html" with modal_id="assumption-modal" title="Add Assumption" form=assumption_form submit_name="add_assumption" submit_label="Add assumption" %}
+{% include "partials/_modal.html" with modal_id="toc-modal" title="Theory of Change" form=toc_form submit_name="save_toc" submit_label="Save" columns=1 %}
+{% include "partials/_modal.html" with modal_id="assumption-modal" title="Add Assumption" form=assumption_form submit_name="add_assumption" submit_label="Add assumption" wide_fields="statement,note" %}
 {% endif %}
 {% endif %}
 {% endblock %}

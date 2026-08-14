@@ -2,10 +2,10 @@
 {% block title %}New Project{% endblock %}
 {% block content %}
 <div class="page-header"><div><h1>New Project</h1><p>{{ organisation.display_name }}</p></div></div>
-<div class="card" style="max-width:600px;">
+<div class="card form-card">
   <form method="post" novalidate>
     {% csrf_token %}
-    {% include "partials/_form_fields.html" %}
+    {% include "partials/_form_fields.html" with wide_fields="description" %}
     <button type="submit" class="btn btn-primary">Create</button>
   </form>
 </div>

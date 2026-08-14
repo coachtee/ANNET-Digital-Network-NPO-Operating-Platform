@@ -4,6 +4,15 @@ from apps.projects.models import Project, ProjectMembership, ProjectTask
 
 
 class ProjectForm(forms.ModelForm):
+    # Ordered for the two-column form grid (see partials/_form_fields.html):
+    # fields flow left-to-right, so these pairs sit side by side as
+    # Name|Objective, Programme|Grant, Manager|Budget, Location|Status,
+    # Start|End -- with the long description spanning both columns.
+    field_order = [
+        "name", "objective", "programme", "grant", "manager", "budget",
+        "location", "status", "start_date", "end_date", "description",
+    ]
+
     class Meta:
         model = Project
         fields = [
@@ -12,7 +21,7 @@ class ProjectForm(forms.ModelForm):
         ]
         widgets = {
             "objective": forms.Textarea(attrs={"rows": 2}),
-            "description": forms.Textarea(attrs={"rows": 3}),
+            "description": forms.Textarea(attrs={"rows": 2}),
             "start_date": forms.DateInput(attrs={"type": "date"}),
             "end_date": forms.DateInput(attrs={"type": "date"}),
         }

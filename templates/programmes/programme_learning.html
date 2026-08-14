@@ -91,8 +91,8 @@
 </div>
 
 {% if can_manage %}
-{% include "partials/_modal.html" with modal_id="question-modal" title="Add Learning Question" form=question_form submit_name="add_learning_question" submit_label="Add question" %}
-{% include "partials/_modal.html" with modal_id="context-modal" title="Add Context Note" form=context_form submit_name="add_context_note" submit_label="Add note" %}
-{% include "partials/_modal.html" with modal_id="log-modal" title="Record Learning" form=log_form submit_name="add_learning_log" submit_label="Record" %}
+{% include "partials/_modal.html" with modal_id="question-modal" title="Add Learning Question" form=question_form submit_name="add_learning_question" submit_label="Add question" wide_fields="question,why_it_matters,answer_note" columns=1 %}
+{% include "partials/_modal.html" with modal_id="context-modal" title="Add Context Note" form=context_form submit_name="add_context_note" submit_label="Add note" wide_fields="description" columns=1 %}
+{% include "partials/_modal.html" with modal_id="log-modal" title="Record Learning" form=log_form submit_name="add_learning_log" submit_label="Record" wide_fields="what_happened,what_changed,what_we_learned,action_we_will_take" %}
 {% endif %}
 {% endblock %}

@@ -11,6 +11,9 @@ from apps.organisations.services import get_organisation_or_404_for_user
 
 @login_required
 def beneficiary_list(request, slug):
+    """List + "Add Person" in a modal, matching the application-wide
+    create/edit standard -- adding a person is a small action and should
+    not navigate away from the list."""
     organisation = get_organisation_or_404_for_user(request.user, slug)
     if not has_org_capability(request.user, organisation, "beneficiaries.view"):
         raise PermissionDenied
@@ -18,24 +21,43 @@ def beneficiary_list(request, slug):
     programme_filter = request.GET.get("programme")
     if programme_filter:
         beneficiaries = beneficiaries.filter(programme_id=programme_filter)
+    can_manage = has_org_capability(request.user, organisation, "beneficiaries.manage")
+
+    form = None
+    if can_manage:
+        form = BeneficiaryForm(request.POST if request.method == "POST" else None, organisation=organisation)
+        if request.method == "POST" and form.is_valid():
+            _save_beneficiary(form, organisation, request)
+            messages.success(request, "Person added.")
+            return redirect("beneficiaries:list", slug=slug)
+
     return render(request, "beneficiaries/list.html", {
         "organisation": organisation, "beneficiaries": beneficiaries,
-        "can_manage": has_org_capability(request.user, organisation, "beneficiaries.manage"),
+        "can_manage": can_manage, "form": form,
         "programmes": organisation.programmes.all(),
     })
 
 
+def _save_beneficiary(form, organisation, request):
+    """Shared by the list modal and the standalone create page so the save
+    behaviour never drifts between the two entry points."""
+    beneficiary = form.save(commit=False)
+    beneficiary.organisation = organisation
+    beneficiary.save()
+    log_action("beneficiary.created", organisation=organisation, obj=beneficiary, actor=request.user)
+    return beneficiary
+
+
 @login_required
 def create_beneficiary(request, slug):
+    """Standalone create page. The list's modal is the primary route;
+    this stays reachable as a direct/bookmarkable URL."""
     organisation = get_organisation_or_404_for_user(request.user, slug)
     if not has_org_capability(request.user, organisation, "beneficiaries.manage"):
         raise PermissionDenied
     form = BeneficiaryForm(request.POST or None, organisation=organisation)
     if request.method == "POST" and form.is_valid():
-        beneficiary = form.save(commit=False)
-        beneficiary.organisation = organisation
-        beneficiary.save()
-        log_action("beneficiary.created", organisation=organisation, obj=beneficiary, actor=request.user)
-        messages.success(request, "Beneficiary added.")
+        _save_beneficiary(form, organisation, request)
+        messages.success(request, "Person added.")
         return redirect("beneficiaries:list", slug=slug)
     return render(request, "beneficiaries/beneficiary_form.html", {"organisation": organisation, "form": form})

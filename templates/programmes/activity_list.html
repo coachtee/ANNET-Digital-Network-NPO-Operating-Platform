@@ -32,6 +32,6 @@
 {% endif %}
 
 {% if can_manage %}
-{% include "partials/_modal.html" with modal_id="activity-modal" title="New Activity" form=form submit_label="Add Activity" %}
+{% include "partials/_modal.html" with modal_id="activity-modal" title="New Activity" form=form submit_label="Add Activity" wide_fields="outputs" %}
 {% endif %}
 {% endblock %}

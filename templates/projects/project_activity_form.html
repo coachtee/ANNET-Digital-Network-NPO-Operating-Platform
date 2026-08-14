@@ -7,10 +7,10 @@
 </div>
 <div class="page-header"><div><h1>New Activity</h1><p>{{ project.name }}</p></div></div>
 
-<div class="card" style="max-width:560px;">
+<div class="card form-card">
   <form method="post" novalidate>
     {% csrf_token %}
-    {% include "partials/_form_fields.html" %}
+    {% include "partials/_form_fields.html" with wide_fields="outputs" %}
     <button type="submit" class="btn btn-primary">Add Activity</button>
   </form>
 </div>

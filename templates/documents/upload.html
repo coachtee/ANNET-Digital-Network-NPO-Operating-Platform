@@ -2,10 +2,10 @@
 {% block title %}Upload Document{% endblock %}
 {% block content %}
 <div class="page-header"><div><h1>Upload Document</h1><p>{{ organisation.display_name }}</p></div></div>
-<div class="card" style="max-width:520px;">
+<div class="card form-card">
   <form method="post" enctype="multipart/form-data" novalidate>
     {% csrf_token %}
-    {% include "partials/_form_fields.html" %}
+    {% include "partials/_form_fields.html" with wide_fields="description" %}
     <button type="submit" class="btn btn-primary">Upload</button>
   </form>
 </div>

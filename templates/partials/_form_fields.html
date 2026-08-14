@@ -1,12 +1,38 @@
-{% for field in form %}
-  {% if field.is_hidden %}
-    {{ field }}
-  {% else %}
-    <div class="form-group">
-      <label for="{{ field.id_for_label }}">{{ field.label }}{% if field.field.required %} *{% endif %}</label>
+{% comment %}
+Shared form-field renderer and the application-wide two-column form
+standard. Every create/edit form in Bohlale Impact renders through this
+partial, so the layout rule lives here once rather than in each template.
+
+Usage:
+  {% include "partials/_form_fields.html" %}                       {# two columns (default) #}
+  {% include "partials/_form_fields.html" with columns=1 %}        {# force a single column #}
+  {% include "partials/_form_fields.html" with wide_fields="description,notes" %}
+
+`wide_fields` is a comma-separated list of field names that should span
+both columns -- long text areas, multi-selects, anything that reads badly
+at half width. Everything else flows two-up on desktop and collapses to
+one column under 720px (see .form-grid in base.css).
+
+Non-field errors (e.g. ProjectForm's programme-readiness gate) render
+above the grid so they are never hidden in one column.
+{% endcomment %}
+{% load text_filters %}
+{% with wide_field_list=wide_fields|split_names %}
+{% if form.non_field_errors %}
+  {% for error in form.non_field_errors %}<div class="field-error" style="margin-bottom:12px;">{{ error }}</div>{% endfor %}
+{% endif %}
+<div class="{% if columns == 1 %}form-single{% else %}form-grid{% endif %}">
+  {% for field in form %}
+    {% if field.is_hidden %}
       {{ field }}
-      {% if field.help_text %}<div class="field-hint">{{ field.help_text }}</div>{% endif %}
-      {% for error in field.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
-    </div>
-  {% endif %}
-{% endfor %}
+    {% else %}
+      <div class="form-group{% if field.name in wide_field_list %} form-group-wide{% endif %}">
+        <label for="{{ field.id_for_label }}">{{ field.label }}{% if field.field.required %} *{% endif %}</label>
+        {{ field }}
+        {% if field.help_text %}<div class="field-hint">{{ field.help_text }}</div>{% endif %}
+        {% for error in field.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
+      </div>
+    {% endif %}
+  {% endfor %}
+</div>
+{% endwith %}

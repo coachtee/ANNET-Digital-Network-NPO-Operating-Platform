@@ -32,6 +32,6 @@
 </div>
 
 {% if can_submit and form.fields.budget_line.queryset.exists %}
-{% include "partials/_modal.html" with modal_id="expense-modal" title="Submit Expense" form=form is_multipart=True submit_label="Submit expense" %}
+{% include "partials/_modal.html" with modal_id="expense-modal" title="Submit Expense" form=form is_multipart=True submit_label="Submit expense" wide_fields="description" %}
 {% endif %}
 {% endblock %}

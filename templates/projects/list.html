@@ -24,6 +24,6 @@
 {% endif %}
 
 {% if can_manage %}
-{% include "partials/_modal.html" with modal_id="project-modal" title="New Project" form=form submit_label="Create" %}
+{% include "partials/_modal.html" with modal_id="project-modal" title="New Project" form=form submit_label="Create" wide_fields="description" %}
 {% endif %}
 {% endblock %}

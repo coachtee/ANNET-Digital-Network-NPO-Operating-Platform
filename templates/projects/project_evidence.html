@@ -27,6 +27,6 @@
 </div>
 
 {% if form %}
-{% include "partials/_modal.html" with modal_id="evidence-modal" title="Upload Evidence" form=form is_multipart=True submit_label="Upload" %}
+{% include "partials/_modal.html" with modal_id="evidence-modal" title="Upload Evidence" form=form is_multipart=True submit_label="Upload" wide_fields="description" %}
 {% endif %}
 {% endblock %}

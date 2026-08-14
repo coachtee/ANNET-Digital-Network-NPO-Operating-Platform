@@ -35,6 +35,6 @@
 </div>
 
 {% if can_manage %}
-{% include "partials/_modal.html" with modal_id="team-modal" title="Add Project Team Member" form=form submit_label="Add Person" %}
+{% include "partials/_modal.html" with modal_id="team-modal" title="Add Project Team Member" form=form submit_label="Add Person" wide_fields="responsibilities" %}
 {% endif %}
 {% endblock %}

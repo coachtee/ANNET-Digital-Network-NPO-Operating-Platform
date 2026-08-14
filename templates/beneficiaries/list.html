@@ -3,7 +3,7 @@
 {% block content %}
 <div class="page-header">
   <div><h1>Beneficiaries</h1><p>{{ organisation.display_name }}: data minimisation applies; only capture what a programme needs.</p></div>
-  {% if can_manage %}<a href="{% url 'beneficiaries:create' slug=organisation.slug %}" class="btn btn-primary">Add beneficiary</a>{% endif %}
+  {% if can_manage %}<button type="button" class="btn btn-primary" data-modal-open="beneficiary-modal">+ Add Person</button>{% endif %}
 </div>
 {% if beneficiaries %}
 <table>
@@ -21,5 +21,9 @@
 </table>
 {% else %}
 <div class="empty-state"><h3>No beneficiaries recorded yet.</h3><p>For outreach where individual identification isn't needed, use anonymous headcounts on the Attendance screen instead.</p></div>
+{% endif %}
+
+{% if can_manage %}
+{% include "partials/_modal.html" with modal_id="beneficiary-modal" title="Add Person" form=form submit_label="Add Person" %}
 {% endif %}
 {% endblock %}

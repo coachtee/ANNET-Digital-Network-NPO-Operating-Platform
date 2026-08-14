@@ -68,8 +68,10 @@
       </div>
       <div class="flex items-center gap-16">
         <span class="text-muted">{{ request.user.get_full_name|default:request.user.email }}</span>
-        {# POST, not a link: Django 5's LogoutView only accepts POST, so a
-           plain <a href> returns 405 and silently leaves the user signed in. #}
+        {% comment %}
+          POST, not a link: Django 5's LogoutView only accepts POST, so an
+          anchor here returns 405 and silently leaves the user signed in.
+        {% endcomment %}
         <form method="post" action="{% url 'accounts:logout' %}" style="display:inline;">
           {% csrf_token %}
           <button type="submit" class="btn btn-ghost btn-sm">Sign out</button>

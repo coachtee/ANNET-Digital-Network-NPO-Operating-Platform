@@ -96,6 +96,29 @@ input:focus, select:focus, textarea:focus {
   outline: 2px solid var(--color-primary); outline-offset: 1px; border-color: var(--color-primary);
 }
 .form-group { margin-bottom: 18px; }
+
+/* Application-wide two-column form standard.
+   Applied once here and inherited by every form rendered through
+   partials/_form_fields.html, so create/edit forms stay short and
+   horizontal instead of becoming tall scrolling columns. Fields that
+   genuinely need the width (long descriptions, notes, multi-selects)
+   opt out per form via the partial's `wide_fields` argument and span
+   both columns. Collapses to a single column on narrow screens. */
+.form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 20px; }
+.form-grid > .form-group { min-width: 0; }
+.form-grid > .form-group-wide { grid-column: 1 / -1; }
+@media (max-width: 720px) {
+  .form-grid { grid-template-columns: minmax(0, 1fr); }
+}
+/* Long free-text fields shouldn't tower over the fields beside them. */
+.form-grid textarea { min-height: 76px; }
+
+/* Page-level (non-modal) create/edit forms. Wide enough for the two-column
+   grid -- the old inline max-width:600px forced every such form back into a
+   single narrow stack. Use .form-card-narrow for genuinely single-column
+   forms (confirmations, one-or-two-field pages). */
+.form-card { max-width: 860px; }
+.form-card-narrow { max-width: 520px; }
 .checkbox-row { display: flex; align-items: center; gap: 8px; }
 .checkbox-row input { width: auto; }
 fieldset { border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: 18px; margin-bottom: 20px; }
@@ -317,9 +340,12 @@ tr:last-child td { border-bottom: none; }
 }
 .modal-backdrop.is-open { display: flex; }
 .modal {
-  background: var(--color-surface); border-radius: var(--radius-md); width: 100%; max-width: 520px;
+  background: var(--color-surface); border-radius: var(--radius-md); width: 100%; max-width: 760px;
   max-height: calc(100vh - 40px); overflow-y: auto; box-shadow: 0 20px 50px rgba(13, 27, 56, 0.25);
 }
+/* Single-column modals (confirmations, one-or-two-field forms) stay narrow
+   -- a 760px shell around two fields looks empty, not spacious. */
+.modal.modal-narrow { max-width: 520px; }
 .modal-header {
   display: flex; align-items: center; justify-content: space-between; gap: 12px;
   padding: 16px 20px; border-bottom: 1px solid var(--color-border); position: sticky; top: 0;

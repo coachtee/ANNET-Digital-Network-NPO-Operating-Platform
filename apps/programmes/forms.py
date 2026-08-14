@@ -72,6 +72,16 @@ class ProgrammePlanForm(forms.ModelForm):
         label="Where, more specifically?", help_text="District/municipality/locality/venue, comma-separated",
     )
 
+    # Grouped for the two-column grid: the programme's reasoning first
+    # (both full width), then delivery detail two-up, then resources.
+    field_order = [
+        "need_and_background", "theory_of_change_summary",
+        "programme_area", "province",
+        "target_beneficiary_groups", "locations",
+        "start_date", "end_date",
+        "staffing_plan", "grants",
+    ]
+
     class Meta:
         model = Programme
         fields = [
