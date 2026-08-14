@@ -26,24 +26,30 @@ def programme_me(request, slug, programme_id):
     programme = get_object_or_404(Programme, id=programme_id, organisation=organisation)
     can_manage = has_org_capability(request.user, organisation, "me.manage")
 
-    outcome_form, output_form, indicator_form = OutcomeForm(), OutputForm(programme=programme), IndicatorForm(programme=programme)
+    # Distinct auto_id per form -- all three render "title"/"outcome"
+    # fields, and without this every one would emit the same id_title/
+    # id_outcome DOM ids, so a <label for="id_title"> in the Output or
+    # Indicator card would focus the Outcome card's field instead.
+    outcome_form = OutcomeForm(auto_id="id_outcome_%s")
+    output_form = OutputForm(programme=programme, auto_id="id_output_%s")
+    indicator_form = IndicatorForm(programme=programme, auto_id="id_indicator_%s")
     if request.method == "POST" and can_manage:
         if "add_outcome" in request.POST:
-            outcome_form = OutcomeForm(request.POST)
+            outcome_form = OutcomeForm(request.POST, auto_id="id_outcome_%s")
             if outcome_form.is_valid():
                 outcome = outcome_form.save(commit=False)
                 outcome.programme = programme
                 outcome.save()
                 return redirect("monitoring_evaluation:programme_me", slug=slug, programme_id=programme.id)
         elif "add_output" in request.POST:
-            output_form = OutputForm(request.POST, programme=programme)
+            output_form = OutputForm(request.POST, programme=programme, auto_id="id_output_%s")
             if output_form.is_valid():
                 output = output_form.save(commit=False)
                 output.programme = programme
                 output.save()
                 return redirect("monitoring_evaluation:programme_me", slug=slug, programme_id=programme.id)
         elif "add_indicator" in request.POST:
-            indicator_form = IndicatorForm(request.POST, programme=programme)
+            indicator_form = IndicatorForm(request.POST, programme=programme, auto_id="id_indicator_%s")
             if indicator_form.is_valid():
                 indicator = indicator_form.save(commit=False)
                 indicator.programme = programme

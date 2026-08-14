@@ -35,7 +35,11 @@
   </div>
   <div class="card-flat">
     <h3>Geography</h3>
-    <p class="mb-0">{{ programme.locations|join:", "|default:"—" }}</p>
+    <p class="mb-0">{% if programme.province %}{{ programme.get_province_display }}{% if programme.locations %}, {% endif %}{% endif %}{{ programme.locations|join:", " }}{% if not programme.province and not programme.locations %}—{% endif %}</p>
+  </div>
+  <div class="card-flat">
+    <h3>Sector</h3>
+    <p class="mb-0">{{ programme.get_programme_area_display|default:"—" }}</p>
   </div>
   <div class="card-flat">
     <h3>Implementation Period</h3>

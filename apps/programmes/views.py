@@ -137,32 +137,39 @@ def wizard_step(request, slug, programme_id, step):
         return render(request, "programmes/wizard_who_and_where.html", context)
 
     if step == Programme.WIZARD_SUCCESS:
-        outcome_form, output_form, indicator_form = OutcomeForm(), OutputForm(programme=programme), IndicatorForm(programme=programme)
+        # Distinct auto_id per form -- all three render "title"/"outcome"
+        # fields, and without this every one of them would emit the same
+        # id_title/id_outcome DOM ids, so a <label for="id_title"> in the
+        # Output or Indicator card would focus the Outcome card's field
+        # instead (a real bug, not just a test-selector nuisance).
+        outcome_form = OutcomeForm(auto_id="id_outcome_%s")
+        output_form = OutputForm(programme=programme, auto_id="id_output_%s")
+        indicator_form = IndicatorForm(programme=programme, auto_id="id_indicator_%s")
         if request.method == "POST":
             if "continue" in request.POST:
                 _advance_wizard(programme, step)
                 return redirect("programmes:wizard_step", slug=slug, programme_id=programme.id, step=Programme.WIZARD_PROJECTS_AND_ACTIVITIES)
             if "add_outcome" in request.POST:
-                outcome_form = OutcomeForm(request.POST)
+                outcome_form = OutcomeForm(request.POST, auto_id="id_outcome_%s")
                 if outcome_form.is_valid():
                     outcome = outcome_form.save(commit=False)
                     outcome.programme = programme
                     outcome.save()
-                    outcome_form = OutcomeForm()
+                    outcome_form = OutcomeForm(auto_id="id_outcome_%s")
             elif "add_output" in request.POST:
-                output_form = OutputForm(request.POST, programme=programme)
+                output_form = OutputForm(request.POST, programme=programme, auto_id="id_output_%s")
                 if output_form.is_valid():
                     output = output_form.save(commit=False)
                     output.programme = programme
                     output.save()
-                    output_form = OutputForm(programme=programme)
+                    output_form = OutputForm(programme=programme, auto_id="id_output_%s")
             elif "add_indicator" in request.POST:
-                indicator_form = IndicatorForm(request.POST, programme=programme)
+                indicator_form = IndicatorForm(request.POST, programme=programme, auto_id="id_indicator_%s")
                 if indicator_form.is_valid():
                     indicator = indicator_form.save(commit=False)
                     indicator.programme = programme
                     indicator.save()
-                    indicator_form = IndicatorForm(programme=programme)
+                    indicator_form = IndicatorForm(programme=programme, auto_id="id_indicator_%s")
         context.update({
             "outcome_form": outcome_form, "output_form": output_form, "indicator_form": indicator_form,
             "outcomes": programme.outcomes.all(), "outputs": programme.outputs.all(), "indicators": programme.indicators.all(),
