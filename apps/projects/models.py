@@ -26,8 +26,10 @@ class Project(TimeStampedModel):
     grant = models.ForeignKey("grants.Grant", on_delete=models.SET_NULL, null=True, blank=True, related_name="projects")
     programme = models.ForeignKey("programmes.Programme", on_delete=models.SET_NULL, null=True, blank=True, related_name="projects")
     name = models.CharField(max_length=255)
+    objective = models.TextField(blank=True, help_text="What this project is trying to achieve -- the part of the programme it delivers.")
     description = models.TextField(blank=True)
     manager = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="projects_managed")
+    location = models.CharField(max_length=255, blank=True)
     start_date = models.DateField(null=True, blank=True)
     end_date = models.DateField(null=True, blank=True)
     budget = models.DecimalField(max_digits=14, decimal_places=2, default=0)
@@ -41,8 +43,16 @@ class Project(TimeStampedModel):
 
 
 class ProjectTask(TimeStampedModel):
+    """Internal delivery work (book venue, prepare materials, upload
+    evidence) -- distinct from Programme/Activity, which is
+    service delivery to beneficiaries. Always belongs to a Project;
+    optionally tied to the one Activity it supports."""
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name="tasks")
+    activity = models.ForeignKey(
+        "programmes.Activity", on_delete=models.SET_NULL, null=True, blank=True, related_name="tasks"
+    )
     title = models.CharField(max_length=255)
     assignee = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="+")
     due_date = models.DateField(null=True, blank=True)

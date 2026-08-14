@@ -1,0 +1,16 @@
+{% extends "workspace_base.html" %}
+{% block title %}{{ project.name }}: Edit{% endblock %}
+{% block content %}
+{% include "projects/_project_workspace_header.html" %}
+
+<div class="card" style="max-width:640px;">
+  <form method="post" novalidate>
+    {% csrf_token %}
+    {% include "partials/_form_fields.html" %}
+    <div class="flex gap-8" style="margin-top:12px;">
+      <button type="submit" class="btn btn-primary">Save changes</button>
+      <a href="{% url 'projects:detail' slug=organisation.slug project_id=project.id %}" class="btn btn-outline">Cancel</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

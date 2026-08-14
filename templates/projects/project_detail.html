@@ -1,32 +1,85 @@
 {% extends "workspace_base.html" %}
 {% block title %}{{ project.name }}{% endblock %}
 {% block content %}
-<div class="breadcrumbs"><a href="{% url 'projects:list' slug=organisation.slug %}">Projects</a> / {{ project.name }}</div>
-<div class="page-header"><div><h1>{{ project.name }}</h1><p><span class="badge badge-neutral">{{ project.get_status_display }}</span> · Budget: R{{ project.budget }}</p></div></div>
+{% include "projects/_project_workspace_header.html" %}
+
+<div class="section-block">
+  <h3>Project progress</h3>
+  {% if progress is not None %}
+    <div class="flex items-center gap-16">
+      <div class="progress-track" style="flex:1;"><div class="progress-track-fill" style="width:{{ progress }}%;"></div></div>
+      <strong>{{ progress }}%</strong>
+    </div>
+    <p class="field-hint">Share of this project's activities that have been delivered.</p>
+  {% else %}
+    <p class="text-muted">No activities yet.</p>
+  {% endif %}
+</div>
 
 <div class="grid grid-2">
-  <div class="card-flat">
-    <h3>Workplan</h3>
-    {% if tasks %}
+  <div class="section-block">
+    <h3>Upcoming Activities</h3>
+    <div class="card-flat" style="padding:0;">
+      {% if upcoming_activities %}
       <table>
-        <thead><tr><th>Task</th><th>Due</th><th>Status</th></tr></thead>
-        <tbody>{% for t in tasks %}<tr><td>{{ t.title }}{% if t.is_milestone %} <span class="badge badge-primary">Milestone</span>{% endif %}</td><td>{{ t.due_date|default:"—" }}</td><td>{{ t.get_status_display }}</td></tr>{% endfor %}</tbody>
+        <thead><tr><th>Activity</th><th>Date</th><th>Location</th></tr></thead>
+        <tbody>
+          {% for a in upcoming_activities %}
+          <tr><td>{{ a.name }}</td><td>{{ a.scheduled_date }}</td><td>{{ a.location|default:"—" }}</td></tr>
+          {% endfor %}
+        </tbody>
       </table>
-    {% else %}<p class="text-muted">No tasks yet.</p>{% endif %}
-    {% if can_manage %}
-    <form method="post" style="margin-top:12px;">
-      {% csrf_token %}
-      {% include "partials/_form_fields.html" with form=task_form %}
-      <button type="submit" class="btn btn-outline btn-sm">Add task</button>
-    </form>
-    {% endif %}
+      {% else %}<p class="text-muted" style="padding:16px;">Nothing scheduled.</p>{% endif %}
+    </div>
   </div>
-  <div class="card-flat">
-    <h3>Budget vs. recorded expenditure</h3>
-    {% if budget %}
-      <p>Budget: R{{ budget.total_amount }}<br>Recorded: R{{ budget.total_recorded_expenditure }}</p>
-    {% else %}<p class="text-muted">No budget set up yet.</p>{% endif %}
-    <a href="{% url 'expenses:project_expenses' slug=organisation.slug project_id=project.id %}" class="btn btn-outline btn-sm">Open Finance Lite</a>
+
+  <div class="section-block">
+    <h3>Budget vs Actual</h3>
+    <div class="card-flat">
+      {% if finance.has_budget %}
+      <p>Budget <strong>R{{ finance.planned|floatformat:2 }}</strong></p>
+      <p>Committed <strong>R{{ finance.committed|floatformat:2 }}</strong></p>
+      <p>Actual <strong>R{{ finance.actual|floatformat:2 }}</strong></p>
+      <p>Remaining <strong>R{{ finance.remaining|floatformat:2 }}</strong></p>
+      <p class="mb-0">Variance <strong>R{{ finance.variance|floatformat:2 }}</strong></p>
+      {% else %}<p class="text-muted mb-0">No budget set up yet.</p>{% endif %}
+    </div>
+  </div>
+
+  <div class="section-block">
+    <h3>People Reached</h3>
+    <div class="card-flat">
+      <p class="mb-0"><strong>{{ people_reached }}</strong> people reached through this project's activities.</p>
+    </div>
+  </div>
+
+  <div class="section-block">
+    <h3>Recent Evidence</h3>
+    <div class="card-flat" style="padding:0;">
+      {% if recent_evidence %}
+      <table>
+        <thead><tr><th>Title</th><th>Uploaded</th></tr></thead>
+        <tbody>
+          {% for d in recent_evidence %}
+          <tr><td><a href="{% url 'documents:detail' slug=organisation.slug document_id=d.id %}">{{ d.title }}</a></td><td>{{ d.created_at|date:"d M Y" }}</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}<p class="text-muted" style="padding:16px;">No evidence uploaded yet.</p>{% endif %}
+    </div>
+  </div>
+</div>
+
+<div class="section-block">
+  <h3>Needs Your Attention</h3>
+  <div class="card-flat" style="padding:0;">
+    {% if attention %}
+    <ul class="attention-list" style="padding:16px;">
+      {% for item in attention %}
+      <li><span>{{ item.text }}</span><a href="{{ item.url }}" class="attention-fix">Review →</a></li>
+      {% endfor %}
+    </ul>
+    {% else %}<p class="text-muted" style="padding:16px;">Nothing outstanding right now.</p>{% endif %}
   </div>
 </div>
 {% endblock %}

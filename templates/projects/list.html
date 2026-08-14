@@ -7,12 +7,12 @@
 </div>
 {% if projects %}
 <table>
-  <thead><tr><th>Name</th><th>Grant</th><th>Manager</th><th>Status</th></tr></thead>
+  <thead><tr><th>Name</th><th>Programme</th><th>Manager</th><th>Status</th></tr></thead>
   <tbody>
     {% for p in projects %}
     <tr>
       <td><a href="{% url 'projects:detail' slug=organisation.slug project_id=p.id %}">{{ p.name }}</a></td>
-      <td>{{ p.grant|default:"—" }}</td>
+      <td>{% if p.programme %}<a href="{% url 'programmes:detail' slug=organisation.slug programme_id=p.programme.id %}">{{ p.programme.name }}</a>{% else %}—{% endif %}</td>
       <td>{{ p.manager|default:"Unassigned" }}</td>
       <td><span class="badge badge-neutral">{{ p.get_status_display }}</span></td>
     </tr>

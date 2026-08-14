@@ -1,0 +1,36 @@
+{% extends "workspace_base.html" %}
+{% block title %}{{ project.name }}: Activities{% endblock %}
+{% block content %}
+{% include "projects/_project_workspace_header.html" %}
+
+<div class="page-header" style="margin-bottom:12px;">
+  <div><p class="mb-0 text-muted">Activities represent actual service delivery under this project.</p></div>
+  {% if can_manage %}<a href="{% url 'projects:create_activity' slug=organisation.slug project_id=project.id %}" class="btn btn-primary">New Activity</a>{% endif %}
+</div>
+
+{% if not project.programme %}
+<div class="card-flat"><p class="mb-0 text-muted">Link this project to a programme before adding activities. <a href="{% url 'projects:edit' slug=organisation.slug project_id=project.id %}">Edit project</a></p></div>
+{% elif activities %}
+<div class="card-flat" style="padding:0;">
+<table>
+  <thead><tr><th>Activity</th><th>Date</th><th>Location</th><th>Expected</th><th>Attended</th><th>Responsible</th><th>Related Output</th><th>Status</th></tr></thead>
+  <tbody>
+    {% for a in activities %}
+    <tr>
+      <td>{{ a.name }}</td>
+      <td>{{ a.scheduled_date|default:"—" }}</td>
+      <td>{{ a.location|default:"—" }}</td>
+      <td>{{ a.expected_participants|default:"—" }}</td>
+      <td>{{ a.attendance_records.count }}</td>
+      <td>{{ a.responsible_person|default:"—" }}</td>
+      <td>{% for o in a.outputs.all %}{{ o.title }}{% if not forloop.last %}, {% endif %}{% empty %}—{% endfor %}</td>
+      <td><span class="badge badge-neutral">{{ a.get_status_display }}</span></td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+</div>
+{% else %}
+<div class="empty-state"><h3>No activities yet.</h3><p>Activities are what this project actually delivers: a workshop, a home visit, a training session.</p></div>
+{% endif %}
+{% endblock %}

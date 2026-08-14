@@ -1,0 +1,38 @@
+<div class="breadcrumbs">
+  {% if project.programme %}<a href="{% url 'programmes:list' slug=organisation.slug %}">Programmes</a> / <a href="{% url 'programmes:detail' slug=organisation.slug programme_id=project.programme.id %}">{{ project.programme.name }}</a> / {{ project.name }}
+  {% else %}<a href="{% url 'projects:list' slug=organisation.slug %}">Projects</a> / {{ project.name }}
+  {% endif %}
+</div>
+<div class="page-header">
+  <div>
+    <h1>{{ project.name }}</h1>
+    <p>
+      {% if project.programme %}Programme: <a href="{% url 'programmes:detail' slug=organisation.slug programme_id=project.programme.id %}">{{ project.programme.name }}</a> ·{% endif %}
+      <span class="badge badge-neutral">{{ project.get_status_display }}</span> ·
+      {{ project.manager|default:"Unassigned" }} ·
+      {% if project.start_date %}{{ project.start_date|date:"d M Y" }}{% else %}No start date{% endif %}{% if project.end_date %} – {{ project.end_date|date:"d M Y" }}{% endif %} ·
+      {{ project.location|default:"No location set" }}
+    </p>
+  </div>
+  {% if can_manage %}<a href="{% url 'projects:edit' slug=organisation.slug project_id=project.id %}" class="btn btn-outline btn-sm">Edit project</a>{% endif %}
+</div>
+
+<div class="summary-bar">
+  <div class="summary-bar-item"><div class="summary-bar-label">Activities</div><div class="summary-bar-value">{{ activity_count }}</div></div>
+  <div class="summary-bar-item"><div class="summary-bar-label">People</div><div class="summary-bar-value">{{ people_reached }}</div></div>
+  <div class="summary-bar-item"><div class="summary-bar-label">Tasks</div><div class="summary-bar-value">{{ task_count }}</div></div>
+  <div class="summary-bar-item"><div class="summary-bar-label">Budget</div><div class="summary-bar-value">R{{ budget_planned }}</div></div>
+  <div class="summary-bar-item"><div class="summary-bar-label">Spent</div><div class="summary-bar-value">R{{ budget_spent }}</div></div>
+  <div class="summary-bar-item"><div class="summary-bar-label">Evidence</div><div class="summary-bar-value">{{ evidence_count }}</div></div>
+</div>
+
+<div class="tabs">
+  <a href="{% url 'projects:detail' slug=organisation.slug project_id=project.id %}" class="{% if active_tab == 'overview' %}active{% endif %}">Overview</a>
+  <a href="{% url 'projects:activities' slug=organisation.slug project_id=project.id %}" class="{% if active_tab == 'activities' %}active{% endif %}">Activities</a>
+  <a href="{% url 'projects:tasks' slug=organisation.slug project_id=project.id %}" class="{% if active_tab == 'tasks' %}active{% endif %}">Tasks</a>
+  <a href="{% url 'projects:people' slug=organisation.slug project_id=project.id %}" class="{% if active_tab == 'people' %}active{% endif %}">People</a>
+  <a href="{% url 'projects:budget' slug=organisation.slug project_id=project.id %}" class="{% if active_tab == 'budget' %}active{% endif %}">Budget</a>
+  <a href="{% url 'projects:expenses' slug=organisation.slug project_id=project.id %}" class="{% if active_tab == 'expenses' %}active{% endif %}">Expenses</a>
+  <a href="{% url 'projects:evidence' slug=organisation.slug project_id=project.id %}" class="{% if active_tab == 'evidence' %}active{% endif %}">Evidence</a>
+  <a href="{% url 'projects:reports' slug=organisation.slug project_id=project.id %}" class="{% if active_tab == 'reports' %}active{% endif %}">Reports</a>
+</div>

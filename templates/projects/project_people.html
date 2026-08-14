@@ -1,0 +1,29 @@
+{% extends "workspace_base.html" %}
+{% block title %}{{ project.name }}: People{% endblock %}
+{% block content %}
+{% include "projects/_project_workspace_header.html" %}
+
+<div class="section-block">
+  <h3>People Reached</h3>
+  <p class="field-hint"><strong>{{ people_reached }}</strong> people reached through this project's activities (named beneficiaries + anonymous headcount).</p>
+</div>
+
+<div class="section-block">
+  <h3>Named Participants</h3>
+  <div class="card-flat" style="padding:0;">
+    {% if beneficiaries %}
+    <table>
+      <thead><tr><th>Name</th><th>Mode</th></tr></thead>
+      <tbody>
+        {% for b in beneficiaries %}
+        <tr>
+          <td>{{ b }}</td>
+          <td>{{ b.get_mode_display }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}<p class="text-muted" style="padding:16px;">No named participants recorded for this project's activities yet.</p>{% endif %}
+  </div>
+</div>
+{% endblock %}

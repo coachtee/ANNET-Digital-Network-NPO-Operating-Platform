@@ -98,6 +98,9 @@ class Activity(TimeStampedModel):
     name = models.CharField(max_length=255)
     scheduled_date = models.DateField(null=True, blank=True)
     location = models.CharField(max_length=255, blank=True)
+    expected_participants = models.PositiveIntegerField(
+        null=True, blank=True, help_text="Planned headcount, for comparison against actual attendance."
+    )
     status = models.CharField(
         max_length=15,
         choices=[("planned", "Planned"), ("delivered", "Delivered"), ("cancelled", "Cancelled")],

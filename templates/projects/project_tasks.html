@@ -1,0 +1,43 @@
+{% extends "workspace_base.html" %}
+{% block title %}{{ project.name }}: Tasks{% endblock %}
+{% block content %}
+{% include "projects/_project_workspace_header.html" %}
+
+<div class="grid grid-2" style="align-items:start;">
+  <div class="section-block">
+    <h3>Tasks</h3>
+    <p class="field-hint">Internal delivery work: book a venue, prepare materials, upload evidence -- not service delivery itself.</p>
+    <div class="card-flat" style="padding:0;">
+      {% if tasks %}
+      <table>
+        <thead><tr><th>Task</th><th>Activity</th><th>Assignee</th><th>Due</th><th>Status</th></tr></thead>
+        <tbody>
+          {% for t in tasks %}
+          <tr>
+            <td>{{ t.title }}{% if t.is_milestone %} <span class="badge badge-primary">Milestone</span>{% endif %}</td>
+            <td>{{ t.activity.name|default:"—" }}</td>
+            <td>{{ t.assignee|default:"Unassigned" }}</td>
+            <td>{{ t.due_date|default:"—" }}</td>
+            <td><span class="badge badge-neutral">{{ t.get_status_display }}</span></td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}<p class="text-muted" style="padding:16px;">No tasks yet.</p>{% endif %}
+    </div>
+  </div>
+
+  {% if can_manage %}
+  <div class="section-block">
+    <h3>Add Task</h3>
+    <div class="card">
+      <form method="post" novalidate>
+        {% csrf_token %}
+        {% include "partials/_form_fields.html" %}
+        <button type="submit" class="btn btn-primary" style="margin-top:8px;">Add task</button>
+      </form>
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

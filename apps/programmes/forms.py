@@ -157,7 +157,10 @@ class ActivityForm(forms.ModelForm):
 
     class Meta:
         model = Activity
-        fields = ["name", "scheduled_date", "location", "status", "project", "outputs", "responsible_person", "budget_line"]
+        fields = [
+            "name", "scheduled_date", "location", "expected_participants", "status",
+            "project", "outputs", "responsible_person", "budget_line",
+        ]
         widgets = {"scheduled_date": forms.DateInput(attrs={"type": "date"})}
 
     def __init__(self, *args, programme=None, project=None, organisation=None, **kwargs):
