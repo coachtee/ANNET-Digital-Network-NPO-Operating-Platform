@@ -1,259 +1,329 @@
-# Programme Workspace — Architecture Proposal (v2, reviewed direction)
+# Programme Workspace — Architecture Proposal (v3, DSD-reconciled)
 
-Status: **proposal only — nothing in this document has been implemented.** No models, views, templates, migrations or tests have been changed. This revises the v1 proposal with the four decisions as approved (with adjustments) and the DSD "chain of connection" principle.
+Status: **proposal only — nothing in this document has been implemented.** No models, views, templates, migrations or tests have been changed.
 
-**On the DSD source material**: I still do not have the actual DSD application form/guideline file accessible in this session's filesystem — I searched the repository and the container and found nothing DSD-related. Everything DSD-specific in this document is taken directly from what you have quoted or paraphrased in your messages (Part C's coverage list; "activities, targets, expected results/beneficiary changes, personnel/resources, area of operation and corresponding budget costs need to be connected"; the budget-must-be-service-specific rule; the multiple-service-specification/Part C rule). Anywhere I go beyond what you've directly told me, I've labelled it as my inference, not a sourced DSD requirement, per your instruction to flag rather than invent. If the PDF can be committed into the repo (e.g. `docs/reference/dsd-guideline.pdf`) or pasted as text, I'll reconcile this document against it before implementation.
+## DSD source material — now reconciled
 
-## Decisions as approved
+The three uploaded files have been read in full and used as the actual source for this revision (not paraphrase):
 
-1. **Programme Plan**: extend `Programme` directly for V1. No separate versioned plan model.
-2. **Programme Budget**: generalise `expenses.Budget` to belong to either a Programme or a Project, with a mutual-exclusivity rule.
-3. **Staffing/resources**: simple structured fields only where the chain-of-connection rule below actually requires them — no staffing subsystem.
-4. **DSD alignment**: your quoted material is the source of truth; unstated points are flagged, not invented.
+- `NDSD_GUIDELINE_ON_COMPLETING_2027/28_2029/30_APPLICATION_FORM2.docx` — the applicant guideline, walking through every section of the application form
+- `2027_2029/30_NDSD_STANDARD_APPLICATION_FORM.docx` — the actual fillable form, including the real Part C table structures (column-by-column)
+- `Website_constitution_checklist.docx` — NPO constitution clause checklist (section 12(2) of the NPO Act). This is unrelated to Programme architecture — it's about the organisation's founding document, not programme planning — so it isn't used below and stays fully out of scope, consistent with "do not touch Constitution... yet."
 
-## The governing principle (new, from this round)
-
-You've identified the one piece the v1 proposal didn't yet model: activities, outputs, personnel, area of operation and budget cost need to be **connected to each other**, not just independently listed under a Programme. The result chain this needs to answer is:
-
-```
-Why are we doing this?  →  Programme.need_and_background / theory_of_change_summary
-What activity delivers it?  →  Activity
-What will it produce?  →  Activity.outputs  (NEW — link to monitoring_evaluation.Output)
-Who benefits?  →  AttendanceRecord / Beneficiary (already linked via programme/activity)
-Who delivers it / what resources?  →  Activity.responsible_person  (NEW — simple FK, no subsystem)
-Where?  →  Activity.location  (already exists)
-What does it cost?  →  Activity.budget_line  (NEW — optional FK into the generalised Budget)
-How do we measure it?  →  Output → Indicator → IndicatorPeriodValue  (already exists,
-                            now reachable from Activity via the new outputs link)
-```
-
-Three new, all-optional relationships on the existing `Activity` model close this loop. No new "linking" model is needed — every one of these already exists (`Output`, `User`, `BudgetLine`) except the join itself.
-
-On **Part C / multiple service specifications**: you've told me DSD requires a separate Part C per distinct service/project/intervention, and that budgets must be service-specific, not mixed across programmes/projects. My reading (flagged as inference, since I haven't seen the form): this means the DSD-alignment granularity is not always "one Programme = one Part C." An organisation running one umbrella Programme with three distinct funded services should be able to produce three separate, clean Part-C-shaped exports — one per **Project** — each with its own description/objective/beneficiaries/budget, without those budgets bleeding into each other. This is already how the generalised Budget model works (§9) and why `Project` needs its own `objective`/`location` fields (§5), not just Programme-level narrative fields. Programme-level Plan fields (§3/§4) cover the umbrella "why does this Programme exist" narrative; Project-level fields cover the per-service Part C detail when a Programme has more than one fundable service. If this reading is wrong once you can share the actual document, it's a small correction (add/relabel fields), not a structural change.
+Everything DSD-specific in this document is now grounded in the real form text, not inference. Two places below are still explicitly flagged as gaps the real document exposes, not filled in with invented detail (§8).
 
 ---
 
-## 1. Current Model Relationships
+## 0. Decisions confirmed this round
+
+1. Programme Plan extends `Programme` directly for V1. No separate versioned plan model.
+2. `expenses.Budget` is generalised to belong to either a Programme or a Project, mutually exclusive.
+3. Staffing/resources: simple structured fields only where the chain-of-connection actually needs them (`Activity.responsible_person`) — no staff-roster subsystem in V1.
+4. DSD is a reporting/application **profile** over the generic model, not a driver of the core schema. Confirmed below with the real Part C structure.
+
+**New governing rules from this round**, both incorporated below:
+
+- **Programme is the only container the user needs to understand.** The underlying relationships (`Activity → Output`, `Activity → BudgetLine`, `Activity → User`) are implementation detail. The user-facing IA is exactly `Organisation → Programme → Project → Activity`, navigated inside one Programme Workspace via `Plan | Projects | Activities | People | M&E | Finance | Evidence | Reports`.
+- **Progressive context inheritance.** Creating an Activity inside a Project inside a Programme must pre-fill everything the system already knows (organisation, programme, project, period, location, manager, relevant outputs, budget context) so the user only supplies what's genuinely new. Detailed in §1.2.
+
+---
+
+## 1. Governing Principles
+
+### 1.1 Programme as the sole user-facing container
+
+The six new relationships proposed in v2 (`Activity.project`, `Activity.outputs`, `Activity.responsible_person`, `Activity.budget_line`, `ProjectTask.activity`, `Project.objective`/`location`) are all still correct and still needed — the real DSD form's Part C, Section C3.1 table (quoted verbatim in §8) independently confirms exactly this shape: one row per Activity, columns for Output Indicators, Expected Results, Personnel and Resources, Area of Operation, and Budget Costs. **What changes this round is not the schema, it's that none of these relationships are ever surfaced to the user as things to "connect."** They're populated automatically (§1.2) or chosen from an already-filtered dropdown (e.g. "which Output does this contribute to" only lists Outputs that already belong to this Programme) — never presented as a generic relational picker.
+
+### 1.2 Progressive context inheritance — what gets pre-filled, and from where
 
 ```
 Organisation
- ├─ programmes.Programme (name, description, programme_area, status,
- │                         locations JSON, services JSON,
- │                         target_beneficiary_groups JSON,
- │                         theory_of_change_summary, grants M2M)
- │   └─ programmes.Activity (programme FK required; name, scheduled_date,
- │                            location, status) — no link to Project,
- │                            Output, personnel, or budget today
- │
- ├─ projects.Project (organisation FK required; programme FK optional;
- │                     grant FK optional; name, description, manager,
- │                     start_date, end_date, budget, status)
- │   └─ projects.ProjectTask (project FK required; title, assignee,
- │                             due_date, is_milestone, status)
- │
- ├─ monitoring_evaluation.Outcome (programme FK required)
- ├─ monitoring_evaluation.Output (programme FK required; outcome FK optional)
- ├─ monitoring_evaluation.Indicator (programme FK required; outcome/output
- │                                    FK optional; target_value,
- │                                    auto_from_attendance)
- │   └─ monitoring_evaluation.IndicatorPeriodValue (indicator FK; actual_value)
- │
- ├─ beneficiaries.Beneficiary (organisation FK; programme FK required)
- ├─ attendance.AttendanceRecord (organisation FK; programme FK required;
- │                                 activity FK optional; beneficiary FK optional)
- │
- ├─ expenses.Budget (project FK, OneToOne — no programme-level budget)
- │   └─ expenses.BudgetLine (budget FK; category, allocated_amount)
- │       └─ expenses.Expense (project FK required — not linked to BudgetLine
- │                             consistently at the Activity level today)
- │
- ├─ grants.Grant (organisation FK; funder_name, amount, dates,
- │                 reporting_requirements) — the Funding model
- │
- ├─ documents.Document (category=CATEGORY_PROGRAMMES already exists as a
- │                       choice; content_type/object_id/related_object GFK
- │                       exists and works — unused for programmes today)
- │
- ├─ impact.* — no models; pure aggregation views
- └─ reporting.* — no models; four org-wide CSV/PDF view functions
+  └─ Programme "Youth Digital Literacy"        (status, period: start_date/end_date)
+       └─ Project "Digital Skills Bootcamp"    (location, manager, own Budget)
+            └─ Activity "HTML & CSS Workshop"  (creating this now)
 ```
 
-Full detail on views/URLs/test-coverage gaps is unchanged from v1 §1 — not repeated here to keep this document focused on what changed.
+When the user clicks "New Activity" from inside a Project (the normal path), the create form is seeded with:
 
----
-
-## 2. Target Model Relationships
-
-```
-Organisation
- └─ Programme                                    [EXTENDED — Plan fields, period]
-     ├─ Outcomes
-     │    └─ Outputs
-     │         └─ Indicators → IndicatorPeriodValue (targets/actuals)
-     │
-     ├─ Projects (0..n)                          [EXTENDED — objective, location]
-     │    ├─ own Budget (generalised, project-scoped)
-     │    │    └─ BudgetLine → Expense
-     │    ├─ Activities (Activity.project FK, NEW — optional)
-     │    └─ Tasks (ProjectTask.activity FK, NEW — optional)
-     │
-     ├─ Activities not tied to a specific project (Activity.project = null)
-     │    ├─ outputs            [NEW — M2M → monitoring_evaluation.Output]
-     │    ├─ responsible_person [NEW — FK → User, nullable]
-     │    ├─ budget_line        [NEW — FK → expenses.BudgetLine, nullable]
-     │    ├─ location           [existing]
-     │    ├─ AttendanceRecord (people reached)     [existing]
-     │    └─ Document evidence (GFK)               [existing, wired up]
-     │
-     ├─ Beneficiaries / AttendanceRecord (programme-level people)
-     ├─ own Budget (generalised, programme-scoped — overhead / shared costs
-     │    not attributable to one project)
-     ├─ Grant (funding, M2M — already exists)
-     └─ Documents (evidence, GFK, category=programmes)
-```
-
-Every arrow in this diagram is either an existing FK (unchanged) or one of six new, nullable/optional fields:
-
-| New field | On | Type | Purpose |
-|---|---|---|---|
-| `Activity.project` | `programmes.Activity` | FK, nullable | Activity can sit inside a specific project |
-| `Activity.outputs` | `programmes.Activity` | M2M → `monitoring_evaluation.Output` | "What will this activity produce" |
-| `Activity.responsible_person` | `programmes.Activity` | FK → User, nullable | "Who delivers it" — simple, no staffing subsystem |
-| `Activity.budget_line` | `programmes.Activity` | FK → `expenses.BudgetLine`, nullable | "What does it cost" at the activity level |
-| `ProjectTask.activity` | `projects.ProjectTask` | FK, nullable | Task can be scoped to one activity within its project |
-| `Project.objective`, `Project.location` | `projects.Project` | text/char, blank | Service-specification-level detail for Part C granularity |
-
-Plus the Programme extension (§4 in v1, unchanged: `start_date`, `end_date`, `need_and_background`, `implementation_plan`, `staffing_plan`, `previous_experience`, `monitoring_plan`, `funding_request_notes`, `wizard_step`) and the Budget generalisation (§9 below).
-
-**No new models.** Six new fields/relations on existing models, all additive.
-
----
-
-## 3. Programme Wizard
-
-Unchanged mechanism from v1 (reuse the Organisation onboarding `onboarding_step`-style dispatcher — proven, tested pattern already in `apps/organisations`). Step content, updated for the new links:
-
-| # | Step | Backs onto |
+| Field | Pre-filled from | User must still provide |
 |---|---|---|
-| 1 | Programme details | `Programme.name`, `programme_area`, `status` |
-| 2 | Need / background / purpose | `Programme.description`, `need_and_background`, `theory_of_change_summary` |
-| 3 | Beneficiaries | `Programme.target_beneficiary_groups` (existing JSON, now exposed) |
-| 4 | Geographic coverage | `Programme.locations` (existing JSON, now exposed) |
-| 5 | Programme period | `Programme.start_date`, `end_date` (new) |
-| 6 | Outcomes | `monitoring_evaluation.Outcome` rows (reuses `OutcomeForm`) |
-| 7 | Outputs | `monitoring_evaluation.Output` rows (reuses `OutputForm`) — **added as its own explicit step**, since Activities now link to Outputs directly and the wizard should ask "what will this programme produce" before asking about activities |
-| 8 | Indicators and targets | `monitoring_evaluation.Indicator` rows (reuses `IndicatorForm`) |
-| 9 | Projects | `projects.Project` row(s), `programme` pre-set (reuses `ProjectForm` + new `objective`/`location` fields) — optional |
-| 10 | Activities | `programmes.Activity` row(s) (reuses `ActivityForm`), each optionally linked to a Project, one or more Outputs, a responsible person, and a budget line if one already exists — optional |
-| 11 | Staffing/resources | `Programme.staffing_plan` (narrative) + optionally assigning `responsible_person` on the activities just created — no new step-specific model |
-| 12 | Budget | Programme-level `Budget`/`BudgetLine` (generalised model, §9); if Projects were created in step 9, their own budgets are set from each Project's own workspace, not force-fed through this step (keeps this step from becoming an unbounded multi-project budget form) |
-| 13 | Funding | Attach `Grant` records via `Programme.grants` M2M (reuses existing queryset restriction) |
-| 14 | Review and create | Read-only summary; submit sets `status` and a `wizard_step` completion sentinel |
+| `programme` | the Project's own `programme` FK — set silently, never shown as a choice | — |
+| `project` | the Project the user is inside — set silently | — |
+| `location` | defaults to `Project.location`; shown as an editable field, not hidden, since a specific activity can happen elsewhere | only override if different |
+| Activity date bounds | the date picker is constrained to fall within `Programme.start_date`/`end_date` when those are set — a soft guide via min/max attributes, not a hard block | the actual date |
+| `responsible_person` | defaults to `Project.manager` in the dropdown's initial selection; the dropdown itself is scoped to the organisation's active members (existing pattern, same as `ProjectTask.assignee`) | only override if someone else runs this specific activity |
+| `outputs` (choices offered) | the multi-select only lists `Output`s that already belong to this Programme (via `programme.outputs`) — never a global list | tick which ones apply, or none |
+| `budget_line` (choices offered) | the dropdown only lists `BudgetLine`s from this Project's own `Budget` (falling back to the Programme's own Budget if the Project has none) — never a global list | pick one, or leave blank |
 
-(Numbering shifted to 14 steps because Outputs is now split out as its own step — still the same 13 concerns from your original list, Outcomes/Outputs just separated to match the Output→Indicator/Activity linking this round introduced.)
+This is the concrete mechanism behind "the user should only have to provide what is genuinely new." Nothing here is a new model or a background job — it's how the Activity creation view builds its form: `instance` pre-population plus scoped `queryset` filtering, the same pattern `ProjectForm.__init__(organisation=...)` already uses today to scope its `grant`/`programme`/`manager` fields (§4 of v1, unchanged reuse).
 
-Every step after #1 remains skippable/resumable, same as the Organisation wizard.
+### 1.3 DSD as a profile, not the product model
+
+Confirmed by the real source (§8): DSD requires **Part C to be completed separately for each service specification**, and its budget section (C6.2) explicitly says "Must be aligned to the budget as per section C3.1 above" and must not mix unrelated programmes/projects. Bohlale's generic model — Programme → Project → Activity, with the generalised Budget attaching to exactly one Programme or Project — already satisfies this without knowing what DSD is. The DSD-shaped export (§8) is a **read-only view over existing data**, parameterised by "which Project is this Part C for," never a stored DSD concept in the core schema. The same underlying data also has to serve foundations, corporate funders, international donors and purely internal reporting — none of those get a special code path either; they're all just different templates over the same Programme/Project/Activity/Output/Indicator/Budget data.
 
 ---
 
-## 4. Programme Workspace
+## A. Programme Information Architecture
 
-Unchanged shape from v1 §9 (breadcrumb → summary bar → tabs `Overview | Plan | Projects | Activities | People | M&E | Finance | Evidence | Reports`, replacing `programme_detail.html`'s inline Activity form), with the Overview tab's Activities table now able to show each activity's linked Output(s) and responsible person inline, and the Finance tab showing the programme's own Budget plus a rollup across child Projects' Budgets (§9). No structural change beyond what's needed to surface the three new Activity relationships.
+```
+Organisation
+ └─ Programme Workspace                                  (one screen, tabbed)
+      ├─ Overview   (default landing — dashboard, per your original brief)
+      ├─ Plan       (DSD-aligned narrative + structured fields, §8)
+      ├─ Projects   (table + create; each row opens a Project Workspace)
+      ├─ Activities (table across the whole programme, with/without a project)
+      ├─ People     (beneficiaries + attendance, programme-scoped)
+      ├─ M&E        (Outcomes → Outputs → Indicators → Targets/Actuals)
+      ├─ Finance    (Programme's own Budget + rollup across child Projects)
+      ├─ Evidence   (Documents linked to this Programme/Project/Activity)
+      └─ Reports    (Programme/Project/Funder/M&E/Financial/DSD-shaped exports)
+```
 
----
+Note: your message lists the tab bar as `Plan | Projects | Activities | People | M&E | Finance | Evidence | Reports` (no separate "Overview" named). I've kept **Overview as the default landing tab** because it directly answers the still-standing instruction from two messages ago — "the default page should be an operational dashboard" — Plan then becomes the tab for the narrative/DSD-aligned fields specifically, rather than also being the landing page. If you'd rather Plan *be* the landing page and drop Overview entirely, say so; it's a one-line change to which tab is default, not a structural one.
 
-## 5. Project Workspace
+The Project Workspace is IA-identical one level down:
 
-Unchanged shape from v1 §10 (`Overview | Activities | Tasks | People | Budget | Expenses | Evidence | Reports`). Overview tab gains `objective` and `location` (new fields) so a Project can stand alone as a clean, exportable "service specification" per the Part C reading above — this is the concrete reason those two fields were promoted from "flagged for completeness" in v1 to formally approved additions in this revision.
-
----
-
-## 6. Activity/Task Relationship
-
-This is the section that changed most this round.
-
-- `Activity` belongs to exactly one `Programme` (required, unchanged) and optionally one `Project` (`Activity.project`, nullable).
-- `Activity` optionally links to one or more `Output`s (`Activity.outputs`, M2M) — this is the "what will it produce" connection. Indicators are then reached transitively (`Output.indicators`, already exists), so "how do we measure it" doesn't need a second direct link from Activity.
-- `Activity` optionally has one `responsible_person` (FK → `User`, nullable) — "who delivers it." Deliberately a single FK, not a roles/assignment model: mirrors the existing `ProjectTask.assignee` and `Grant.responsible_manager` pattern already used elsewhere in this codebase, so no new concept is introduced.
-- `Activity` optionally links to one `budget_line` (FK → `expenses.BudgetLine`, nullable) — "what does it cost," at whatever granularity the organisation actually tracks (many small activities won't need line-item costing and can leave this blank; the Programme/Project-level Budget totals still work regardless).
-- `Activity.location` (existing field) already answers "area of operation" per-activity; no change needed there.
-- `Task` (`ProjectTask`) stays required-to-Project (a task is always project work) and gains an optional `activity` FK so a task can be scoped to the specific activity it supports, without forcing every task to have one (some project tasks — e.g. "sign the funding agreement" — aren't tied to any single activity).
-
-This closes the DSD "connected" requirement using only new nullable fields on the two models that already exist for this purpose — no new join table beyond the one M2M (`Activity.outputs`, which Django implements as a plain through-table, not a new concept to maintain).
-
----
-
-## 7. People/Attendance Relationship
-
-Unchanged from today, because it already works: `Beneficiary.programme` (required) and `AttendanceRecord.programme` (required) + `AttendanceRecord.activity` (optional). The Programme Workspace's People tab is `beneficiaries.beneficiary_list` filtered to `?programme=<id>` (already supported); the Activities tab can show attendance/reach per activity via `AttendanceRecord.activity`. One small addition: `attendance_list`'s view gains a `?programme=` filter (matching the pattern `beneficiary_list` already has) so the Programme Workspace's People tab can show attendance records, not just beneficiary records, scoped to the programme.
-
----
-
-## 8. M&E Relationship
-
-Unchanged from today's already-good design: `Outcome → Output → Indicator → IndicatorPeriodValue`, all programme-scoped. The only change is the new `Activity.outputs` link (§6), which lets the M&E tab (reusing `monitoring_evaluation.programme_me` near-verbatim, per v1 §4) additionally show, per Output, which activities are meant to deliver it — a small "contributing activities" list, computed from the reverse of the new M2M, not a new query concept.
+```
+Programme "Youth Digital Literacy"
+ └─ Project Workspace: "Digital Skills Bootcamp"
+      ├─ Overview
+      ├─ Activities
+      ├─ Tasks
+      ├─ People
+      ├─ Budget
+      ├─ Expenses
+      ├─ Evidence
+      └─ Reports
+```
 
 ---
 
-## 9. Budget/Funding Relationship
+## B. Programme Workspace Wireframe
 
-**Budget generalisation** (as approved): `expenses.Budget.project` becomes nullable; `expenses.Budget.programme` is added, nullable; a `clean()`/`CheckConstraint` enforces exactly one of the two is set. This directly satisfies the DSD rule you quoted — "the budget must be specific to the particular service/programme/project being funded, rather than mixing unrelated programmes and projects" — because each `Budget` row is still scoped to exactly one Programme or exactly one Project, never both, never neither, and `Expense.project` stays required, so expenditure is always traceable to one specific funded thing. A Programme's "total budget vs actual" view is a rollup (its own `Budget` + each child `Project`'s `Budget`), but the underlying data never mixes two different funded services' money into one record.
+```
+┌──────────────────────────────────────────────────────────────────────────┐
+│ Programmes / Youth Digital Literacy                          [breadcrumb]│
+│                                                                            │
+│ Youth Digital Literacy                              [Status: Active]     │
+│                                                                            │
+│ ┌─ Readiness ──────────────────────────────────────────────────────────┐ │
+│ │ Ready for reporting                                                   │ │
+│ │ ✓ Programme plan  ✓ Beneficiaries  ✓ Projects  ✓ Activities          │ │
+│ │ ✓ Indicators  ✓ Budget  ✗ Evidence  ✗ Funding                        │ │
+│ │ Missing: at least one funding source, evidence for this period        │ │
+│ └────────────────────────────────────────────────────────────────────── │
+│                                                                            │
+│ [Period: Apr 2027–Mar 2030] [Projects: 2] [Activities: 6] [People: 84]   │
+│                                                                            │
+│  Overview │ Plan │ Projects │ Activities │ People │ M&E │ Finance │      │
+│  Evidence │ Reports                                                      │
+│  ─────────                                                                │
+│                                                                            │
+│  Outcomes & Indicators                        Upcoming work              │
+│  ┌────────────────────────────────┐           ┌───────────────────────┐ │
+│  │ Outcome           Indicator  %  │           │ HTML & CSS Workshop    │ │
+│  │ Digital literacy  Youth ...  62%│           │ Tue 14 Oct · Bootcamp  │ │
+│  └────────────────────────────────┘           └───────────────────────┘ │
+│                                                                            │
+│  Projects                                      Budget vs Actual          │
+│  ┌────────────────────────────────┐           ┌───────────────────────┐ │
+│  │ Digital Skills Bootcamp  Active │           │ R120,000 / R180,000    │ │
+│  │ Community Outreach     Planning │           │ 67% of programme       │ │
+│  └────────────────────────────────┘           │ budget spent            │ │
+│                                                 └───────────────────────┘ │
+│                                                                            │
+│  Items requiring attention                                               │
+│  ┌────────────────────────────────────────────────────────────────────┐ │
+│  │ No funding source linked yet.                          Add →       │ │
+│  │ Community Outreach project has no activities yet.       Add →      │ │
+│  └────────────────────────────────────────────────────────────────────┘ │
+└──────────────────────────────────────────────────────────────────────────┘
+```
 
-**Funding**: `grants.Grant` is unchanged and already does this job — `Programme.grants` (M2M, a programme can draw on multiple grants) and `Project.grant` (FK, a project is normally funded by one specific grant/agreement, which is exactly the DSD "one Part C, one funding request" shape). No model change.
+Same visual language already established in the last two redesign passes: `.summary-bar` for the compact metrics row, `.tabs`, dense `.card-flat` tables — no new components.
 
 ---
 
-## 10. Evidence Relationship
+## C. Project Workspace Wireframe
 
-Unchanged from v1: no new model. `documents.Document` already has `category=CATEGORY_PROGRAMMES` and a working generic FK (`content_type`/`object_id`/`related_object`). The Evidence tab on both the Programme and Project workspaces uploads/lists `Document`s with `related_object` pointing at the Programme, Project, or (new, since Activity is now a richer object) Activity instance. Existing visibility rules (`_can_view_document`) and versioning are reused unchanged.
+```
+┌──────────────────────────────────────────────────────────────────────────┐
+│ Programmes / Youth Digital Literacy / Digital Skills Bootcamp            │
+│                                                                            │
+│ Digital Skills Bootcamp                               [Status: Active]   │
+│ Manager: Thandiwe M. · Location: Khayelitsha · Apr 2027 – Mar 2028        │
+│                                                                            │
+│  Overview │ Activities │ Tasks │ People │ Budget │ Expenses │ Evidence │  │
+│  Reports                                                                  │
+│  ─────────                                                                │
+│                                                                            │
+│  Objective: Equip 50 unemployed youth with entry-level digital skills    │
+│                                                                            │
+│  Activities                                    Budget vs Actual          │
+│  ┌────────────────────────────────┐           ┌───────────────────────┐ │
+│  │ HTML & CSS Workshop   Planned   │           │ R45,000 / R60,000      │ │
+│  │ Intro to Excel        Delivered │           │ 75% spent               │ │
+│  └────────────────────────────────┘           └───────────────────────┘ │
+│                                                                            │
+│  Tasks                                          People reached: 38       │
+│  ┌────────────────────────────────┐                                     │
+│  │ Book venue           Done       │                                     │
+│  │ Print certificates   To Do      │                                     │
+│  └────────────────────────────────┘                                     │
+└──────────────────────────────────────────────────────────────────────────┘
+```
+
+`objective` is the new `Project.objective` field (§E) — it's the DSD C3.1 "Objective" line surfaced plainly, but it's just a text field on Project, useful for any funder, not DSD-specific.
 
 ---
 
-## 11. Reporting Relationship
+## D. New Programme Wizard
 
-Unchanged from v1: no new model. New programme-scoped and project-scoped view functions in `apps/reporting`, reusing the existing csv/reportlab generation code, filtered querysets. Because of the Part C reading above, the **Project-level export is the one that should most closely match a DSD Part C shape** (one service, one budget, one set of activities/outputs) — the Programme-level export is the umbrella "everything under this programme" report. Both read the same underlying data; neither is a separate source of truth.
+Unchanged mechanism from v2 (reuse `Organisation.onboarding_step`-style dispatcher). Step content, confirmed against the real Part C structure:
+
+| # | Step | Backs onto | DSD Part C section it satisfies (confirmed) |
+|---|---|---|---|
+| 1 | Programme details | `Programme.name`, `programme_area`, `status` | C1 (service reference is export-time input, not stored here — §1.3) |
+| 2 | Need / background / purpose | `Programme.description`, `need_and_background`, `theory_of_change_summary` | C2.1 |
+| 3 | Beneficiaries | `Programme.target_beneficiary_groups` (existing JSON) | C2.2 |
+| 4 | Geographic coverage | `Programme.locations` (existing JSON) | C2.3 |
+| 5 | Programme period | `Programme.start_date`, `end_date` (new) | C2.4 (time-related elements narrative stays free text within `need_and_background` — no separate structured field, since the guideline's list — time of day/week/month/season/school calendar — is illustrative prompting, not a data schema) |
+| 6 | Outcomes | `monitoring_evaluation.Outcome` rows | Maps to DSD's "Objective" grouping in C3.1 — see §8 |
+| 7 | Outputs | `monitoring_evaluation.Output` rows | Feeds "Expected Results" in C3.1 |
+| 8 | Indicators and targets | `monitoring_evaluation.Indicator` rows | C3.2 |
+| 9 | Projects | `projects.Project` (+ new `objective`, `location`) | Per-service breakdown when a Programme covers >1 service — confirmed, not inferred (§8) |
+| 10 | Activities | `programmes.Activity` (+ new `project`/`outputs`/`responsible_person`/`budget_line`, all pre-filled per §1.2) | C3.1 row-level detail |
+| 11 | Staffing/resources | `Programme.staffing_plan` (narrative) + `Activity.responsible_person` already set in step 10 | Partially — C4 wants a full staff roster with demographics; V1 does not build this (§8 gap #1) |
+| 12 | Budget | Programme-level `Budget`/`BudgetLine` (generalised model) | C6.2 conceptually, single-year only in V1 (§8 gap #2) |
+| 13 | Funding | `Programme.grants` M2M | C7 |
+| 14 | Review and create | Read-only summary; sets `status` + wizard completion | — |
+
+Every step after #1 stays skippable/resumable.
 
 ---
 
-## 12. Migration/Cutover Strategy
+## E. Existing → New Model Mapping
 
-**Migrations** (all additive, same as v1 §7, updated field list):
+| Existing model (unchanged) | New field(s) | Type | Purpose |
+|---|---|---|---|
+| `programmes.Programme` | `start_date`, `end_date` | Date, nullable | Programme period (C2.4) |
+| | `need_and_background`, `implementation_plan`, `staffing_plan`, `previous_experience`, `monitoring_plan`, `funding_request_notes` | Text, blank | Plan tab narrative (C2.1, C3, C4 summary, C5, C3.2 narrative, C7) |
+| | `wizard_step` | CharField + choices | Drives the guided wizard (§D) |
+| `programmes.Activity` | `project` | FK → `projects.Project`, nullable | Activity can sit inside a specific project |
+| | `outputs` | M2M → `monitoring_evaluation.Output` | What this activity produces — reaches Indicators/Outcomes transitively |
+| | `responsible_person` | FK → User, nullable | Personnel (C3.1) — simple, no roster |
+| | `budget_line` | FK → `expenses.BudgetLine`, nullable | Budget cost (C3.1) at activity granularity |
+| `projects.Project` | `objective`, `location` | Text/Char, blank | Per-service detail (C3.1 "Objective", C2.3 per-project) |
+| `projects.ProjectTask` | `activity` | FK → `Activity`, nullable | Task scoped to a specific activity, optional |
+| `expenses.Budget` | `programme` (new, nullable) + `project` (existing, now nullable) | FK×2, exactly-one-set constraint | Programme-level or Project-level budget, never mixed (C6.2 rule) |
 
-1. `programmes`: add `Programme.start_date`, `end_date`, `need_and_background`, `implementation_plan`, `staffing_plan`, `previous_experience`, `monitoring_plan`, `funding_request_notes`, `wizard_step`; add `Activity.project` (nullable FK), `Activity.outputs` (M2M), `Activity.responsible_person` (nullable FK), `Activity.budget_line` (nullable FK).
-2. `projects`: add `Project.objective`, `Project.location`; add `ProjectTask.activity` (nullable FK).
-3. `expenses`: relax `Budget.project` to nullable, add `Budget.programme` (nullable FK) + exactly-one-set constraint.
-4. No model changes to `beneficiaries`, `monitoring_evaluation`, `grants`, `documents`; `attendance` gets one new view-level query filter, no model change.
-5. Every migration is `ADD COLUMN` or `ALTER COLUMN ... DROP NOT NULL` — no data backfill, no destructive step. Run `manage.py check` and the full test suite after each app's migration in sequence (programmes → projects → expenses) to isolate any regression immediately.
-
-**Cutover** (how the new UI replaces the old, without breaking existing links):
-
-- `programmes:detail` keeps its exact URL shape (`<slug>/<programme_id>/`) — only the template/view content changes, so nothing that links to a programme elsewhere in the app (dashboard, tabs, breadcrumbs) needs to change.
-- The inline "Add Activity" form currently on that page moves to a dedicated `programmes:create_activity` sub-page (same lightweight pattern as `attendance:record`/`beneficiaries:create`), reachable from the new Activities tab.
-- `monitoring_evaluation:programme_me` and `monitoring_evaluation:indicator_detail` keep working as standalone URLs (not deleted) — the Programme Workspace's M&E tab embeds the same template content, so a direct link to `programme_me` from anywhere else in the app (or a bookmark) still resolves correctly; it just also becomes reachable via the tab.
-- `expenses:project_expenses` similarly stays a live URL; the Project Workspace's Finance/Expenses tab embeds it rather than replacing it.
-- No existing URL is removed in this phase. Everything becomes reachable two ways (direct URL + workspace tab) rather than one way — the safer cutover, since it can't break an existing bookmark or an existing test that hits the old URL directly.
+**No new models.** `monitoring_evaluation.{Outcome,Output,Indicator,IndicatorPeriodValue}`, `beneficiaries.Beneficiary`, `attendance.AttendanceRecord`, `grants.Grant`, `documents.Document` are all unchanged — reused exactly as they are today.
 
 ---
 
-## 13. Test Strategy
+## F. Data Flow — One Source of Truth, Many Reports
 
-Unchanged in shape from v1 §11 (this app surface has near-zero coverage today, so this rebuild is also the first real safety net), updated for the new relationships:
+```
+                         ┌─────────────────────────────────────┐
+                         │   Programme / Project / Activity     │
+                         │   Outcome → Output → Indicator       │
+                         │   Beneficiary / AttendanceRecord     │
+                         │   Budget → BudgetLine → Expense      │
+                         │   Grant                              │
+                         │   Document (evidence, GFK)            │
+                         └───────────────┬───────────────────────┘
+                                         │  (read-only queries, filtered
+                                         │   by programme_id / project_id)
+              ┌──────────────┬───────────┼───────────┬──────────────┬────────────┐
+              ▼              ▼           ▼           ▼              ▼            ▼
+        Programme        Project      M&E         Financial      Funder      DSD-shaped
+        Report           Report       Report      Report         Report      Report
+        (umbrella,       (one         (Outcomes/  (Budget vs     (whatever   (Part C
+        everything       service,     Outputs/    Actual,        a specific  layout, one
+        under this       Part-C-      Indicators, expense        funder's    Project =
+        programme)       shaped)      targets vs  detail)        agreement   one service
+                                       actuals)                   asks for)   specification)
+```
 
-1. **Migration correctness** — `manage.py check` clean; an existing `Budget`/`Activity`/`ProjectTask` row created before migration still round-trips with new fields blank/null.
-2. **Model-level tests**: `Budget` exactly-one-of-{programme,project} constraint (both set → error, neither set → error, exactly one → valid); an `Activity` with both `programme` and `project` set is queryable and consistent from both directions.
-3. **Chain-of-connection tests** (new this round): an `Activity` linked to an `Output` correctly surfaces on that Output's "contributing activities"; an `Activity.budget_line` total is included in its parent Budget's rollup; an `Activity.responsible_person` who isn't an organisation member is rejected by form validation (mirrors the existing `ProjectTask.assignee` queryset restriction).
-4. **Wizard tests**: create a programme through every step, assert `wizard_step` advances and resumes correctly, assert the final review step is idempotent.
-5. **Workspace tests** (Programme and Project): each tab 200s for a permitted user / 403s for an unpermitted one (reusing existing capability names — `programmes.manage`, `me.view`, `projects.manage`, `attendance.view`, `documents.view`, etc.); Overview tab's "budget vs actual" and "people reached" figures match real database aggregates.
-6. **Evidence/Document GFK tests**: evidence uploaded against a Programme/Project/Activity sets `content_type`/`object_id` correctly; existing visibility rules still apply unchanged.
-7. **Reporting tests**: programme-scoped and project-scoped exports return only rows belonging to that programme/project (tenant-isolation-style, matching `apps.organisations.tests.TenantIsolationTests`).
-8. **Regression run**: full existing suite (currently 102 tests) stays green throughout, since every change is additive.
+Every report is a view function in `apps/reporting`, reusing the existing csv/reportlab generation code (v1 §11/v2 §11, unchanged), reading the exact same querysets the Programme/Project Workspace tabs already display. Nothing is precomputed into a separate report table — the same live-query discipline already enforced everywhere else in this codebase (`impact_dashboard`'s "every figure derived live" rule) applies here too.
 
-Build order, matching your stated priority: Programme (model extension) → Project (objective/location) → Activity (project/outputs/responsible_person/budget_line links + task link) → People/Evidence → M&E (tab embedding) → Finance (Budget generalisation) → Reporting. Each stage fully tested before the next starts.
+---
+
+## Programme Readiness (new requirement, item 5)
+
+Not a percentage. A checklist, computed the same way `apps.organisations.health.compute_health_check` already works (reused pattern, not a new mechanism):
+
+```python
+def compute_programme_readiness(programme):
+    checks = [
+        ("plan", "Programme plan", bool(programme.need_and_background)),
+        ("outcome", "Programme outcome", programme.outcomes.exists()),
+        ("indicator", "At least one measurable indicator", programme.indicators.exists()),
+        ("project", "Project", programme.projects.exists()),
+        ("activity", "Activity", programme.activities.exists()),
+        ("beneficiaries", "Beneficiaries", programme.beneficiaries.exists()),
+        ("budget", "Budget", Budget.objects.filter(
+             Q(programme=programme) | Q(project__programme=programme)).exists()),
+        ("funding", "Funding information", programme.grants.exists()),
+        ("evidence", "Evidence", Document.objects.filter(
+             content_type=..., object_id__in=[programme.id, *programme.projects.values_list("id")]).exists()),
+    ]
+    missing = [label for key, label, ok in checks if not ok]
+    return {"checks": checks, "missing": missing, "ready": not missing}
+```
+
+Rendered on the Overview tab exactly as your wireframe shows: "Missing: ..." list when incomplete, a green checklist when everything required is present. No score, no percentage — a direct, honest yes/no per item, same spirit as the Health Check's per-dimension reasons/actions.
+
+---
+
+## 8. DSD Part C — Confirmed Structure and Flagged Gaps
+
+Quoting the real Standard Application Form, Section C3.1 table columns (verbatim from the document):
+
+> `ACTIVITIES TO IMPLEMENT PROJECT OR PROGRAMME` | `OUTPUT INDICATORS (targets and results of the actions/activities)` | `EXPECTED OR DESIRED RESULTS OF PROJECT, PROGRAMME (outcomes)` | `PERSONNEL AND RESOURCES (physical and material resources needed to achieve the Objectives)` | `AREA OF OPERATION` | `BUDGET COSTS (What are the financial costs & type of personnel...)`
+
+— repeated once per `Objective:` block, ending in `Total per Objective`. This is the exact row-per-Activity shape already designed in §1.1/§E: **Output Indicators** = `Activity.outputs`, **Expected Results** = reached transitively via `Output.outcome`, **Personnel and Resources** = `Activity.responsible_person`, **Area of Operation** = `Activity.location` (existing field), **Budget Costs** = `Activity.budget_line`.
+
+**"Objective" maps to Bohlale's existing `Outcome`** — DSD groups activities under an Objective and totals budget per Objective; Bohlale already groups Outputs under an Outcome, and Activities now link to Outputs. A DSD export groups its Activity rows by the Outcome reached through their linked Outputs, and sums `budget_line.allocated_amount` per group for "Total per Objective." This is a query in the export view, not a new field.
+
+Section C3.2 (Indicators/Targets/Monitoring) maps exactly to the existing `Indicator.target_value` + `IndicatorPeriodValue.means_of_verification` — confirmed, no gap.
+
+**Two real gaps, flagged rather than filled with invented fields:**
+
+1. **Section C4 (Staffing Plan)** asks for a full roster of *every* staff member in the organisation (not just this programme) with name, qualifications, nationality, gender, race, role, and whether they work on this specific programme. This is materially bigger than `Activity.responsible_person` — it's organisation-wide HR/demographic data, the same category as the existing Board/Governance demographic fields (`GovernanceOfficial`), not something a Programme Workspace should own. **V1 does not build this.** A true DSD C4 export will need either a manual supplementary step at export time or a dedicated future staff-roster feature — explicitly out of scope now, matching decision #3 ("do not over-engineer a staffing subsystem yet").
+2. **Section C6.2 (Operational Budget)** is broken out **by financial year** across the funding duration (up to 3 years), each budget item totalled per year and across years. The generalised `Budget`/`BudgetLine` model in this proposal is a flat total with no year dimension. **V1 does not build multi-year budgeting.** If a literal DSD-shaped budget export is needed later, the smallest addition would be an optional `BudgetLine.financial_year` field — deliberately not added now, since nothing else in Bohlale's finance model (`Expense`, `expenses:project_expenses`) has a year dimension either, and adding one only for DSD would contradict "DSD is a profile, not the product model."
+
+Everything else in Part C (C1 service specification reference, C2.1–C2.4 description/beneficiaries/geography/time, C5 previous experience, C7 funding request, C8 declaration) is already covered by existing or newly-proposed fields, or is explicitly an export-time input (C1's service specification reference — §1.3) rather than a stored field.
+
+---
+
+## Migration/Cutover Strategy
+
+Unchanged from v2 — repeated here for completeness, no changes needed:
+
+1. `programmes`: add `Programme.start_date`, `end_date`, `need_and_background`, `implementation_plan`, `staffing_plan`, `previous_experience`, `monitoring_plan`, `funding_request_notes`, `wizard_step`; add `Activity.project`, `Activity.outputs`, `Activity.responsible_person`, `Activity.budget_line`.
+2. `projects`: add `Project.objective`, `Project.location`; add `ProjectTask.activity`.
+3. `expenses`: relax `Budget.project` to nullable, add `Budget.programme` (nullable) + exactly-one-set constraint.
+4. No model changes to `beneficiaries`, `monitoring_evaluation`, `grants`, `documents`; `attendance` gets one new view-level query filter (`?programme=`), no model change.
+5. All migrations are `ADD COLUMN`/`ALTER COLUMN ... DROP NOT NULL` — no data backfill, no destructive step. Full test suite run after each app's migration in sequence.
+6. Cutover: `programmes:detail`, `monitoring_evaluation:programme_me`, `monitoring_evaluation:indicator_detail`, `expenses:project_expenses` all keep their existing URLs live — the new workspace tabs embed this content rather than replacing it, so nothing that already links to them breaks. The inline "Add Activity" form moves off the default page to its own lightweight create view (§1.2 covers what it pre-fills).
+
+---
+
+## Test Strategy
+
+Unchanged in shape from v2, plus explicit coverage for the two new items this round:
+
+1. Migration correctness, model-level constraint tests (`Budget` exactly-one-of), chain-of-connection tests (`Activity.outputs` → Outcome rollup, `Activity.budget_line` → Budget total) — as in v2.
+2. **Progressive inheritance tests** (new): creating an Activity from within a Project pre-fills `programme`/`project` correctly and silently; the `outputs` and `budget_line` querysets offered are scoped to the right programme/project and never leak another programme's data (tenant-isolation-style).
+3. **Programme Readiness tests** (new): each checklist item reflects real data (a programme with no Outcome shows "Programme outcome" as missing; adding one flips it); the `ready` flag is only true when every check passes.
+4. Wizard, Workspace tab, Evidence/Document GFK, and Reporting tests — as in v2.
+5. Full existing suite (currently 102 tests) stays green throughout.
+
+Build order unchanged: **Programme → Project → Activity → People/Evidence → M&E → Finance → Reporting.**
 
 ---
 
 ## Confirmed out of scope this round
 
-Person/Beneficiary migration, Case Management, Android, Kiosk mode, Constitution/Learning modules, and any rebuild of already-working engines (M&E scoring, Finance approval workflow, Attendance capture, Document versioning) — all untouched. This is IA/connection work over the existing engines, not a rebuild of them.
-
-Nothing will be built until you review this and say go.
+Person/Beneficiary migration, Case Management, Android, Kiosk mode, Constitution/Learning modules (including the constitution checklist document reviewed above), and any rebuild of already-working engines. Nothing will be built until you review this and say go.
