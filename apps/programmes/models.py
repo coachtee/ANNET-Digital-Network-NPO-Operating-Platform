@@ -114,9 +114,9 @@ class Programme(TimeStampedModel):
     # free-text "Purpose" question and feeds the Programme Readiness
     # gate) -- this is a distinct, optional planning-and-learning aid, not
     # a replacement for Purpose.
-    toc_what = models.TextField(blank=True, help_text="What are we doing?")
-    toc_change = models.TextField(blank=True, help_text="What change do we expect?")
-    toc_why = models.TextField(blank=True, help_text="Why do we believe this will contribute to that change?")
+    toc_what = models.TextField(blank=True)
+    toc_change = models.TextField(blank=True)
+    toc_why = models.TextField(blank=True)
 
     wizard_step = models.CharField(max_length=25, choices=WIZARD_STEP_CHOICES, default=WIZARD_PROGRAMME)
 
