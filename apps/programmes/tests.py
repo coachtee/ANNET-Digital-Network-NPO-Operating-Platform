@@ -23,10 +23,12 @@ from apps.projects.services import project_finance_summary
 PASSWORD = "TestPass!2026"
 
 
-class ProgrammeWizardGoldenPathTests(TestCase):
-    """Every step of the guided wizard, mirroring the live UAT walkthrough:
-    create -> Why -> Who & Where -> Success -> Projects & Activities ->
-    People & Resources -> Budget & Funding -> Review -> Overview."""
+class ProgrammeCreationTests(TestCase):
+    """The Programme Wizard is gone. "New Programme" is a short create
+    form (name/area/status/start/end); everything else is filled in
+    progressively inside the Programme Workspace afterwards -- see
+    ProgrammeWorkspaceOverviewTests, ProgrammeReadinessTests and the
+    DOPA demonstration scenario for that progressive flow."""
 
     def setUp(self):
         self.organisation = Organisation.objects.create(legal_name="Org A", organisation_type="npo")
@@ -34,144 +36,90 @@ class ProgrammeWizardGoldenPathTests(TestCase):
         OrganisationMembership.objects.create(organisation=self.organisation, user=self.user, role=ORG_ROLE_ADMIN)
         self.client.force_login(self.user)
 
-    def test_full_wizard_creates_a_complete_programme(self):
-        resp = self.client.post(reverse("programmes:create", kwargs={"slug": self.organisation.slug}), {
+    def test_create_programme_lands_straight_in_the_workspace(self):
+        resp = self.client.post(reverse("programmes:list", kwargs={"slug": self.organisation.slug}), {
             "name": "Youth Digital Literacy Initiative", "programme_area": "education_skills",
             "status": Programme.STATUS_PLANNED, "start_date": "2026-04-01", "end_date": "2027-03-31",
         })
         programme = Programme.objects.get(organisation=self.organisation)
-        self.assertRedirects(
-            resp, reverse("programmes:wizard_step", kwargs={
-                "slug": self.organisation.slug, "programme_id": programme.id, "step": Programme.WIZARD_WHY,
-            }),
-        )
-        self.assertEqual(programme.wizard_step, Programme.WIZARD_WHY)
-
-        def wizard_url(step):
-            return reverse("programmes:wizard_step", kwargs={"slug": self.organisation.slug, "programme_id": programme.id, "step": step})
-
-        self.client.post(wizard_url(Programme.WIZARD_WHY), {
-            "need_and_background": "Limited access to digital skills training.",
-            "theory_of_change_summary": "Improve employability.",
-        })
-        programme.refresh_from_db()
-        self.assertEqual(programme.wizard_step, Programme.WIZARD_WHO_AND_WHERE)
-
-        self.client.post(wizard_url(Programme.WIZARD_WHO_AND_WHERE), {
-            "target_beneficiary_groups": "Youth aged 18-35, Unemployed graduates",
-            "locations": "Khayelitsha, Ekurhuleni",
-        })
-        programme.refresh_from_db()
-        self.assertEqual(programme.wizard_step, Programme.WIZARD_SUCCESS)
-        self.assertEqual(programme.target_beneficiary_groups, ["Youth aged 18-35", "Unemployed graduates"])
-        self.assertEqual(programme.locations, ["Khayelitsha", "Ekurhuleni"])
-
-        self.client.post(wizard_url(Programme.WIZARD_SUCCESS), {"add_outcome": "1", "title": "Improved digital literacy", "description": ""})
-        self.assertEqual(programme.outcomes.count(), 1)
-        outcome = programme.outcomes.first()
-        self.client.post(wizard_url(Programme.WIZARD_SUCCESS), {
-            "add_output": "1", "title": "Digital skills training delivered", "description": "", "outcome": str(outcome.id),
-        })
-        output = programme.outputs.first()
-        self.client.post(wizard_url(Programme.WIZARD_SUCCESS), {
-            "add_indicator": "1", "name": "Young people completing training", "indicator_type": "count",
-            "outcome": str(outcome.id), "output": str(output.id), "target_value": "100",
-        })
-        self.assertTrue(programme.indicators.filter(target_value=100).exists())
-        self.client.post(wizard_url(Programme.WIZARD_SUCCESS), {"continue": "1"})
-        programme.refresh_from_db()
-        self.assertEqual(programme.wizard_step, Programme.WIZARD_PROJECTS_AND_ACTIVITIES)
-
-        self.client.post(wizard_url(Programme.WIZARD_PROJECTS_AND_ACTIVITIES), {
-            "add_project": "1", "name": "Digital Skills Bootcamp", "status": Project.STATUS_ACTIVE, "budget": "65000",
-        })
-        project = Project.objects.get(programme=programme)
-        self.assertEqual(project.name, "Digital Skills Bootcamp")
-        self.client.post(wizard_url(Programme.WIZARD_PROJECTS_AND_ACTIVITIES), {"continue": "1"})
-        programme.refresh_from_db()
-        self.assertEqual(programme.wizard_step, Programme.WIZARD_PEOPLE_AND_RESOURCES)
-
-        self.client.post(wizard_url(Programme.WIZARD_PEOPLE_AND_RESOURCES), {"staffing_plan": "Two facilitators."})
-        programme.refresh_from_db()
-        self.assertEqual(programme.wizard_step, Programme.WIZARD_BUDGET_AND_FUNDING)
-        self.assertEqual(programme.staffing_plan, "Two facilitators.")
-
-        self.client.post(wizard_url(Programme.WIZARD_BUDGET_AND_FUNDING), {"grants": []})
-        programme.refresh_from_db()
-        self.assertEqual(programme.wizard_step, Programme.WIZARD_REVIEW)
-
-        resp = self.client.post(wizard_url(Programme.WIZARD_REVIEW))
-        programme.refresh_from_db()
-        self.assertEqual(programme.wizard_step, Programme.WIZARD_COMPLETE)
+        self.assertEqual(programme.name, "Youth Digital Literacy Initiative")
         self.assertRedirects(resp, reverse("programmes:detail", kwargs={"slug": self.organisation.slug, "programme_id": programme.id}))
 
-    def test_new_programme_never_auto_resumes_a_different_abandoned_wizard(self):
-        # Regression test for the exact bug reported in UAT: clicking "New
-        # Programme" must never silently drag the user into a *different*,
-        # unrelated Programme's abandoned wizard session.
-        abandoned = Programme.objects.create(
-            organisation=self.organisation, name="Abandoned Draft", wizard_step=Programme.WIZARD_WHY,
-            description="Should never leak into a new session", need_and_background="Old need",
+    def test_new_programme_never_carries_data_from_another_programme(self):
+        # Regression test for the original bug: creating a new Programme
+        # must never resume or inherit data from another, unrelated one.
+        other = Programme.objects.create(
+            organisation=self.organisation, name="Existing Programme",
+            description="Should never leak into a new programme", need_and_background="Old need",
         )
-        resp = self.client.get(reverse("programmes:create", kwargs={"slug": self.organisation.slug}))
-        self.assertEqual(resp.status_code, 200)
-        self.assertIsInstance(resp.context["form"], type(resp.context["form"]))
-        self.assertNotContains(resp, "Abandoned Draft")
-
-        resp = self.client.post(reverse("programmes:create", kwargs={"slug": self.organisation.slug}), {
+        resp = self.client.post(reverse("programmes:list", kwargs={"slug": self.organisation.slug}), {
             "name": "Brand New Programme", "status": Programme.STATUS_PLANNED,
         })
-        new_programme = Programme.objects.exclude(id=abandoned.id).get(organisation=self.organisation)
+        new_programme = Programme.objects.exclude(id=other.id).get(organisation=self.organisation)
         self.assertEqual(new_programme.name, "Brand New Programme")
-        # Nothing from the abandoned draft leaked across.
         self.assertEqual(new_programme.description, "")
         self.assertEqual(new_programme.need_and_background, "")
-        self.assertRedirects(resp, reverse("programmes:wizard_step", kwargs={
-            "slug": self.organisation.slug, "programme_id": new_programme.id, "step": Programme.WIZARD_WHY,
-        }))
-        abandoned.refresh_from_db()
-        self.assertEqual(abandoned.wizard_step, Programme.WIZARD_WHY)  # untouched
+        self.assertRedirects(resp, reverse("programmes:detail", kwargs={"slug": self.organisation.slug, "programme_id": new_programme.id}))
 
     def test_clicking_new_programme_repeatedly_creates_independent_programmes(self):
-        url = reverse("programmes:create", kwargs={"slug": self.organisation.slug})
+        url = reverse("programmes:list", kwargs={"slug": self.organisation.slug})
         self.client.post(url, {"name": "Programme One", "status": Programme.STATUS_PLANNED})
         self.client.post(url, {"name": "Programme Two", "status": Programme.STATUS_PLANNED})
         names = set(Programme.objects.filter(organisation=self.organisation).values_list("name", flat=True))
         self.assertEqual(names, {"Programme One", "Programme Two"})
 
-    def test_programme_list_routes_a_mid_wizard_programme_back_into_its_own_wizard(self):
-        programme = Programme.objects.create(
-            organisation=self.organisation, name="Mid Wizard", wizard_step=Programme.WIZARD_WHY,
-        )
+    def test_incomplete_programmes_show_directly_in_the_list_no_wizard_routing(self):
+        programme = Programme.objects.create(organisation=self.organisation, name="Incomplete Programme")
         resp = self.client.get(reverse("programmes:list", kwargs={"slug": self.organisation.slug}))
-        self.assertTrue(resp.context["rows"][0]["is_mid_wizard"])
-        self.assertContains(resp, reverse("programmes:wizard_step", kwargs={
-            "slug": self.organisation.slug, "programme_id": programme.id, "step": Programme.WIZARD_WHY,
-        }))
+        self.assertContains(resp, "Incomplete Programme")
+        self.assertContains(resp, reverse("programmes:detail", kwargs={"slug": self.organisation.slug, "programme_id": programme.id}))
 
-    def test_pre_existing_programme_with_default_wizard_step_is_not_treated_as_mid_wizard(self):
-        # Regression test: a programme created before the wizard existed
-        # (or any programme whose wizard_step is still the field default)
-        # must not be mistaken for an abandoned wizard -- that bug caused
-        # an infinite redirect loop, caught via a live browser walkthrough.
-        Programme.objects.create(organisation=self.organisation, name="Legacy Programme")
-        resp = self.client.get(reverse("programmes:create", kwargs={"slug": self.organisation.slug}))
-        self.assertEqual(resp.status_code, 200)
-        self.assertNotIn("wizard_step", resp.request["PATH_INFO"])
+    def test_a_programme_is_progressively_completed_through_the_workspace(self):
+        """Plan tab, M&E tab and the standalone Projects page -- not
+        wizard steps -- are where a Programme's need/purpose/
+        beneficiaries/geography/logic/first Project get filled in."""
+        resp = self.client.post(reverse("programmes:list", kwargs={"slug": self.organisation.slug}), {
+            "name": "Youth Digital Literacy Initiative", "status": Programme.STATUS_PLANNED,
+        })
+        programme = Programme.objects.get(organisation=self.organisation)
 
-    def test_wizard_step_with_unrecognised_step_redirects_to_workspace_not_a_loop(self):
-        programme = Programme.objects.create(organisation=self.organisation, name="Legacy Programme")
-        resp = self.client.get(reverse("programmes:wizard_step", kwargs={
-            "slug": self.organisation.slug, "programme_id": programme.id, "step": Programme.WIZARD_PROGRAMME,
-        }))
-        self.assertRedirects(resp, reverse("programmes:detail", kwargs={"slug": self.organisation.slug, "programme_id": programme.id}))
+        self.client.post(reverse("programmes:plan", kwargs={"slug": self.organisation.slug, "programme_id": programme.id}), {
+            "need_and_background": "Limited access to digital skills training.",
+            "theory_of_change_summary": "Improve employability.",
+            "target_beneficiary_groups": "Youth aged 18-35, Unemployed graduates",
+            "locations": "Khayelitsha, Ekurhuleni", "programme_area": "education_skills",
+        })
+        programme.refresh_from_db()
+        self.assertEqual(programme.need_and_background, "Limited access to digital skills training.")
+        self.assertEqual(programme.target_beneficiary_groups, ["Youth aged 18-35", "Unemployed graduates"])
+        self.assertEqual(programme.locations, ["Khayelitsha", "Ekurhuleni"])
+
+        me_url = reverse("monitoring_evaluation:programme_me", kwargs={"slug": self.organisation.slug, "programme_id": programme.id})
+        self.client.post(me_url, {"add_outcome": "1", "title": "Improved digital literacy", "description": ""})
+        outcome = programme.outcomes.get()
+        self.client.post(me_url, {"add_output": "1", "title": "Digital skills training delivered", "description": "", "outcome": str(outcome.id)})
+        output = programme.outputs.get()
+        self.client.post(me_url, {
+            "add_indicator": "1", "name": "Young people completing training", "indicator_type": "count",
+            "outcome": str(outcome.id), "output": str(output.id), "target_value": "100",
+        })
+        self.assertTrue(programme.indicators.filter(target_value=100).exists())
+        self.assertTrue(compute_programme_readiness(programme)["is_ready"])
+
+        self.client.post(reverse("projects:list", kwargs={"slug": self.organisation.slug}), {
+            "name": "Digital Skills Bootcamp", "programme": str(programme.id), "status": Project.STATUS_ACTIVE, "budget": "65000",
+        })
+        self.assertTrue(Project.objects.filter(programme=programme, name="Digital Skills Bootcamp").exists())
 
     def test_non_manager_cannot_create_a_programme(self):
         other = User.objects.create_user(email="member@example.com", password=PASSWORD)
         OrganisationMembership.objects.create(organisation=self.organisation, user=other, role="fundraiser")
         self.client.force_login(other)
-        resp = self.client.get(reverse("programmes:create", kwargs={"slug": self.organisation.slug}))
-        self.assertEqual(resp.status_code, 403)
+        resp = self.client.post(reverse("programmes:list", kwargs={"slug": self.organisation.slug}), {
+            "name": "Should not be created", "status": Programme.STATUS_PLANNED,
+        })
+        self.assertEqual(resp.status_code, 200)
+        self.assertFalse(Programme.objects.filter(name="Should not be created").exists())
 
 
 class ProgrammeWorkspaceOverviewTests(TestCase):
@@ -554,24 +502,31 @@ class ProgrammeReadinessTests(TestCase):
         )
         self.assertTrue(form.is_valid())
 
-    def test_wizard_project_step_hides_the_add_project_form_until_ready(self):
-        url = reverse("programmes:wizard_step", kwargs={
-            "slug": self.organisation.slug, "programme_id": self.programme.id, "step": Programme.WIZARD_PROJECTS_AND_ACTIVITIES,
+    def test_standalone_project_create_view_is_blocked_until_ready(self):
+        resp = self.client.post(reverse("projects:list", kwargs={"slug": self.organisation.slug}), {
+            "name": "Bootcamp", "programme": str(self.programme.id), "status": Project.STATUS_ACTIVE, "budget": "0",
         })
-        resp = self.client.get(url)
-        self.assertIsNone(resp.context["project_form"])
-        self.assertContains(resp, "before creating a Project")
+        self.assertFalse(Project.objects.filter(programme=self.programme).exists())
+        self.assertContains(resp, "Complete the Programme Plan first")
 
         self._make_ready()
-        resp = self.client.get(url)
-        self.assertIsNotNone(resp.context["project_form"])
+        resp = self.client.post(reverse("projects:list", kwargs={"slug": self.organisation.slug}), {
+            "name": "Bootcamp", "programme": str(self.programme.id), "status": Project.STATUS_ACTIVE, "budget": "0",
+        })
+        self.assertTrue(Project.objects.filter(programme=self.programme, name="Bootcamp").exists())
 
-    def test_programme_overview_shows_readiness_checklist(self):
+    def test_programme_overview_shows_the_readiness_path(self):
         resp = self.client.get(reverse("programmes:detail", kwargs={"slug": self.organisation.slug, "programme_id": self.programme.id}))
         self.assertContains(resp, "Programme not ready")
+        self.assertContains(resp, "1 / 11 complete")  # "Programme defined" is already met (it has a name)
         self._make_ready()
         resp = self.client.get(reverse("programmes:detail", kwargs={"slug": self.organisation.slug, "programme_id": self.programme.id}))
         self.assertContains(resp, "Programme ready")
+        self.assertContains(resp, "9 / 11 complete")
+        # Each step routes straight to where it's edited.
+        self.assertContains(resp, reverse("programmes:plan", kwargs={"slug": self.organisation.slug, "programme_id": self.programme.id}))
+        self.assertContains(resp, reverse("monitoring_evaluation:programme_me", kwargs={"slug": self.organisation.slug, "programme_id": self.programme.id}))
+        self.assertContains(resp, reverse("programmes:team", kwargs={"slug": self.organisation.slug, "programme_id": self.programme.id}))
 
 
 class ProgrammeTeamTests(TestCase):
@@ -653,69 +608,57 @@ class DOPADemonstrationScenarioTests(TestCase):
 
         slug = self.organisation.slug
 
-        # 1. Programme, via the wizard -- a real Programme Planning Workshop.
-        resp = self.client.post(reverse("programmes:create", kwargs={"slug": slug}), {
+        # 1. Programme -- a short create form, not a wizard.
+        resp = self.client.post(reverse("programmes:list", kwargs={"slug": slug}), {
             "name": "DOPA Youth Digital Skills & Employability Programme",
             "programme_area": "education_skills", "status": Programme.STATUS_PLANNED,
         })
         programme = Programme.objects.get(organisation=self.organisation)
-        self.assertRedirects(resp, reverse("programmes:wizard_step", kwargs={"slug": slug, "programme_id": programme.id, "step": Programme.WIZARD_WHY}))
+        self.assertRedirects(resp, reverse("programmes:detail", kwargs={"slug": slug, "programme_id": programme.id}))
 
-        def wizard_url(step):
-            return reverse("programmes:wizard_step", kwargs={"slug": slug, "programme_id": programme.id, "step": step})
-
-        self.client.post(wizard_url(Programme.WIZARD_WHY), {
+        # Filled in progressively on the Plan tab -- one form, not three
+        # separate wizard steps (need/purpose, who/where, staffing all live
+        # together there now).
+        self.client.post(reverse("programmes:plan", kwargs={"slug": slug, "programme_id": programme.id}), {
             "need_and_background": "Young people in Katlehong and surrounding rural communities have limited access to digital skills training and struggle to enter the job market.",
             "theory_of_change_summary": "If young people gain practical digital and workplace-readiness skills, they will be more employable.",
-        })
-        self.client.post(wizard_url(Programme.WIZARD_WHO_AND_WHERE), {
             "target_beneficiary_groups": "Unemployed youth aged 18-30",
-            "province": "GP", "locations": "Katlehong",
+            "province": "GP", "locations": "Katlehong", "programme_area": "education_skills",
+            "staffing_plan": "One programme manager, one facilitator.",
         })
         programme.refresh_from_db()
 
         # 2. Outcome -> Output -> Indicator -> Target, via the small M&E popups.
-        self.client.post(wizard_url(Programme.WIZARD_SUCCESS), {
+        me_url = reverse("monitoring_evaluation:programme_me", kwargs={"slug": slug, "programme_id": programme.id})
+        self.client.post(me_url, {
             "add_outcome": "1", "title": "Young people improve their digital skills and workplace readiness.", "description": "",
         })
         outcome = programme.outcomes.get()
-        self.client.post(wizard_url(Programme.WIZARD_SUCCESS), {
+        self.client.post(me_url, {
             "add_output": "1", "title": "Digital skills training delivered.", "description": "", "outcome": str(outcome.id),
         })
         output = programme.outputs.get()
-        self.client.post(wizard_url(Programme.WIZARD_SUCCESS), {
+        self.client.post(me_url, {
             "add_indicator": "1", "name": "Young people completing digital skills training.",
             "indicator_type": "count", "outcome": str(outcome.id), "output": str(output.id), "target_value": "100",
         })
-        self.client.post(wizard_url(Programme.WIZARD_SUCCESS), {"continue": "1"})
         programme.refresh_from_db()
 
         readiness = compute_programme_readiness(programme)
         self.assertTrue(readiness["is_ready"], readiness["missing"])
 
-        # 3. Project 1, via the now-unblocked wizard step.
-        resp = self.client.post(wizard_url(Programme.WIZARD_PROJECTS_AND_ACTIVITIES), {
-            "add_project": "1", "name": "Digital Skills Bootcamp – Katlehong", "status": Project.STATUS_ACTIVE,
+        # 3. Project 1, via the standalone Projects page -- now unblocked.
+        self.client.post(reverse("projects:list", kwargs={"slug": slug}), {
+            "name": "Digital Skills Bootcamp – Katlehong", "programme": str(programme.id), "status": Project.STATUS_ACTIVE,
             "budget": "20000",
         })
         project1 = Project.objects.get(programme=programme, name__contains="Katlehong")
 
-        # Activities.
-        self.client.post(wizard_url(Programme.WIZARD_PROJECTS_AND_ACTIVITIES), {
-            "add_activity": "1", "name": "Computer & Digital Literacy Workshop", "status": "planned", "project": str(project1.id),
-        })
-        self.client.post(wizard_url(Programme.WIZARD_PROJECTS_AND_ACTIVITIES), {
-            "add_activity": "1", "name": "CV & Workplace Readiness Workshop", "status": "planned", "project": str(project1.id),
-        })
+        # Activities, via the Programme's own Activities tab.
+        activities_url = reverse("programmes:activities", kwargs={"slug": slug, "programme_id": programme.id})
+        self.client.post(activities_url, {"name": "Computer & Digital Literacy Workshop", "status": "planned", "project": str(project1.id)})
+        self.client.post(activities_url, {"name": "CV & Workplace Readiness Workshop", "status": "planned", "project": str(project1.id)})
         self.assertEqual(project1.activities.count(), 2)
-        self.client.post(wizard_url(Programme.WIZARD_PROJECTS_AND_ACTIVITIES), {"continue": "1"})
-
-        self.client.post(wizard_url(Programme.WIZARD_PEOPLE_AND_RESOURCES), {"staffing_plan": "One programme manager, one facilitator."})
-        self.client.post(wizard_url(Programme.WIZARD_BUDGET_AND_FUNDING), {"grants": []})
-        resp = self.client.post(wizard_url(Programme.WIZARD_REVIEW))
-        programme.refresh_from_db()
-        self.assertEqual(programme.wizard_step, Programme.WIZARD_COMPLETE)
-        self.assertRedirects(resp, reverse("programmes:detail", kwargs={"slug": slug, "programme_id": programme.id}))
 
         # 4. Programme Team.
         self.client.post(reverse("programmes:team", kwargs={"slug": slug, "programme_id": programme.id}), {

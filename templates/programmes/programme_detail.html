@@ -17,41 +17,48 @@
 </div>
 
 <div class="section-block">
-  <h3>Programme Readiness</h3>
+  <div class="page-header" style="margin-bottom:12px;">
+    <div>
+      <h3 class="mb-0">Programme Planning</h3>
+      <p class="text-muted mb-0">{{ readiness.complete_count }} / {{ readiness.total_count }} complete</p>
+    </div>
+    {% if readiness.is_ready %}<span class="badge badge-success">Programme ready</span>{% else %}<span class="badge badge-warning">Programme not ready</span>{% endif %}
+  </div>
   <div class="card-flat">
-    {% if readiness.is_ready %}
-      <span class="badge badge-success">Programme ready</span>
-      <p class="field-hint" style="margin-top:8px;">This programme has the minimum plan a Project needs: need, purpose, beneficiaries, geography, and at least one Outcome, Output, Indicator and Target.</p>
-    {% else %}
-      <span class="badge badge-warning">Programme not ready</span>
-      <p class="field-hint" style="margin-top:8px;">Complete the items below before creating a Project under this programme.</p>
-    {% endif %}
-    <p class="readiness-group-label">Foundation</p>
-    <ul class="readiness-list">
-      {% for label, met in readiness.foundation %}
-      <li class="{% if met %}readiness-met{% else %}readiness-missing{% endif %}">{% if met %}✓{% else %}○{% endif %} {{ label }}</li>
-      {% endfor %}
-    </ul>
-    <p class="readiness-group-label">Programme Logic</p>
-    <ul class="readiness-list">
-      {% for label, met in readiness.logic %}
-      <li class="{% if met %}readiness-met{% else %}readiness-missing{% endif %}">{% if met %}✓{% else %}○{% endif %} {{ label }}</li>
-      {% endfor %}
-    </ul>
-    <p class="readiness-group-label">Logic &amp; Learning <span class="text-muted">(optional)</span></p>
-    <ul class="readiness-list">
-      {% for label, met in readiness.logic_and_learning %}
-      <li class="{% if met %}readiness-met{% else %}readiness-missing{% endif %}">{% if met %}✓{% else %}○{% endif %} {{ label }}</li>
-      {% endfor %}
-    </ul>
-    <p class="readiness-group-label">Delivery <span class="text-muted">(recommended)</span></p>
-    <ul class="readiness-list">
-      {% for label, met in readiness.recommended %}
-      <li class="{% if met %}readiness-met{% else %}readiness-missing{% endif %}">{% if met %}✓{% else %}○{% endif %} {{ label }}</li>
-      {% endfor %}
-    </ul>
+    <div class="readiness-path-group">
+      <p class="readiness-path-group-label">Foundation</p>
+      <div class="readiness-path-steps">
+        {% for step in readiness.foundation %}
+        <a href="{{ step.url }}" class="readiness-step{% if step.met %} is-met{% endif %}">{% if step.met %}✓{% else %}○{% endif %} {{ step.label|cut:" defined"|cut:" identified" }}</a>
+        {% endfor %}
+      </div>
+    </div>
+    <div class="readiness-path-group">
+      <p class="readiness-path-group-label">Programme Logic</p>
+      <div class="readiness-path-steps">
+        {% for step in readiness.logic %}
+        <a href="{{ step.url }}" class="readiness-step{% if step.met %} is-met{% endif %}">{% if step.met %}✓{% else %}○{% endif %} {{ step.label|cut:" defined" }}</a>
+        {% endfor %}
+      </div>
+    </div>
+    <div class="readiness-path-group">
+      <p class="readiness-path-group-label">Delivery <span class="text-muted">(recommended)</span></p>
+      <div class="readiness-path-steps">
+        {% for step in readiness.delivery %}
+        <a href="{{ step.url }}" class="readiness-step{% if step.met %} is-met{% endif %}">{% if step.met %}✓{% else %}○{% endif %} {{ step.label }}</a>
+        {% endfor %}
+      </div>
+    </div>
+    <div class="readiness-path-group">
+      <p class="readiness-path-group-label">Logic &amp; Learning <span class="text-muted">(optional)</span></p>
+      <div class="readiness-path-steps">
+        {% for step in readiness.logic_and_learning %}
+        <a href="{{ step.url }}" class="readiness-step{% if step.met %} is-met{% endif %}">{% if step.met %}✓{% else %}○{% endif %} {{ step.label }}</a>
+        {% endfor %}
+      </div>
+    </div>
     {% if not readiness.is_ready %}
-    <a href="{% url 'programmes:plan' slug=organisation.slug programme_id=programme.id %}" class="btn btn-primary btn-sm">Complete Programme Plan</a>
+    <a href="{% url 'programmes:plan' slug=organisation.slug programme_id=programme.id %}" class="btn btn-primary btn-sm" style="margin-top:14px;">Complete Programme Plan</a>
     {% endif %}
   </div>
 </div>

@@ -212,7 +212,7 @@ tr:last-child td { border-bottom: none; }
 .app-main { flex: 1; min-width: 0; }
 .app-topbar { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 12px 28px; border-bottom: 1px solid var(--color-border); background: #fff; position: sticky; top: 0; z-index: 10; }
 .app-topbar-left { display: flex; align-items: center; gap: 14px; min-width: 0; }
-.app-content { padding: 24px 28px; max-width: 1180px; }
+.app-content { padding: 24px 28px; max-width: 1180px; margin: 0 auto; width: 100%; box-sizing: border-box; }
 .breadcrumbs { font-size: .82rem; color: var(--color-text-muted); margin-bottom: 10px; }
 .breadcrumbs a { color: var(--color-text-muted); }
 .page-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 24px; flex-wrap: wrap; }
@@ -293,9 +293,6 @@ tr:last-child td { border-bottom: none; }
 .justify-between { justify-content: space-between; }
 
 /* Guided wizard chrome (Programme wizard, reused wherever else needed) */
-.wizard-progress { height: 6px; background: var(--color-border); border-radius: 999px; overflow: hidden; margin-bottom: 28px; max-width: 480px; }
-.wizard-progress-bar { height: 100%; background: var(--color-primary); }
-.wizard-step-label { font-size: .78rem; color: var(--color-text-muted); font-weight: 700; text-transform: uppercase; letter-spacing: .03em; margin-bottom: 6px; }
 .wizard-actions { display: flex; justify-content: space-between; align-items: center; margin-top: 24px; }
 .wizard-inline-list { list-style: none; margin: 0 0 16px; padding: 0; }
 .wizard-inline-list li { padding: 8px 0; border-bottom: 1px solid var(--color-border); font-size: .88rem; }
@@ -349,9 +346,17 @@ tr:last-child td { border-bottom: none; }
 .hub-card h3 { color: var(--color-primary); }
 
 /* Programme Readiness checklist -- a gate, not a percentage. */
-.readiness-list { list-style: none; margin: 4px 0 12px; padding: 0; display: flex; flex-direction: column; gap: 6px; }
-.readiness-list li { font-size: .88rem; }
-.readiness-met { color: var(--color-success); }
-.readiness-missing { color: var(--color-text-muted); }
-.readiness-group-label { font-size: .78rem; font-weight: 600; text-transform: uppercase; letter-spacing: .03em; color: var(--color-text-muted); margin: 16px 0 0; }
-.readiness-group-label:first-of-type { margin-top: 4px; }
+/* Programme Planning path -- a compact, clickable stepper (never a tall
+   vertical checklist). Grouped sections wrap naturally on narrow
+   screens instead of needing a separate mobile layout. */
+.readiness-path-group { margin: 14px 0 0; }
+.readiness-path-group:first-child { margin-top: 4px; }
+.readiness-path-group-label { font-size: .72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .03em; color: var(--color-text-muted); margin: 0 0 6px; }
+.readiness-path-steps { display: flex; flex-wrap: wrap; gap: 6px; }
+.readiness-step {
+  display: inline-flex; align-items: center; gap: 4px; padding: 5px 10px; border-radius: 999px;
+  font-size: .8rem; font-weight: 600; border: 1px solid var(--color-border); color: var(--color-text-muted);
+  background: var(--color-surface); white-space: nowrap;
+}
+.readiness-step:hover { border-color: var(--color-primary); text-decoration: none; }
+.readiness-step.is-met { color: var(--color-success); border-color: var(--color-success); background: var(--color-success-light); }

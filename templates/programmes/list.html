@@ -4,7 +4,7 @@
 <div class="breadcrumbs">Programmes</div>
 <div class="page-header">
   <div><h1>Programmes</h1><p>Manage the programmes your organisation delivers.</p></div>
-  {% if can_manage %}<a href="{% url 'programmes:create' slug=organisation.slug %}" class="btn btn-primary">New Programme</a>{% endif %}
+  {% if can_manage %}<button type="button" class="btn btn-primary" data-modal-open="create-programme-modal">+ New Programme</button>{% endif %}
 </div>
 {% if rows %}
 <div class="card-flat" style="padding:0;">
@@ -13,17 +13,10 @@
   <tbody>
     {% for row in rows %}
     <tr>
-      <td>
-        {% if row.is_mid_wizard %}
-        <a href="{% url 'programmes:wizard_step' slug=organisation.slug programme_id=row.programme.id step=row.programme.wizard_step %}">{{ row.programme.name|default:"Untitled programme" }}</a>
-        <span class="badge badge-warning">Draft</span>
-        {% else %}
-        <a href="{% url 'programmes:detail' slug=organisation.slug programme_id=row.programme.id %}">{{ row.programme.name }}</a>
-        {% endif %}
-      </td>
+      <td><a href="{% url 'programmes:detail' slug=organisation.slug programme_id=row.programme.id %}">{{ row.programme.name }}</a></td>
       <td><span class="badge badge-neutral">{{ row.programme.get_status_display }}</span></td>
       <td>{% if row.programme.start_date %}{{ row.programme.start_date|date:"Y" }}{% if row.programme.end_date %}–{{ row.programme.end_date|date:"Y" }}{% endif %}{% else %}—{% endif %}</td>
-      <td>{% if row.is_mid_wizard %}<span class="text-muted">Planning in progress</span>{% elif row.progress is not None %}{{ row.progress }}%{% else %}<span class="text-muted">No data yet</span>{% endif %}</td>
+      <td>{% if row.progress is not None %}{{ row.progress }}%{% else %}<span class="text-muted">No data yet</span>{% endif %}</td>
     </tr>
     {% endfor %}
   </tbody>
@@ -31,5 +24,9 @@
 </div>
 {% else %}
 <div class="empty-state"><h3>No programmes yet.</h3><p>Create your first programme to begin tracking activities, attendance and impact.</p></div>
+{% endif %}
+
+{% if can_manage %}
+{% include "partials/_modal.html" with modal_id="create-programme-modal" title="New Programme" form=form submit_label="Create Programme" %}
 {% endif %}
 {% endblock %}

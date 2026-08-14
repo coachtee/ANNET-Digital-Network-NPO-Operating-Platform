@@ -83,6 +83,49 @@ def compute_programme_readiness(programme):
     }
 
 
+def programme_readiness_steps(programme):
+    """The Overview tab's compact, clickable Programme Planning path --
+    each step routes straight to where it's edited. Built on top of
+    compute_programme_readiness() without changing that function's
+    return contract, since ProjectForm.clean_programme() and existing
+    tests read it directly.
+
+    The "N / total complete" count covers Foundation + Programme Logic
+    (required) and Delivery (recommended) -- Logic & Learning stays
+    secondary/optional and isn't counted, so it never reads as blocking.
+    """
+    readiness = compute_programme_readiness(programme)
+    slug = programme.organisation.slug
+    plan_url = reverse("programmes:plan", kwargs={"slug": slug, "programme_id": programme.id})
+    me_url = reverse("monitoring_evaluation:programme_me", kwargs={"slug": slug, "programme_id": programme.id})
+    learning_url = reverse("programmes:learning", kwargs={"slug": slug, "programme_id": programme.id})
+    team_url = reverse("programmes:team", kwargs={"slug": slug, "programme_id": programme.id})
+    projects_url = reverse("projects:list", kwargs={"slug": slug}) + f"?programme={programme.id}"
+
+    url_for_label = {
+        "Programme defined": plan_url, "Need identified": plan_url, "Purpose defined": plan_url,
+        "Beneficiaries defined": plan_url, "Geography defined": plan_url,
+        "Outcome defined": me_url, "Output defined": me_url, "Indicator defined": me_url, "Target defined": me_url,
+        "Theory of Change considered": plan_url, "Key assumptions identified": plan_url,
+        "Learning question identified": learning_url,
+        "Programme Manager assigned": team_url, "At least one project created": projects_url,
+    }
+
+    def build_group(items):
+        return [{"label": label, "met": met, "url": url_for_label[label]} for label, met in items]
+
+    counted = readiness["checks"] + readiness["recommended"]
+    return {
+        "foundation": build_group(readiness["foundation"]),
+        "logic": build_group(readiness["logic"]),
+        "logic_and_learning": build_group(readiness["logic_and_learning"]),
+        "delivery": build_group(readiness["recommended"]),
+        "complete_count": sum(1 for _, met in counted if met),
+        "total_count": len(counted),
+        "is_ready": readiness["is_ready"],
+    }
+
+
 def compute_programme_attention(programme, organisation):
     """Actionable gaps, in priority order, capped at 6 -- combines setup
     completeness (no outcome/indicator/project/activity/funding yet) with

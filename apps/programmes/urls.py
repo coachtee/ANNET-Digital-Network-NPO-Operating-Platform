@@ -6,9 +6,7 @@ app_name = "programmes"
 
 urlpatterns = [
     path("<slug:slug>/", views.programme_list, name="list"),
-    path("<slug:slug>/create/", views.create_programme, name="create"),
     path("<slug:slug>/<uuid:programme_id>/", views.programme_detail, name="detail"),
-    path("<slug:slug>/<uuid:programme_id>/wizard/<str:step>/", views.wizard_step, name="wizard_step"),
     path("<slug:slug>/<uuid:programme_id>/plan/", views.programme_plan, name="plan"),
     path("<slug:slug>/<uuid:programme_id>/plan/assumptions/<uuid:assumption_id>/edit/", views.assumption_edit, name="assumption_edit"),
     path("<slug:slug>/<uuid:programme_id>/plan/assumptions/<uuid:assumption_id>/delete/", views.assumption_delete, name="assumption_delete"),

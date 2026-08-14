@@ -11,7 +11,6 @@ from apps.core.permissions import has_org_capability
 from apps.documents.forms import DocumentUploadForm
 from apps.documents.models import Document
 from apps.impact.services import people_reached_for_programme
-from apps.monitoring_evaluation.forms import IndicatorForm, OutcomeForm, OutputForm
 from apps.organisations.services import get_organisation_or_404_for_user
 from apps.programmes.forms import (
     ActivityForm,
@@ -19,13 +18,9 @@ from apps.programmes.forms import (
     ContextNoteForm,
     LearningLogEntryForm,
     LearningQuestionForm,
+    ProgrammeCreateForm,
     ProgrammeMembershipForm,
     ProgrammePlanForm,
-    ProgrammeWizardDetailsForm,
-    ProgrammeWizardFundingForm,
-    ProgrammeWizardPeopleResourcesForm,
-    ProgrammeWizardWhyForm,
-    ProgrammeWizardWhoWhereForm,
     TheoryOfChangeForm,
 )
 from apps.programmes.models import (
@@ -40,222 +35,43 @@ from apps.programmes.models import (
 from apps.programmes.services import (
     compute_programme_attention,
     compute_programme_progress,
-    compute_programme_readiness,
     programme_budget_summary,
+    programme_readiness_steps,
 )
-from apps.projects.forms import ProjectForm
-
-WIZARD_ORDER = [step for step, _ in Programme.WIZARD_STEP_CHOICES]
-
-
-def _advance_wizard(programme, current_step):
-    idx = WIZARD_ORDER.index(current_step)
-    if idx + 1 < len(WIZARD_ORDER):
-        programme.wizard_step = WIZARD_ORDER[idx + 1]
-        programme.save(update_fields=["wizard_step"])
-
 
 def _require_manage(request, organisation):
     if not has_org_capability(request.user, organisation, "programmes.manage"):
         raise PermissionDenied
 
 
-def _is_mid_wizard(programme):
-    """WIZARD_PROGRAMME is the field's default -- a programme genuinely
-    mid-wizard is never sitting at that value (create_programme always
-    advances to WIZARD_WHY in the same save that creates the row), so
-    excluding it here is what keeps pre-existing programmes (backfilled
-    with the default when this field was added) from being mistaken for
-    an abandoned wizard."""
-    return programme.wizard_step not in (Programme.WIZARD_PROGRAMME, Programme.WIZARD_COMPLETE)
-
-
 @login_required
 def programme_list(request, slug):
+    """Programme list + "New Programme" -- a short create form in a
+    modal, not a wizard. A Programme is created immediately and the user
+    is sent straight into its (possibly still-incomplete) Workspace,
+    where Plan/M&E/Team/Projects let them progressively fill it in.
+
+    Every click of "New Programme" starts a genuinely new, empty
+    Programme -- it can never resume or inherit data from another
+    programme."""
     organisation = get_organisation_or_404_for_user(request.user, slug)
+    can_manage = has_org_capability(request.user, organisation, "programmes.manage")
     programmes = organisation.programmes.all()
-    rows = [
-        {"programme": p, "progress": compute_programme_progress(p), "is_mid_wizard": _is_mid_wizard(p)}
-        for p in programmes
-    ]
-    return render(request, "programmes/list.html", {
-        "organisation": organisation, "rows": rows,
-        "can_manage": has_org_capability(request.user, organisation, "programmes.manage"),
-    })
+    rows = [{"programme": p, "progress": compute_programme_progress(p)} for p in programmes]
 
-
-@login_required
-def create_programme(request, slug):
-    """Step 1 of the guided wizard: creates the Programme immediately (so
-    every later step edits a real instance, mirroring
-    apps.organisations' onboarding_step mechanism) and sends the user
-    straight into step 2.
-
-    Every click of "New Programme" starts a genuinely new Programme --
-    it must never silently resume a different, unrelated abandoned
-    wizard the org happens to have lying around. Resuming an incomplete
-    Programme is only possible by explicitly opening that specific
-    Programme from the Programme list (see programme_list/is_mid_wizard),
-    which routes straight back into wizard_step at its saved step."""
-    organisation = get_organisation_or_404_for_user(request.user, slug)
-    _require_manage(request, organisation)
-
-    form = ProgrammeWizardDetailsForm(request.POST if request.method == "POST" else None)
-    if request.method == "POST" and form.is_valid():
-        programme = form.save(commit=False)
-        programme.organisation = organisation
-        programme.wizard_step = Programme.WIZARD_WHY
-        programme.save()
-        log_action("programme.created", organisation=organisation, obj=programme, actor=request.user)
-        return redirect("programmes:wizard_step", slug=slug, programme_id=programme.id, step=Programme.WIZARD_WHY)
-    return render(request, "programmes/wizard_details.html", {
-        "organisation": organisation, "form": form, "step_number": 1, "step_total": 8,
-    })
-
-
-@login_required
-def wizard_step(request, slug, programme_id, step):
-    organisation = get_organisation_or_404_for_user(request.user, slug)
-    programme = get_object_or_404(Programme, id=programme_id, organisation=organisation)
-    _require_manage(request, organisation)
-
-    step_idx = WIZARD_ORDER.index(step)
-    # index 0 is WIZARD_PROGRAMME, handled by create_programme's own form,
-    # not this dispatcher -- so step 2 (WHY) has no wizard-navigable "back".
-    prev_step = WIZARD_ORDER[step_idx - 1] if step_idx > 1 else None
-    context = {
-        "organisation": organisation, "programme": programme, "step": step,
-        "step_number": step_idx + 1, "step_total": 8, "prev_step": prev_step,
-    }
-
-    if step == Programme.WIZARD_WHY:
-        form = ProgrammeWizardWhyForm(request.POST if request.method == "POST" else None, instance=programme)
+    form = None
+    if can_manage:
+        form = ProgrammeCreateForm(request.POST if request.method == "POST" else None)
         if request.method == "POST" and form.is_valid():
-            form.save()
-            _advance_wizard(programme, step)
-            return redirect("programmes:wizard_step", slug=slug, programme_id=programme.id, step=Programme.WIZARD_WHO_AND_WHERE)
-        context["form"] = form
-        return render(request, "programmes/wizard_why.html", context)
-
-    if step == Programme.WIZARD_WHO_AND_WHERE:
-        initial = {
-            "target_beneficiary_groups": ", ".join(programme.target_beneficiary_groups),
-            "locations": ", ".join(programme.locations),
-        }
-        form = ProgrammeWizardWhoWhereForm(request.POST if request.method == "POST" else None, initial=initial)
-        if request.method == "POST" and form.is_valid():
-            form.save(programme)
-            _advance_wizard(programme, step)
-            return redirect("programmes:wizard_step", slug=slug, programme_id=programme.id, step=Programme.WIZARD_SUCCESS)
-        context["form"] = form
-        return render(request, "programmes/wizard_who_and_where.html", context)
-
-    if step == Programme.WIZARD_SUCCESS:
-        # Distinct auto_id per form -- all three render "title"/"outcome"
-        # fields, and without this every one of them would emit the same
-        # id_title/id_outcome DOM ids, so a <label for="id_title"> in the
-        # Output or Indicator card would focus the Outcome card's field
-        # instead (a real bug, not just a test-selector nuisance).
-        outcome_form = OutcomeForm(auto_id="id_outcome_%s")
-        output_form = OutputForm(programme=programme, auto_id="id_output_%s")
-        indicator_form = IndicatorForm(programme=programme, auto_id="id_indicator_%s")
-        if request.method == "POST":
-            if "continue" in request.POST:
-                _advance_wizard(programme, step)
-                return redirect("programmes:wizard_step", slug=slug, programme_id=programme.id, step=Programme.WIZARD_PROJECTS_AND_ACTIVITIES)
-            if "add_outcome" in request.POST:
-                outcome_form = OutcomeForm(request.POST, auto_id="id_outcome_%s")
-                if outcome_form.is_valid():
-                    outcome = outcome_form.save(commit=False)
-                    outcome.programme = programme
-                    outcome.save()
-                    outcome_form = OutcomeForm(auto_id="id_outcome_%s")
-            elif "add_output" in request.POST:
-                output_form = OutputForm(request.POST, programme=programme, auto_id="id_output_%s")
-                if output_form.is_valid():
-                    output = output_form.save(commit=False)
-                    output.programme = programme
-                    output.save()
-                    output_form = OutputForm(programme=programme, auto_id="id_output_%s")
-            elif "add_indicator" in request.POST:
-                indicator_form = IndicatorForm(request.POST, programme=programme, auto_id="id_indicator_%s")
-                if indicator_form.is_valid():
-                    indicator = indicator_form.save(commit=False)
-                    indicator.programme = programme
-                    indicator.save()
-                    indicator_form = IndicatorForm(programme=programme, auto_id="id_indicator_%s")
-        context.update({
-            "outcome_form": outcome_form, "output_form": output_form, "indicator_form": indicator_form,
-            "outcomes": programme.outcomes.all(), "outputs": programme.outputs.all(), "indicators": programme.indicators.all(),
-        })
-        return render(request, "programmes/wizard_success.html", context)
-
-    if step == Programme.WIZARD_PROJECTS_AND_ACTIVITIES:
-        readiness = compute_programme_readiness(programme)
-        project_form = ProjectForm(organisation=organisation, initial={"programme": programme.id}) if readiness["is_ready"] else None
-        activity_form = ActivityForm(programme=programme, organisation=organisation)
-        if request.method == "POST":
-            if "continue" in request.POST:
-                _advance_wizard(programme, step)
-                return redirect("programmes:wizard_step", slug=slug, programme_id=programme.id, step=Programme.WIZARD_PEOPLE_AND_RESOURCES)
-            if "add_project" in request.POST and readiness["is_ready"]:
-                project_form = ProjectForm(request.POST, organisation=organisation)
-                if project_form.is_valid():
-                    project = project_form.save(commit=False)
-                    project.organisation = organisation
-                    project.programme = programme
-                    project.save()
-                    project_form = ProjectForm(organisation=organisation, initial={"programme": programme.id})
-            elif "add_activity" in request.POST:
-                activity_form = ActivityForm(request.POST, programme=programme, organisation=organisation)
-                if activity_form.is_valid():
-                    activity = activity_form.save(commit=False)
-                    activity.programme = programme
-                    activity.save()
-                    activity_form.save_m2m()
-                    activity_form = ActivityForm(programme=programme, organisation=organisation)
-        context.update({
-            "project_form": project_form, "activity_form": activity_form, "readiness": readiness,
-            "projects": programme.projects.all(), "activities": programme.activities.all(),
-        })
-        return render(request, "programmes/wizard_projects_and_activities.html", context)
-
-    if step == Programme.WIZARD_PEOPLE_AND_RESOURCES:
-        form = ProgrammeWizardPeopleResourcesForm(request.POST if request.method == "POST" else None, instance=programme)
-        if request.method == "POST" and form.is_valid():
-            form.save()
-            _advance_wizard(programme, step)
-            return redirect("programmes:wizard_step", slug=slug, programme_id=programme.id, step=Programme.WIZARD_BUDGET_AND_FUNDING)
-        context["form"] = form
-        return render(request, "programmes/wizard_people_and_resources.html", context)
-
-    if step == Programme.WIZARD_BUDGET_AND_FUNDING:
-        form = ProgrammeWizardFundingForm(request.POST if request.method == "POST" else None, instance=programme, organisation=organisation)
-        if request.method == "POST" and form.is_valid():
-            form.save()
-            _advance_wizard(programme, step)
-            return redirect("programmes:wizard_step", slug=slug, programme_id=programme.id, step=Programme.WIZARD_REVIEW)
-        context["form"] = form
-        context["budget"] = programme_budget_summary(programme)
-        return render(request, "programmes/wizard_budget_and_funding.html", context)
-
-    if step == Programme.WIZARD_REVIEW:
-        if request.method == "POST":
-            programme.wizard_step = Programme.WIZARD_COMPLETE
-            programme.save(update_fields=["wizard_step"])
-            messages.success(request, f"{programme.name} is ready. Welcome to your Programme Workspace.")
+            programme = form.save(commit=False)
+            programme.organisation = organisation
+            programme.save()
+            log_action("programme.created", organisation=organisation, obj=programme, actor=request.user)
             return redirect("programmes:detail", slug=slug, programme_id=programme.id)
-        context.update({
-            "outcomes": programme.outcomes.all(), "indicators": programme.indicators.all(),
-            "projects": programme.projects.all(), "activities": programme.activities.all(),
-            "budget": programme_budget_summary(programme),
-        })
-        return render(request, "programmes/wizard_review.html", context)
 
-    # Not a real wizard page (e.g. a pre-existing programme whose
-    # wizard_step is still the field's default) -- send the user to the
-    # real workspace rather than looping back into this dispatcher.
-    return redirect("programmes:detail", slug=slug, programme_id=programme.id)
+    return render(request, "programmes/list.html", {
+        "organisation": organisation, "rows": rows, "can_manage": can_manage, "form": form,
+    })
 
 
 @login_required
@@ -284,7 +100,7 @@ def programme_detail(request, slug, programme_id):
             status="planned", scheduled_date__gte=today
         ).order_by("scheduled_date")[:5],
         "attention": compute_programme_attention(programme, organisation),
-        "readiness": compute_programme_readiness(programme),
+        "readiness": programme_readiness_steps(programme),
     }
     return render(request, "programmes/programme_detail.html", context)
 
@@ -298,7 +114,7 @@ def programme_plan(request, slug, programme_id):
 
     form = None
     if editing and can_manage:
-        form = ProgrammePlanForm(request.POST if request.method == "POST" else None, instance=programme)
+        form = ProgrammePlanForm(request.POST if request.method == "POST" else None, instance=programme, organisation=organisation)
         if request.method == "POST" and form.is_valid():
             form.save()
             messages.success(request, "Programme plan updated.")

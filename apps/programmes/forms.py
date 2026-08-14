@@ -1,6 +1,5 @@
 from django import forms
 
-from apps.organisations.models import PROVINCE_CHOICES
 from apps.programmes.models import (
     Activity,
     Assumption,
@@ -43,8 +42,12 @@ class ProgrammeMembershipForm(forms.ModelForm):
             )
 
 
-class ProgrammeWizardDetailsForm(forms.ModelForm):
-    """Wizard step 1: Programme. Also used as the plain create form."""
+class ProgrammeCreateForm(forms.ModelForm):
+    """The entire "New Programme" experience: a short create form, not a
+    multi-step wizard. Everything else (need, purpose, beneficiaries,
+    geography, outcomes, team, funding...) is filled in progressively
+    inside the Programme Workspace afterwards -- see ProgrammePlanForm,
+    the M&E tab and the Team tab."""
 
     class Meta:
         model = Programme
@@ -55,95 +58,33 @@ class ProgrammeWizardDetailsForm(forms.ModelForm):
         }
 
 
-class ProgrammeWizardWhyForm(forms.ModelForm):
-    """Wizard step 2: Why. "What problem are you trying to address?" /
-    "What do you want to achieve?" -- reuses the existing
-    theory_of_change_summary field for the latter rather than adding a
-    duplicate concept."""
-
-    class Meta:
-        model = Programme
-        fields = ["need_and_background", "theory_of_change_summary"]
-        labels = {
-            "need_and_background": "What problem are you trying to address?",
-            "theory_of_change_summary": "What do you want to achieve?",
-        }
-        widgets = {
-            "need_and_background": forms.Textarea(attrs={"rows": 4}),
-            "theory_of_change_summary": forms.Textarea(attrs={"rows": 3}),
-        }
-
-
-class ProgrammeWizardWhoWhereForm(forms.Form):
-    """Wizard step 3: Who & Where. target_beneficiary_groups/locations are
-    already-existing JSONField(list) columns on Programme with no form
-    ever exposing them -- same comma-separated-text pattern already used
-    for Organisation.sectors/programme_areas in the onboarding wizard."""
+class ProgrammePlanForm(forms.ModelForm):
+    """Plan tab edit form -- where a Programme's need, purpose,
+    beneficiaries, geography, staffing and funding are progressively
+    filled in after the short Create Programme step."""
 
     target_beneficiary_groups = forms.CharField(
         required=False, widget=forms.Textarea(attrs={"rows": 2}),
         label="Who will benefit?", help_text="Comma-separated, e.g. Youth aged 18-35, Unemployed graduates",
     )
-    province = forms.ChoiceField(
-        required=False, choices=[("", "---------")] + PROVINCE_CHOICES, label="Primary province",
-    )
     locations = forms.CharField(
         required=False, widget=forms.Textarea(attrs={"rows": 2}),
-        label="Where, more specifically?", help_text="District/municipality/locality/venue, comma-separated, e.g. Khayelitsha, Ekurhuleni",
-    )
-
-    def save(self, programme):
-        programme.target_beneficiary_groups = _to_list(self.cleaned_data["target_beneficiary_groups"])
-        programme.province = self.cleaned_data["province"]
-        programme.locations = _to_list(self.cleaned_data["locations"])
-        programme.save(update_fields=["target_beneficiary_groups", "province", "locations"])
-
-
-class ProgrammeWizardPeopleResourcesForm(forms.ModelForm):
-    """Wizard step 6: People & Resources. Deliberately a single narrative
-    field, not a staff roster -- see the architecture proposal's flagged
-    DSD C4 gap."""
-
-    class Meta:
-        model = Programme
-        fields = ["staffing_plan"]
-        labels = {"staffing_plan": "Who will deliver this programme, and what resources do they need?"}
-        widgets = {"staffing_plan": forms.Textarea(attrs={"rows": 4})}
-
-
-class ProgrammeWizardFundingForm(forms.ModelForm):
-    """Wizard step 7: Budget & Funding. Project-level budgets are already
-    captured in step 5 (Projects & Activities); this step is specifically
-    about funding sources."""
-
-    class Meta:
-        model = Programme
-        fields = ["grants"]
-        labels = {"grants": "Which funding sources support this programme?"}
-
-    def __init__(self, *args, organisation=None, **kwargs):
-        super().__init__(*args, **kwargs)
-        if organisation is not None:
-            self.fields["grants"].queryset = organisation.grants.all()
-
-
-class ProgrammePlanForm(forms.ModelForm):
-    """Plan tab edit form -- the same fields the wizard collects, editable
-    afterwards in one place rather than only during initial setup."""
-
-    target_beneficiary_groups = forms.CharField(
-        required=False, widget=forms.Textarea(attrs={"rows": 2}), help_text="Comma-separated",
-    )
-    locations = forms.CharField(
-        required=False, widget=forms.Textarea(attrs={"rows": 2}), help_text="Comma-separated",
+        label="Where, more specifically?", help_text="District/municipality/locality/venue, comma-separated",
     )
 
     class Meta:
         model = Programme
         fields = [
             "need_and_background", "theory_of_change_summary", "programme_area", "province",
-            "start_date", "end_date", "staffing_plan",
+            "start_date", "end_date", "staffing_plan", "grants",
         ]
+        labels = {
+            "need_and_background": "What problem are you trying to address?",
+            "theory_of_change_summary": "What do you want to achieve?",
+            "province": "Primary province",
+            "staffing_plan": "Who will deliver this programme, and what resources do they need?",
+            "grants": "Which funding sources support this programme?",
+        }
         widgets = {
             "need_and_background": forms.Textarea(attrs={"rows": 4}),
             "theory_of_change_summary": forms.Textarea(attrs={"rows": 3}),
@@ -152,11 +93,13 @@ class ProgrammePlanForm(forms.ModelForm):
             "end_date": forms.DateInput(attrs={"type": "date"}),
         }
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, organisation=None, **kwargs):
         super().__init__(*args, **kwargs)
         if self.instance and self.instance.pk:
             self.fields["target_beneficiary_groups"].initial = ", ".join(self.instance.target_beneficiary_groups)
             self.fields["locations"].initial = ", ".join(self.instance.locations)
+        if organisation is not None:
+            self.fields["grants"].queryset = organisation.grants.all()
 
     def save(self, commit=True):
         programme = super().save(commit=False)
@@ -164,6 +107,7 @@ class ProgrammePlanForm(forms.ModelForm):
         programme.locations = _to_list(self.cleaned_data["locations"])
         if commit:
             programme.save()
+            self.save_m2m()
         return programme
 
 
@@ -255,26 +199,6 @@ class ContextNoteForm(forms.ModelForm):
             "description": forms.Textarea(attrs={"rows": 2}),
             "date": forms.DateInput(attrs={"type": "date"}),
         }
-
-
-class ProgrammeForm(forms.ModelForm):
-    """Legacy full-form edit, kept for any direct Programme edit outside
-    the wizard/Plan-tab split."""
-
-    sectors_help = "Comma-separated"
-
-    class Meta:
-        model = Programme
-        fields = ["name", "description", "programme_area", "theory_of_change_summary", "status", "grants"]
-        widgets = {
-            "description": forms.Textarea(attrs={"rows": 3}),
-            "theory_of_change_summary": forms.Textarea(attrs={"rows": 3}),
-        }
-
-    def __init__(self, *args, organisation=None, **kwargs):
-        super().__init__(*args, **kwargs)
-        if organisation is not None:
-            self.fields["grants"].queryset = organisation.grants.all()
 
 
 class ActivityForm(forms.ModelForm):
