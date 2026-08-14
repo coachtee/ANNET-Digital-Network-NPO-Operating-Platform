@@ -1,0 +1,35 @@
+{% extends "workspace_base.html" %}
+{% block title %}{{ programme.name }}: Review{% endblock %}
+{% block content %}
+{% include "programmes/_wizard_shell.html" %}
+<h1 style="font-size:1.5rem;">Review {{ programme.name }}</h1>
+<p class="text-muted">Here's what you've set up. You can change any of this later from the Programme Workspace.</p>
+
+<div class="grid grid-2">
+  <div class="card-flat">
+    <h3>Plan</h3>
+    <p><strong>Area:</strong> {{ programme.programme_area|default:"—" }}</p>
+    <p><strong>Period:</strong> {{ programme.start_date|default:"—" }} to {{ programme.end_date|default:"—" }}</p>
+    <p><strong>Beneficiaries:</strong> {{ programme.target_beneficiary_groups|join:", "|default:"—" }}</p>
+    <p><strong>Geography:</strong> {{ programme.locations|join:", "|default:"—" }}</p>
+  </div>
+  <div class="card-flat">
+    <h3>What Success Looks Like</h3>
+    <p>{{ outcomes.count }} outcome{{ outcomes.count|pluralize }}, {{ indicators.count }} indicator{{ indicators.count|pluralize }}</p>
+  </div>
+  <div class="card-flat">
+    <h3>Delivery</h3>
+    <p>{{ projects.count }} project{{ projects.count|pluralize }}, {{ activities.count }} activit{{ activities.count|pluralize:"y,ies" }}</p>
+  </div>
+  <div class="card-flat">
+    <h3>Budget</h3>
+    <p>Budget <strong>R{{ budget.budget|floatformat:2 }}</strong> · Funding sources: {{ programme.grants.count }}</p>
+  </div>
+</div>
+
+<form method="post" class="wizard-actions">
+  {% csrf_token %}
+  <a href="{% url 'programmes:wizard_step' slug=organisation.slug programme_id=programme.id step=prev_step %}" class="btn btn-ghost">Back</a>
+  <button type="submit" class="btn btn-primary">Create Programme</button>
+</form>
+{% endblock %}

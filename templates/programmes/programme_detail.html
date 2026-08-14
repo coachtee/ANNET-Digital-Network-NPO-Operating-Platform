@@ -1,38 +1,95 @@
 {% extends "workspace_base.html" %}
 {% block title %}{{ programme.name }}{% endblock %}
 {% block content %}
-<div class="breadcrumbs"><a href="{% url 'programmes:list' slug=organisation.slug %}">Programmes</a> / {{ programme.name }}</div>
-<div class="page-header"><div><h1>{{ programme.name }}</h1><p>{{ programme.programme_area }} · <span class="badge badge-neutral">{{ programme.get_status_display }}</span></p></div></div>
+{% include "programmes/_workspace_header.html" %}
 
-<div class="metric-row">
-  <div class="metric-card"><div class="stat-value">{{ activities|length }}</div><div class="stat-label">Activities</div></div>
-  <div class="metric-card"><div class="stat-value">{{ beneficiary_count }}</div><div class="stat-label">Beneficiaries</div></div>
-  <div class="metric-card"><div class="stat-value">{{ indicators|length }}</div><div class="stat-label">Indicators</div></div>
+<div class="section-block">
+  <h3>Programme progress</h3>
+  {% if progress is not None %}
+    <div class="flex items-center gap-16">
+      <div class="progress-track" style="flex:1;"><div class="progress-track-fill" style="width:{{ progress }}%;"></div></div>
+      <strong>{{ progress }}%</strong>
+    </div>
+    <p class="field-hint">Average achievement across this programme's indicators.</p>
+  {% else %}
+    <p class="text-muted">No indicator results recorded yet.</p>
+  {% endif %}
 </div>
 
 <div class="grid grid-2">
-  <div class="card-flat">
-    <h3>Activities</h3>
-    {% if activities %}
+  <div class="section-block">
+    <h3>Outcomes &amp; Indicators</h3>
+    <div class="card-flat" style="padding:0;">
+      {% if indicators %}
       <table>
-        <thead><tr><th>Name</th><th>Date</th><th>Status</th></tr></thead>
-        <tbody>{% for a in activities %}<tr><td>{{ a.name }}</td><td>{{ a.scheduled_date|default:"—" }}</td><td>{{ a.get_status_display }}</td></tr>{% endfor %}</tbody>
+        <thead><tr><th>Indicator</th><th>Target</th><th>Actual</th><th>Achievement</th></tr></thead>
+        <tbody>
+          {% for i in indicators %}
+          <tr>
+            <td>{{ i.name }}</td>
+            <td>{{ i.target_value|default:"—" }}</td>
+            <td>{{ i.latest_actual.actual_value|default:"—" }}</td>
+            <td>{% if i.achievement_percent is not None %}<span class="badge {% if i.achievement_percent >= 75 %}badge-success{% elif i.achievement_percent >= 40 %}badge-warning{% else %}badge-danger{% endif %}">{{ i.achievement_percent }}%</span>{% else %}—{% endif %}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
       </table>
-    {% else %}<p class="text-muted">No activities yet.</p>{% endif %}
-    {% if can_manage %}
-    <form method="post" style="margin-top:12px;">
-      {% csrf_token %}
-      {% include "partials/_form_fields.html" with form=activity_form %}
-      <button type="submit" class="btn btn-outline btn-sm">Add activity</button>
-    </form>
-    {% endif %}
+      {% else %}<p class="text-muted" style="padding:16px;">No indicators defined yet.</p>{% endif %}
+    </div>
   </div>
-  <div class="card-flat">
-    <h3>Indicators</h3>
-    {% if indicators %}
-      <ul>{% for i in indicators %}<li>{{ i.name }}: {% if i.achievement_percent %}{{ i.achievement_percent }}% of target{% else %}no actuals yet{% endif %}</li>{% endfor %}</ul>
-    {% else %}<p class="text-muted">No indicators defined yet.</p>{% endif %}
-    <a href="{% url 'monitoring_evaluation:dashboard' slug=organisation.slug %}" class="btn btn-outline btn-sm">Open M&amp;E</a>
+
+  <div class="section-block">
+    <h3>Projects</h3>
+    <div class="card-flat" style="padding:0;">
+      {% if projects %}
+      <table>
+        <thead><tr><th>Project</th><th>Status</th></tr></thead>
+        <tbody>
+          {% for p in projects %}
+          <tr><td><a href="{% url 'projects:detail' slug=organisation.slug project_id=p.id %}">{{ p.name }}</a></td><td><span class="badge badge-neutral">{{ p.get_status_display }}</span></td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}<p class="text-muted" style="padding:16px;">No projects yet.</p>{% endif %}
+    </div>
+  </div>
+
+  <div class="section-block">
+    <h3>Upcoming Activities</h3>
+    <div class="card-flat" style="padding:0;">
+      {% if upcoming_activities %}
+      <table>
+        <thead><tr><th>Activity</th><th>Date</th><th>Location</th></tr></thead>
+        <tbody>
+          {% for a in upcoming_activities %}
+          <tr><td>{{ a.name }}</td><td>{{ a.scheduled_date }}</td><td>{{ a.location|default:"—" }}</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}<p class="text-muted" style="padding:16px;">Nothing scheduled.</p>{% endif %}
+    </div>
+  </div>
+
+  <div class="section-block">
+    <h3>Budget vs Actual</h3>
+    <div class="card-flat">
+      <p>Budget <strong>R{{ budget.budget|floatformat:2 }}</strong></p>
+      <p>Spent <strong>R{{ budget.spent|floatformat:2 }}</strong></p>
+      <p class="mb-0">Remaining <strong>R{{ budget.remaining|floatformat:2 }}</strong></p>
+    </div>
+  </div>
+</div>
+
+<div class="section-block">
+  <h3>Needs Your Attention</h3>
+  <div class="card-flat" style="padding:0;">
+    {% if attention %}
+    <ul class="attention-list" style="padding:16px;">
+      {% for item in attention %}
+      <li><span>{{ item.text }}</span><a href="{{ item.url }}" class="attention-fix">Review →</a></li>
+      {% endfor %}
+    </ul>
+    {% else %}<p class="text-muted" style="padding:16px;">Nothing outstanding right now.</p>{% endif %}
   </div>
 </div>
 {% endblock %}

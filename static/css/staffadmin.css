@@ -24,8 +24,3 @@
 .staff-sidebar .sidebar-toggle { color: rgba(255,255,255,.7); border-color: rgba(255,255,255,.2); }
 .staff-sidebar .sidebar-toggle:hover { background: rgba(255,255,255,.08); }
 .sidebar-tooltip--staff { background: #fff; color: var(--color-primary); }
-
-.coming-soon-badge {
-  display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: .72rem; font-weight: 700;
-  background: var(--color-warning-light); color: var(--color-warning); text-transform: uppercase; letter-spacing: .03em;
-}

@@ -1,0 +1,14 @@
+{% extends "workspace_base.html" %}
+{% block title %}{{ programme.name }}: New Activity{% endblock %}
+{% block content %}
+<div class="breadcrumbs"><a href="{% url 'programmes:list' slug=organisation.slug %}">Programmes</a> / <a href="{% url 'programmes:detail' slug=organisation.slug programme_id=programme.id %}">{{ programme.name }}</a> / <a href="{% url 'programmes:activities' slug=organisation.slug programme_id=programme.id %}">Activities</a> / New</div>
+<div class="page-header"><div><h1>New Activity</h1>{% if project %}<p>{{ project.name }}</p>{% else %}<p>{{ programme.name }}</p>{% endif %}</div></div>
+
+<div class="card" style="max-width:560px;">
+  <form method="post" novalidate>
+    {% csrf_token %}
+    {% include "partials/_form_fields.html" %}
+    <button type="submit" class="btn btn-primary">Add Activity</button>
+  </form>
+</div>
+{% endblock %}

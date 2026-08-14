@@ -1,0 +1,3 @@
+<div class="breadcrumbs"><a href="{% url 'programmes:list' slug=organisation.slug %}">Programmes</a> / New Programme</div>
+<div class="wizard-step-label">Step {{ step_number }} of {{ step_total }}</div>
+<div class="wizard-progress"><div class="wizard-progress-bar" style="width:{% widthratio step_number step_total 100 %}%;"></div></div>

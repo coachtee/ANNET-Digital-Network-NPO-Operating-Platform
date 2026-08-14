@@ -1,0 +1,31 @@
+{% extends "workspace_base.html" %}
+{% block title %}{{ programme.name }}: Finance{% endblock %}
+{% block content %}
+{% include "programmes/_workspace_header.html" %}
+
+<div class="summary-bar">
+  <div class="summary-bar-item"><div class="summary-bar-label">Budget</div><div class="summary-bar-value">R{{ budget.budget|floatformat:2 }}</div></div>
+  <div class="summary-bar-item"><div class="summary-bar-label">Spent</div><div class="summary-bar-value">R{{ budget.spent|floatformat:2 }}</div></div>
+  <div class="summary-bar-item"><div class="summary-bar-label">Remaining</div><div class="summary-bar-value">R{{ budget.remaining|floatformat:2 }}</div></div>
+</div>
+
+<div class="section-block">
+  <h3>Project Budgets</h3>
+  <div class="card-flat" style="padding:0;">
+    {% if projects %}
+    <table>
+      <thead><tr><th>Project</th><th>Budget</th><th></th></tr></thead>
+      <tbody>
+        {% for p in projects %}
+        <tr>
+          <td>{{ p.name }}</td>
+          <td>R{{ p.budget|floatformat:2 }}</td>
+          <td><a href="{% url 'expenses:project_expenses' slug=organisation.slug project_id=p.id %}">View Expenses →</a></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}<p class="text-muted" style="padding:16px;">No projects yet — add one from the Projects tab to start tracking budget.</p>{% endif %}
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,32 @@
+{% extends "workspace_base.html" %}
+{% block title %}{{ programme.name }}: Activities{% endblock %}
+{% block content %}
+{% include "programmes/_workspace_header.html" %}
+
+<div class="page-header" style="margin-bottom:12px;">
+  <div><p class="mb-0 text-muted">Activities represent actual service delivery.</p></div>
+  {% if can_manage %}<a href="{% url 'programmes:create_activity' slug=organisation.slug programme_id=programme.id %}" class="btn btn-primary">New Activity</a>{% endif %}
+</div>
+
+{% if activities %}
+<div class="card-flat" style="padding:0;">
+<table>
+  <thead><tr><th>Activity</th><th>Project</th><th>Date</th><th>Location</th><th>Responsible</th><th>Status</th></tr></thead>
+  <tbody>
+    {% for a in activities %}
+    <tr>
+      <td>{{ a.name }}</td>
+      <td>{% if a.project %}{{ a.project.name }}{% else %}—{% endif %}</td>
+      <td>{{ a.scheduled_date|default:"—" }}</td>
+      <td>{{ a.location|default:"—" }}</td>
+      <td>{{ a.responsible_person|default:"—" }}</td>
+      <td><span class="badge badge-neutral">{{ a.get_status_display }}</span></td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+</div>
+{% else %}
+<div class="empty-state"><h3>No activities yet.</h3><p>Activities are what your organisation actually delivers: a workshop, a home visit, a training session.</p></div>
+{% endif %}
+{% endblock %}

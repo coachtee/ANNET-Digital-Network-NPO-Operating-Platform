@@ -1,0 +1,41 @@
+{% extends "workspace_base.html" %}
+{% block title %}{{ programme.name }}: Evidence{% endblock %}
+{% block content %}
+{% include "programmes/_workspace_header.html" %}
+
+<div class="grid grid-2" style="align-items:start;">
+  <div class="section-block">
+    <h3>Evidence</h3>
+    <div class="card-flat" style="padding:0;">
+      {% if documents %}
+      <table>
+        <thead><tr><th>Title</th><th>Category</th><th>Uploaded</th><th></th></tr></thead>
+        <tbody>
+          {% for d in documents %}
+          <tr>
+            <td>{{ d.title }}</td>
+            <td>{{ d.get_category_display }}</td>
+            <td>{{ d.created_at|date:"d M Y" }}</td>
+            <td><a href="{% url 'documents:detail' slug=organisation.slug document_id=d.id %}">View</a></td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}<p class="text-muted" style="padding:16px;">No evidence uploaded yet.</p>{% endif %}
+    </div>
+  </div>
+
+  {% if form %}
+  <div class="section-block">
+    <h3>Upload Evidence</h3>
+    <div class="card">
+      <form method="post" enctype="multipart/form-data" novalidate>
+        {% csrf_token %}
+        {% include "partials/_form_fields.html" %}
+        <button type="submit" class="btn btn-primary">Upload</button>
+      </form>
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

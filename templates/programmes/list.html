@@ -1,23 +1,27 @@
 {% extends "workspace_base.html" %}
 {% block title %}Programmes{% endblock %}
 {% block content %}
+<div class="breadcrumbs">Programmes</div>
 <div class="page-header">
-  <div><h1>Programmes</h1><p>{{ organisation.display_name }}</p></div>
-  {% if can_manage %}<a href="{% url 'programmes:create' slug=organisation.slug %}" class="btn btn-primary">New programme</a>{% endif %}
+  <div><h1>Programmes</h1><p>Manage the programmes your organisation delivers.</p></div>
+  {% if can_manage %}<a href="{% url 'programmes:create' slug=organisation.slug %}" class="btn btn-primary">New Programme</a>{% endif %}
 </div>
-{% if programmes %}
+{% if rows %}
+<div class="card-flat" style="padding:0;">
 <table>
-  <thead><tr><th>Name</th><th>Area</th><th>Status</th></tr></thead>
+  <thead><tr><th>Programme</th><th>Status</th><th>Period</th><th>Progress</th></tr></thead>
   <tbody>
-    {% for p in programmes %}
+    {% for row in rows %}
     <tr>
-      <td><a href="{% url 'programmes:detail' slug=organisation.slug programme_id=p.id %}">{{ p.name }}</a></td>
-      <td>{{ p.programme_area|default:"—" }}</td>
-      <td><span class="badge badge-neutral">{{ p.get_status_display }}</span></td>
+      <td><a href="{% url 'programmes:detail' slug=organisation.slug programme_id=row.programme.id %}">{{ row.programme.name }}</a></td>
+      <td><span class="badge badge-neutral">{{ row.programme.get_status_display }}</span></td>
+      <td>{% if row.programme.start_date %}{{ row.programme.start_date|date:"Y" }}{% if row.programme.end_date %}–{{ row.programme.end_date|date:"Y" }}{% endif %}{% else %}—{% endif %}</td>
+      <td>{% if row.progress is not None %}{{ row.progress }}%{% else %}<span class="text-muted">No data yet</span>{% endif %}</td>
     </tr>
     {% endfor %}
   </tbody>
 </table>
+</div>
 {% else %}
 <div class="empty-state"><h3>No programmes yet.</h3><p>Create your first programme to begin tracking activities, attendance and impact.</p></div>
 {% endif %}

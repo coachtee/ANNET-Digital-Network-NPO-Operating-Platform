@@ -13,9 +13,14 @@ from apps.projects.models import Project
 @login_required
 def project_list(request, slug):
     organisation = get_organisation_or_404_for_user(request.user, slug)
+    projects = organisation.projects.all()
+    programme_id = request.GET.get("programme")
+    if programme_id:
+        projects = projects.filter(programme_id=programme_id)
     return render(request, "projects/list.html", {
-        "organisation": organisation, "projects": organisation.projects.all(),
+        "organisation": organisation, "projects": projects,
         "can_manage": has_org_capability(request.user, organisation, "projects.manage"),
+        "programme_id": programme_id,
     })
 
 
@@ -24,13 +29,19 @@ def create_project(request, slug):
     organisation = get_organisation_or_404_for_user(request.user, slug)
     if not has_org_capability(request.user, organisation, "projects.manage"):
         raise PermissionDenied
-    form = ProjectForm(request.POST or None, organisation=organisation)
+    initial = {}
+    programme_id = request.GET.get("programme")
+    if programme_id:
+        initial["programme"] = programme_id
+    form = ProjectForm(request.POST or None, organisation=organisation, initial=initial)
     if request.method == "POST" and form.is_valid():
         project = form.save(commit=False)
         project.organisation = organisation
         project.save()
         log_action("project.created", organisation=organisation, obj=project, actor=request.user)
         messages.success(request, "Project created.")
+        if project.programme_id:
+            return redirect("programmes:detail", slug=slug, programme_id=project.programme_id)
         return redirect("projects:detail", slug=slug, project_id=project.id)
     return render(request, "projects/project_form.html", {"organisation": organisation, "form": form})
 

@@ -1,0 +1,26 @@
+<div class="breadcrumbs"><a href="{% url 'programmes:list' slug=organisation.slug %}">Programmes</a> / {{ programme.name }}</div>
+<div class="page-header">
+  <div>
+    <h1>{{ programme.name }}</h1>
+    <p>{{ programme.programme_area|default:"Programme" }} · <span class="badge badge-neutral">{{ programme.get_status_display }}</span></p>
+  </div>
+</div>
+
+<div class="summary-bar">
+  <div class="summary-bar-item"><div class="summary-bar-label">Projects</div><div class="summary-bar-value">{{ programme.projects.count }}</div></div>
+  <div class="summary-bar-item"><div class="summary-bar-label">People</div><div class="summary-bar-value">{{ programme.beneficiaries.count }}</div></div>
+  <div class="summary-bar-item"><div class="summary-bar-label">Activities</div><div class="summary-bar-value">{{ programme.activities.count }}</div></div>
+  <div class="summary-bar-item"><div class="summary-bar-label">Outcomes</div><div class="summary-bar-value">{{ programme.outcomes.count }}</div></div>
+</div>
+
+<div class="tabs">
+  <a href="{% url 'programmes:detail' slug=organisation.slug programme_id=programme.id %}" class="{% if active_tab == 'overview' %}active{% endif %}">Overview</a>
+  <a href="{% url 'programmes:plan' slug=organisation.slug programme_id=programme.id %}" class="{% if active_tab == 'plan' %}active{% endif %}">Plan</a>
+  <a href="{% url 'projects:list' slug=organisation.slug %}?programme={{ programme.id }}" class="{% if active_tab == 'projects' %}active{% endif %}">Projects</a>
+  <a href="{% url 'programmes:activities' slug=organisation.slug programme_id=programme.id %}" class="{% if active_tab == 'activities' %}active{% endif %}">Activities</a>
+  <a href="{% url 'beneficiaries:list' slug=organisation.slug %}?programme={{ programme.id }}" class="{% if active_tab == 'people' %}active{% endif %}">People</a>
+  <a href="{% url 'monitoring_evaluation:programme_me' slug=organisation.slug programme_id=programme.id %}" class="{% if active_tab == 'me' %}active{% endif %}">M&amp;E</a>
+  <a href="{% url 'programmes:finance' slug=organisation.slug programme_id=programme.id %}" class="{% if active_tab == 'finance' %}active{% endif %}">Finance</a>
+  <a href="{% url 'programmes:evidence' slug=organisation.slug programme_id=programme.id %}" class="{% if active_tab == 'evidence' %}active{% endif %}">Evidence</a>
+  <a href="{% url 'programmes:reports' slug=organisation.slug programme_id=programme.id %}" class="{% if active_tab == 'reports' %}active{% endif %}">Reports</a>
+</div>

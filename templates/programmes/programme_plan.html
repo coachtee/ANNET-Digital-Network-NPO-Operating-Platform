@@ -1,0 +1,54 @@
+{% extends "workspace_base.html" %}
+{% block title %}{{ programme.name }}: Plan{% endblock %}
+{% block content %}
+{% include "programmes/_workspace_header.html" %}
+
+{% if editing %}
+<div class="card" style="max-width:640px;">
+  <h3>Edit programme plan</h3>
+  <form method="post" novalidate>
+    {% csrf_token %}
+    {% include "partials/_form_fields.html" %}
+    <button type="submit" class="btn btn-primary">Save</button>
+    <a href="{% url 'programmes:plan' slug=organisation.slug programme_id=programme.id %}" class="btn btn-ghost">Cancel</a>
+  </form>
+</div>
+{% else %}
+<div class="page-header" style="margin-bottom:12px;">
+  <div></div>
+  {% if can_manage %}<a href="?edit=1" class="btn btn-outline btn-sm">Edit</a>{% endif %}
+</div>
+
+<div class="card-flat" style="margin-bottom:16px;">
+  <h3>Need &amp; Background</h3>
+  <p class="mb-0">{{ programme.need_and_background|default:"Not yet described." }}</p>
+</div>
+
+<div class="grid grid-2">
+  <div class="card-flat">
+    <h3>Purpose</h3>
+    <p class="mb-0">{{ programme.theory_of_change_summary|default:"—" }}</p>
+  </div>
+  <div class="card-flat">
+    <h3>Beneficiaries</h3>
+    <p class="mb-0">{{ programme.target_beneficiary_groups|join:", "|default:"—" }}</p>
+  </div>
+  <div class="card-flat">
+    <h3>Geography</h3>
+    <p class="mb-0">{{ programme.locations|join:", "|default:"—" }}</p>
+  </div>
+  <div class="card-flat">
+    <h3>Implementation Period</h3>
+    <p class="mb-0">{{ programme.start_date|default:"—" }} to {{ programme.end_date|default:"—" }}</p>
+  </div>
+  <div class="card-flat">
+    <h3>Staffing &amp; Resources</h3>
+    <p class="mb-0">{{ programme.staffing_plan|default:"Not yet described." }}</p>
+  </div>
+  <div class="card-flat">
+    <h3>Outcomes</h3>
+    {% if outcomes %}<ul class="mb-0">{% for o in outcomes %}<li>{{ o.title }}</li>{% endfor %}</ul>{% else %}<p class="mb-0 text-muted">None yet.</p>{% endif %}
+  </div>
+</div>
+{% endif %}
+{% endblock %}
