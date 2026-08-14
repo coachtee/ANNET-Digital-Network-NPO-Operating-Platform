@@ -1,3 +1,4 @@
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase
 from django.urls import reverse
 
@@ -15,6 +16,7 @@ from apps.programmes.services import (
 )
 from apps.projects.forms import ProjectForm
 from apps.projects.models import Project
+from apps.projects.services import project_finance_summary
 
 PASSWORD = "TestPass!2026"
 
@@ -623,3 +625,163 @@ class ProgrammeTeamTests(TestCase):
         ProgrammeMembership.objects.create(programme=self.programme, user=self.manager, role="programme_manager")
         resp = self.client.get(reverse("programmes:detail", kwargs={"slug": self.organisation.slug, "programme_id": self.programme.id}))
         self.assertContains(resp, "Programme Manager: Thabiso")
+
+
+class DOPADemonstrationScenarioTests(TestCase):
+    """The full DOPA demonstration scenario end to end, through the real
+    views a user actually clicks through -- not direct model creation.
+    This is the capstone: Organisation -> Programme (wizard) -> Outcome
+    -> Output -> Indicator -> Target -> Programme Team -> two Projects
+    -> Activities -> Tasks -> Project Team -> Budget -> Expense
+    (submitted -> approved), with the exact Committed/Actual/Remaining
+    figures checked at each stage."""
+
+    def setUp(self):
+        self.organisation = Organisation.objects.create(legal_name="DOPA", organisation_type="npo")
+        self.admin = User.objects.create_user(email="admin@dopa.example.com", password=PASSWORD, first_name="Thabiso")
+        self.reviewer = User.objects.create_user(email="finance@dopa.example.com", password=PASSWORD, first_name="Sarah")
+        OrganisationMembership.objects.create(organisation=self.organisation, user=self.admin, role=ORG_ROLE_ADMIN)
+        OrganisationMembership.objects.create(organisation=self.organisation, user=self.reviewer, role=ORG_ROLE_ADMIN)
+        self.client.force_login(self.admin)
+
+    def test_full_dopa_scenario(self):
+        from apps.expenses.models import Budget, BudgetLine, Expense
+        from apps.programmes.models import ProgrammeMembership
+        from apps.projects.models import ProjectMembership
+
+        slug = self.organisation.slug
+
+        # 1. Programme, via the wizard -- a real Programme Planning Workshop.
+        resp = self.client.post(reverse("programmes:create", kwargs={"slug": slug}), {
+            "name": "DOPA Youth Digital Skills & Employability Programme",
+            "programme_area": "education_skills", "status": Programme.STATUS_PLANNED,
+        })
+        programme = Programme.objects.get(organisation=self.organisation)
+        self.assertRedirects(resp, reverse("programmes:wizard_step", kwargs={"slug": slug, "programme_id": programme.id, "step": Programme.WIZARD_WHY}))
+
+        def wizard_url(step):
+            return reverse("programmes:wizard_step", kwargs={"slug": slug, "programme_id": programme.id, "step": step})
+
+        self.client.post(wizard_url(Programme.WIZARD_WHY), {
+            "need_and_background": "Young people in Katlehong and surrounding rural communities have limited access to digital skills training and struggle to enter the job market.",
+            "theory_of_change_summary": "If young people gain practical digital and workplace-readiness skills, they will be more employable.",
+        })
+        self.client.post(wizard_url(Programme.WIZARD_WHO_AND_WHERE), {
+            "target_beneficiary_groups": "Unemployed youth aged 18-30",
+            "province": "GP", "locations": "Katlehong",
+        })
+        programme.refresh_from_db()
+
+        # 2. Outcome -> Output -> Indicator -> Target, via the small M&E popups.
+        self.client.post(wizard_url(Programme.WIZARD_SUCCESS), {
+            "add_outcome": "1", "title": "Young people improve their digital skills and workplace readiness.", "description": "",
+        })
+        outcome = programme.outcomes.get()
+        self.client.post(wizard_url(Programme.WIZARD_SUCCESS), {
+            "add_output": "1", "title": "Digital skills training delivered.", "description": "", "outcome": str(outcome.id),
+        })
+        output = programme.outputs.get()
+        self.client.post(wizard_url(Programme.WIZARD_SUCCESS), {
+            "add_indicator": "1", "name": "Young people completing digital skills training.",
+            "indicator_type": "count", "outcome": str(outcome.id), "output": str(output.id), "target_value": "100",
+        })
+        self.client.post(wizard_url(Programme.WIZARD_SUCCESS), {"continue": "1"})
+        programme.refresh_from_db()
+
+        readiness = compute_programme_readiness(programme)
+        self.assertTrue(readiness["is_ready"], readiness["missing"])
+
+        # 3. Project 1, via the now-unblocked wizard step.
+        resp = self.client.post(wizard_url(Programme.WIZARD_PROJECTS_AND_ACTIVITIES), {
+            "add_project": "1", "name": "Digital Skills Bootcamp – Katlehong", "status": Project.STATUS_ACTIVE,
+            "budget": "20000",
+        })
+        project1 = Project.objects.get(programme=programme, name__contains="Katlehong")
+
+        # Activities.
+        self.client.post(wizard_url(Programme.WIZARD_PROJECTS_AND_ACTIVITIES), {
+            "add_activity": "1", "name": "Computer & Digital Literacy Workshop", "status": "planned", "project": str(project1.id),
+        })
+        self.client.post(wizard_url(Programme.WIZARD_PROJECTS_AND_ACTIVITIES), {
+            "add_activity": "1", "name": "CV & Workplace Readiness Workshop", "status": "planned", "project": str(project1.id),
+        })
+        self.assertEqual(project1.activities.count(), 2)
+        self.client.post(wizard_url(Programme.WIZARD_PROJECTS_AND_ACTIVITIES), {"continue": "1"})
+
+        self.client.post(wizard_url(Programme.WIZARD_PEOPLE_AND_RESOURCES), {"staffing_plan": "One programme manager, one facilitator."})
+        self.client.post(wizard_url(Programme.WIZARD_BUDGET_AND_FUNDING), {"grants": []})
+        resp = self.client.post(wizard_url(Programme.WIZARD_REVIEW))
+        programme.refresh_from_db()
+        self.assertEqual(programme.wizard_step, Programme.WIZARD_COMPLETE)
+        self.assertRedirects(resp, reverse("programmes:detail", kwargs={"slug": slug, "programme_id": programme.id}))
+
+        # 4. Programme Team.
+        self.client.post(reverse("programmes:team", kwargs={"slug": slug, "programme_id": programme.id}), {
+            "user": str(self.admin.id), "role": "programme_manager", "status": "active",
+        })
+        self.assertTrue(ProgrammeMembership.objects.filter(programme=programme, user=self.admin, role="programme_manager").exists())
+
+        # 5. Project 2, from the Projects list -- the Programme is ready, so this is unblocked too.
+        resp = self.client.post(reverse("projects:list", kwargs={"slug": slug}), {
+            "name": "Digital Skills Bootcamp – Rural School", "programme": str(programme.id), "status": Project.STATUS_PLANNING, "budget": "0",
+        })
+        self.assertEqual(Project.objects.filter(programme=programme).count(), 2)
+
+        # 6. Tasks on Project 1.
+        for title in ["Book training venue", "Arrange computers", "Confirm facilitator", "Print attendance register"]:
+            self.client.post(reverse("projects:tasks", kwargs={"slug": slug, "project_id": project1.id}), {"title": title, "status": "todo"})
+        self.assertEqual(project1.tasks.count(), 4)
+
+        # 7. Project Team.
+        self.client.post(reverse("projects:people", kwargs={"slug": slug, "project_id": project1.id}), {
+            "user": str(self.admin.id), "role": "project_manager", "status": "active",
+        })
+        self.assertTrue(ProjectMembership.objects.filter(project=project1, user=self.admin, role="project_manager").exists())
+
+        # 8. Budget: R20,000 with the real line breakdown.
+        self.client.post(reverse("projects:budget", kwargs={"slug": slug, "project_id": project1.id}), {
+            "create_budget": "1", "total_amount": "20000",
+        })
+        budget = Budget.objects.get(project=project1)
+        self.assertEqual(budget.total_amount, 20000)
+        lines = {"Facilitator": "4000", "Venue": "5000", "Refreshments": "4000", "Training materials": "3000", "Transport": "2000", "Printing": "2000"}
+        for category, amount in lines.items():
+            self.client.post(reverse("projects:budget", kwargs={"slug": slug, "project_id": project1.id}), {
+                "add_line": "1", "category": category, "allocated_amount": amount,
+            })
+        self.assertEqual(budget.lines.count(), 6)
+        self.assertEqual(sum(l.allocated_amount for l in budget.lines.all()), 20000)
+
+        # 9. Submit the Facilitator expense -- Committed, not yet Actual.
+        facilitator_line = budget.lines.get(category="Facilitator")
+        self.client.post(reverse("projects:expenses", kwargs={"slug": slug, "project_id": project1.id}), {
+            "budget_line": str(facilitator_line.id), "amount": "4000", "description": "Facilitator",
+            "receipt": SimpleUploadedFile("receipt.pdf", b"%PDF-1.4 fake", content_type="application/pdf"),
+        })
+        expense = Expense.objects.get(project=project1)
+        self.assertEqual(expense.status, Expense.STATUS_SUBMITTED)
+
+        summary = project_finance_summary(project1)
+        self.assertEqual(summary["planned"], 20000)
+        self.assertEqual(summary["committed"], 4000)
+        self.assertEqual(summary["actual"], 0)
+        self.assertEqual(summary["remaining"], 20000)
+
+        # 10. A different reviewer approves it -- Actual, no longer Committed,
+        # never double-counted.
+        self.client.force_login(self.reviewer)
+        self.client.post(reverse("expenses:review_expense", kwargs={"slug": slug, "expense_id": expense.id}), {
+            "status": Expense.STATUS_APPROVED, "review_note": "Approved.",
+        })
+        summary = project_finance_summary(project1)
+        self.assertEqual(summary["planned"], 20000)
+        self.assertEqual(summary["committed"], 0)
+        self.assertEqual(summary["actual"], 4000)
+        self.assertEqual(summary["remaining"], 16000)
+
+        # 11. Completing the project doesn't change its finance.
+        project1.status = Project.STATUS_COMPLETE
+        project1.save()
+        summary = project_finance_summary(project1)
+        self.assertEqual(summary["actual"], 4000)
+        self.assertEqual(summary["remaining"], 16000)
